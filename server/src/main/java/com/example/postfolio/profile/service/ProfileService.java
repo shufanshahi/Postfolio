@@ -64,4 +64,9 @@ public class ProfileService {
         return userRepository.findByEmail(email)
                 .flatMap(profileRepository::findByUser);
     }
+
+    public Profile getProfileById(Long profileId) {
+        return profileRepository.findById(profileId)
+                .orElseThrow(() -> new RuntimeException("Profile not found with id: " + profileId));
+    }
 }
