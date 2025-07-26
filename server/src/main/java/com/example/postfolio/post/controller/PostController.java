@@ -1,18 +1,15 @@
 package com.example.postfolio.post.controller;
 
-import com.example.postfolio.post.dto.CreatePostDTO;
-import com.example.postfolio.post.dto.PostResponseDTO;
-import com.example.postfolio.post.dto.UpdatePostDTO;
+import com.example.postfolio.post.dto.*;
 import com.example.postfolio.post.entity.Post;
+import com.example.postfolio.post.models.PostType;
 import com.example.postfolio.post.service.PostService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.modelmapper.ModelMapper;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
-import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -21,11 +18,8 @@ import java.util.stream.Collectors;
 @RestController
 @RequestMapping("/api/posts")
 @RequiredArgsConstructor
-@Validated
 public class PostController {
-
     private final PostService postService;
-    private final ModelMapper modelMapper = new ModelMapper();
 
     @PostMapping
     public ResponseEntity<PostResponseDTO> createPost(
@@ -44,10 +38,35 @@ public class PostController {
         return ResponseEntity.ok(convertToDto(post));
     }
 
+    // New endpoint for skill-based post retrieval
+    @GetMapping("/profile/{profileId}/skills/{skill}")
+    public ResponseEntity<List<PostResponseDTO>> getPostsBySkill(
+            @PathVariable Long profileId,
+            @PathVariable String skill) {
+        List<Post> posts = postService.getPostsByTag(profileId, skill);
+        return ResponseEntity.ok(convertToDtoList(posts));
+    }
+
+    // New endpoint for skill listing
+    @GetMapping("/profile/{profileId}/skills")
+    public ResponseEntity<List<String>> getProfileSkills(
+            @PathVariable Long profileId) {
+        List<String> skills = postService.getProfileSkills(profileId);
+        return ResponseEntity.ok(skills);
+    }
+
     @GetMapping("/profile/{profileId}")
     public ResponseEntity<List<PostResponseDTO>> getProfilePosts(
             @PathVariable Long profileId) {
         List<Post> posts = postService.getAllPostsByProfile(profileId);
+        return ResponseEntity.ok(convertToDtoList(posts));
+    }
+
+    @GetMapping("/profile/{profileId}/type/{type}")
+    public ResponseEntity<List<PostResponseDTO>> getPostsByType(
+            @PathVariable Long profileId,
+            @PathVariable PostType type) {
+        List<Post> posts = postService.getPostsByType(profileId, type);
         return ResponseEntity.ok(convertToDtoList(posts));
     }
 
@@ -59,6 +78,14 @@ public class PostController {
         return ResponseEntity.ok(convertToDtoPage(postPage));
     }
 
+    @GetMapping("/profile/{profileId}/needs-review")
+    public ResponseEntity<Page<PostResponseDTO>> getPostsNeedingReview(
+            @PathVariable Long profileId,
+            Pageable pageable) {
+        Page<Post> posts = postService.getPostsNeedingReview(profileId, pageable);
+        return ResponseEntity.ok(convertToDtoPage(posts));
+    }
+
     @PutMapping("/{postId}")
     public ResponseEntity<PostResponseDTO> updatePost(
             @PathVariable Long postId,
@@ -68,6 +95,27 @@ public class PostController {
                 updatePostDTO.getProfileId(),
                 updatePostDTO.getContent()
         );
+        return ResponseEntity.ok(convertToDto(post));
+    }
+
+    @PutMapping("/{postId}/tags")
+    public ResponseEntity<PostResponseDTO> updatePostTags(
+            @PathVariable Long postId,
+            @RequestBody @Valid TagUpdateDTO tagUpdateDTO) {
+        Post post = postService.updatePostTags(
+                postId,
+                tagUpdateDTO.getProfileId(),
+                tagUpdateDTO.getTags()
+        );
+        return ResponseEntity.ok(convertToDto(post));
+    }
+
+    // New endpoint for reprocessing AI tags
+    @PostMapping("/{postId}/retag")
+    public ResponseEntity<PostResponseDTO> reprocessPostTags(
+            @PathVariable Long postId,
+            @RequestParam Long profileId) {
+        Post post = postService.reprocessPostWithAI(postId, profileId);
         return ResponseEntity.ok(convertToDto(post));
     }
 
@@ -85,9 +133,19 @@ public class PostController {
         return ResponseEntity.ok(convertToDtoList(posts));
     }
 
-    // Helper methods for DTO conversion
+    // DTO conversion methods
     private PostResponseDTO convertToDto(Post post) {
-        return modelMapper.map(post, PostResponseDTO.class);
+        return PostResponseDTO.builder()
+                .id(post.getId())
+                .content(post.getContent())
+                .cvHeading(post.getCvHeading())
+                .type(post.getType())
+                .tags(post.getTags())
+                .autoTagged(post.getAutoTagged())
+                .profileId(post.getProfile().getId())
+                .createdAt(post.getCreatedAt())
+                .updatedAt(post.getUpdatedAt())
+                .build();
     }
 
     private List<PostResponseDTO> convertToDtoList(List<Post> posts) {
@@ -97,7 +155,10 @@ public class PostController {
     }
 
     private Page<PostResponseDTO> convertToDtoPage(Page<Post> postPage) {
-        List<PostResponseDTO> dtoList = convertToDtoList(postPage.getContent());
+        List<PostResponseDTO> dtoList = postPage.getContent()
+                .stream()
+                .map(this::convertToDto)
+                .collect(Collectors.toList());
         return new PageImpl<>(dtoList, postPage.getPageable(), postPage.getTotalElements());
     }
 }

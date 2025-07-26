@@ -23,7 +23,7 @@ public class Post {
     @Column(nullable = false, columnDefinition = "TEXT")
     private String content;
 
-    @Column(nullable = false)
+
     private String cvHeading; // AI-generated summary for CV display (e.g., "React Dashboard Project")
 
     @Enumerated(EnumType.STRING)
