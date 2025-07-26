@@ -38,8 +38,8 @@ public class GeminiService {
     private String buildPrompt(String content) {
         return """
             Analyze this post and return STRICT JSON format with:
-            1. "type" (ONLY choose one: EXPERIENCE, EDUCATION, SKILL, PROJECT, ACHIEVEMENT)
-            2. "tags" (comma-separated technical skills)
+            1. "type" (ONLY choose one: EXPERIENCE, EDUCATION, SKILL, PROJECT, ACHIEVEMENT) Acadamic achievements goes to EDUCATION other achievement goes to ACHIEVEMENT
+            2. "tags" (comma-separated any skills such as debating,technical skill,language any soft skills)
             
             Return ONLY the JSON object, without any markdown formatting or additional text.
             Example response:
