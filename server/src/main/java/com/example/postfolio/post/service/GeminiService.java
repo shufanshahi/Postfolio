@@ -4,6 +4,7 @@ import com.example.postfolio.post.models.PostType;
 import com.google.gson.*;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
@@ -11,13 +12,13 @@ import org.springframework.web.client.RestTemplate;
 
 import java.util.*;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class GeminiService {
     private final RestTemplate restTemplate;
 
-
-    private String apiKey="AIzaSyDyu3V1zVQxZYZb-MMnP0UJMIT2WXRI-KY";
+    private String apiKey = "AIzaSyDyu3V1zVQxZYZb-MMnP0UJMIT2WXRI-KY";
 
     private static final String GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent";
 
@@ -26,31 +27,33 @@ public class GeminiService {
             String sanitizedContent = content.replace("\"", "\\\"");
             String prompt = buildPrompt(sanitizedContent);
             String jsonResponse = callGeminiAPI(prompt);
+            log.debug("Gemini API raw response: {}", jsonResponse);
             return parseResponse(jsonResponse);
         } catch (Exception e) {
+            log.error("Gemini analysis failed for content: {}", content, e);
             throw new RuntimeException("Failed to analyze post with Gemini: " + e.getMessage());
         }
     }
 
     private String buildPrompt(String content) {
         return """
-            Analyze this post and return JSON with:
-            1. "type" (ONLY: EXPERIENCE, EDUCATION, SKILL, PROJECT, ACHIEVEMENT)
+            Analyze this post and return STRICT JSON format with:
+            1. "type" (ONLY choose one: EXPERIENCE, EDUCATION, SKILL, PROJECT, ACHIEVEMENT)
             2. "tags" (comma-separated technical skills)
             
+            Return ONLY the JSON object, without any markdown formatting or additional text.
             Example response:
             {
               "type": "PROJECT",
               "tags": "React,Node.js"
             }
             
-            Post: "%s"
+            Post Content: "%s"
             """.formatted(content);
     }
 
-    private String callGeminiAPI(String prompt) throws JsonSyntaxException {
+    private String callGeminiAPI(String prompt) {
         try {
-            // Build JSON payload properly using Gson
             JsonObject requestBody = new JsonObject();
             JsonArray contents = new JsonArray();
             JsonObject content = new JsonObject();
@@ -63,6 +66,11 @@ public class GeminiService {
             contents.add(content);
             requestBody.add("contents", contents);
 
+            // Add generation config to encourage clean JSON output
+            JsonObject generationConfig = new JsonObject();
+            generationConfig.addProperty("temperature", 0.7);
+            requestBody.add("generationConfig", generationConfig);
+
             HttpHeaders headers = new HttpHeaders();
             headers.set("X-goog-api-key", apiKey);
             headers.setContentType(MediaType.APPLICATION_JSON);
@@ -73,7 +81,7 @@ public class GeminiService {
             );
 
             ResponseEntity<String> response = restTemplate.postForEntity(
-                    GEMINI_API_URL,
+                    GEMINI_API_URL + "?key=" + apiKey, // Adding API key as query parameter as fallback
                     request,
                     String.class
             );
@@ -90,7 +98,13 @@ public class GeminiService {
 
     private GeminiResponse parseResponse(String jsonResponse) {
         try {
-            JsonObject response = JsonParser.parseString(jsonResponse).getAsJsonObject();
+            JsonElement root = JsonParser.parseString(jsonResponse);
+            JsonObject response = root.getAsJsonObject();
+
+            if (!response.has("candidates") || response.getAsJsonArray("candidates").isEmpty()) {
+                throw new RuntimeException("No candidates in Gemini response");
+            }
+
             JsonObject candidate = response.getAsJsonArray("candidates")
                     .get(0).getAsJsonObject();
             String text = candidate.getAsJsonObject("content")
@@ -98,27 +112,60 @@ public class GeminiService {
                     .get(0).getAsJsonObject()
                     .get("text").getAsString();
 
-            JsonObject result = JsonParser.parseString(text).getAsJsonObject();
+            // Extract JSON from text (handles both raw JSON and markdown-wrapped JSON)
+            String jsonContent = extractJsonFromText(text);
+
+            JsonObject result = JsonParser.parseString(jsonContent).getAsJsonObject();
 
             // Validate response structure
             if (!result.has("type") || !result.has("tags")) {
-                throw new RuntimeException("Invalid Gemini response format");
+                throw new RuntimeException("Invalid Gemini response format - missing required fields");
             }
 
-            PostType type = PostType.valueOf(result.get("type").getAsString());
-            String[] tags = result.get("tags").getAsString().split(",\\s*");
+            PostType type;
+            try {
+                type = PostType.valueOf(result.get("type").getAsString());
+            } catch (IllegalArgumentException e) {
+                log.warn("Invalid post type received, defaulting to SKILL");
+                type = PostType.SKILL;
+            }
 
-            return new GeminiResponse(
-                    type,
-                    Arrays.asList(tags)
-            );
+            String tagsString = result.get("tags").getAsString();
+            List<String> tags = Arrays.stream(tagsString.split(",\\s*"))
+                    .filter(tag -> !tag.isBlank())
+                    .toList();
+
+            if (tags.isEmpty()) {
+                tags = List.of("General");
+            }
+
+            return new GeminiResponse(type, tags);
+        } catch (JsonSyntaxException e) {
+            log.error("Invalid JSON response from Gemini: {}", jsonResponse);
+            throw new RuntimeException("Malformed JSON response from Gemini");
         } catch (Exception e) {
             throw new RuntimeException("Failed to parse Gemini response: " + e.getMessage());
         }
     }
 
-    @RequiredArgsConstructor
+    private String extractJsonFromText(String text) {
+        // If the response is wrapped in markdown code blocks
+        if (text.trim().startsWith("```json")) {
+            int start = text.indexOf("{");
+            int end = text.lastIndexOf("}");
+            if (start >= 0 && end > start) {
+                return text.substring(start, end + 1);
+            }
+        }
+        // If the response is just the JSON
+        else if (text.trim().startsWith("{")) {
+            return text;
+        }
+        throw new RuntimeException("Could not extract JSON from Gemini response: " + text);
+    }
+
     @Getter
+    @RequiredArgsConstructor
     public static class GeminiResponse {
         private final PostType postType;
         private final List<String> tags;
