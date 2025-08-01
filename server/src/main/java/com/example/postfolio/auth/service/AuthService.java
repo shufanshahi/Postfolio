@@ -6,6 +6,7 @@ import com.example.postfolio.auth.dto.AuthRequest;
 import com.example.postfolio.auth.dto.AuthResponse;
 import com.example.postfolio.auth.dto.RegisterRequest;
 import com.example.postfolio.config.JwtService;
+import com.example.postfolio.profile.service.ProfileService;
 import com.example.postfolio.user.entity.User;
 import com.example.postfolio.user.model.Role;
 import com.example.postfolio.user.repository.UserRepository;
@@ -26,6 +27,7 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
     private final AuthenticationManager authenticationManager;
+    private final ProfileService profileService;
 
     public AuthResponse register(RegisterRequest request) {
         User user = User.builder()
@@ -35,7 +37,11 @@ public class AuthService {
                 .role(request.role())
                 .build();
 
-        userRepository.save(user);
+
+
+        User savedUser = userRepository.save(user);
+
+        profileService.initializeProfileForUser(savedUser);
         String jwt = jwtService.generateToken(user);
         return new AuthResponse(jwt);
     }
