@@ -16,11 +16,19 @@ export default function Dashboard() {
         router.push('/login');
     };
 
+    const goToProfile = () => {
+        router.push('/profile');
+    };
+
+
     return (
         <div>
             <h1>Dashboard</h1>
             <p>Hello! You're logged in.</p>
-            <button onClick={handleLogout}>Logout</button>
+            <div style={{ display: 'flex', gap: '10px' }}>
+                <button onClick={goToProfile}>Profile</button>
+                <button onClick={handleLogout}>Logout</button>
+            </div>
         </div>
     );
 }
