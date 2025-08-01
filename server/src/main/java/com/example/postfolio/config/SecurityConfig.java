@@ -21,7 +21,6 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
-import java.util.Arrays;
 import java.util.List;
 
 @Configuration
@@ -35,19 +34,20 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-                .cors(cors -> cors.configurationSource(corsConfigurationSource())) // Enable CORS
-                .csrf(csrf -> csrf.disable()) // Disable CSRF for APIs
+                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+                .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(authorize -> authorize
                         .requestMatchers(
+                                "/api/**",
                                 "/api/auth/**",
                                 "/api/profile/**",
                                 "/swagger-ui/**",
                                 "/v3/api-docs/**"
-                        ).permitAll() // Public endpoints
-                        .anyRequest().authenticated() // All other endpoints require auth
+                        ).permitAll()
+                        .anyRequest().authenticated()
                 )
                 .sessionManagement(session -> session
-                        .sessionCreationPolicy(SessionCreationPolicy.STATELESS) // No sessions
+                        .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 )
                 .authenticationProvider(authenticationProvider())
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
@@ -57,15 +57,26 @@ public class SecurityConfig {
 
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
-        CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(List.of("http://localhost:3000")); // Frontend URL
-        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
-        configuration.setAllowedHeaders(List.of("*"));
-        configuration.setAllowCredentials(true); // Required for JWT auth
-        configuration.setMaxAge(3600L); // Cache preflight response for 1 hour
-
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        source.registerCorsConfiguration("/**", configuration); // Apply to all paths
+
+        // Configuration for authentication endpoints
+        CorsConfiguration authConfig = new CorsConfiguration();
+        authConfig.setAllowedOriginPatterns(List.of("*"));
+        authConfig.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        authConfig.setAllowedHeaders(List.of("*"));
+        authConfig.setAllowCredentials(false);
+        authConfig.setMaxAge(3600L);
+        source.registerCorsConfiguration("/api/auth/**", authConfig);
+
+        // Configuration for all other endpoints
+        CorsConfiguration defaultConfig = new CorsConfiguration();
+        defaultConfig.setAllowedOriginPatterns(List.of("http://localhost:3000"));
+        defaultConfig.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        defaultConfig.setAllowedHeaders(List.of("*"));
+        defaultConfig.setAllowCredentials(true);
+        defaultConfig.setMaxAge(3600L);
+        source.registerCorsConfiguration("/**", defaultConfig);
+
         return source;
     }
 

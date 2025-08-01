@@ -84,4 +84,6 @@ public class ProfileService {
                 .orElseThrow(() -> new RuntimeException("User not found"));
         initializeProfileForUser(user);
     }
+
+
 }

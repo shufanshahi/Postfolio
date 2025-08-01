@@ -20,6 +20,15 @@ export default function Dashboard() {
         router.push('/profile');
     };
 
+    const goToMyFeed = () => {
+        router.push('/myfeed');
+    };
+
+    const goToMyCv = () => {
+        router.push('/mycv');
+    };
+
+
 
     return (
         <div>
@@ -28,6 +37,8 @@ export default function Dashboard() {
             <div style={{ display: 'flex', gap: '10px' }}>
                 <button onClick={goToProfile}>Profile</button>
                 <button onClick={handleLogout}>Logout</button>
+                <button onClick={goToMyFeed}>My Feed</button>
+                <button onClick={goToMyCv}>My Cv</button>
             </div>
         </div>
     );
