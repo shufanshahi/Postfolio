@@ -20,6 +20,7 @@ public class GeminiService {
 
     private String apiKey = "AIzaSyDyu3V1zVQxZYZb-MMnP0UJMIT2WXRI-KY";
 
+
     private static final String GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent";
 
     public GeminiResponse analyzePost(String content) {
@@ -38,14 +39,23 @@ public class GeminiService {
     private String buildPrompt(String content) {
         return """
             Analyze this post and return STRICT JSON format with:
-            1. "type" (ONLY choose one: EXPERIENCE, EDUCATION, SKILL, PROJECT, ACHIEVEMENT) Acadamic achievements goes to EDUCATION other achievement goes to ACHIEVEMENT
-            2. "tags" (comma-separated any skills such as debating,technical skill,language any soft skills)
+            1. "summary" (a concise 5-7 word summary suitable for a CV heading)
+            2. "type" (ONLY choose one: EXPERIENCE, EDUCATION, SKILL, PROJECT, ACHIEVEMENT)
+            3. "tags" (comma-separated any relevant skills/topics)
+            
+            Guidelines:
+            - Summary should be professional and highlight key achievements
+            - For experience: focus on role and impact
+            - For projects: highlight technology and purpose
+            - For education: include qualification and institution if mentioned
+            - Keep summary under 10 words
             
             Return ONLY the JSON object, without any markdown formatting or additional text.
             Example response:
             {
+              "summary": "Led React migration project",
               "type": "PROJECT",
-              "tags": "React,Node.js"
+              "tags": "React,Node.js,Team Leadership"
             }
             
             Post Content: "%s"
@@ -68,7 +78,8 @@ public class GeminiService {
 
             // Add generation config to encourage clean JSON output
             JsonObject generationConfig = new JsonObject();
-            generationConfig.addProperty("temperature", 0.7);
+            generationConfig.addProperty("temperature", 0.3); // Lower temperature for more predictable results
+            generationConfig.addProperty("maxOutputTokens", 200);
             requestBody.add("generationConfig", generationConfig);
 
             HttpHeaders headers = new HttpHeaders();
@@ -81,7 +92,7 @@ public class GeminiService {
             );
 
             ResponseEntity<String> response = restTemplate.postForEntity(
-                    GEMINI_API_URL + "?key=" + apiKey, // Adding API key as query parameter as fallback
+                    GEMINI_API_URL + "?key=" + apiKey,
                     request,
                     String.class
             );
@@ -112,16 +123,21 @@ public class GeminiService {
                     .get(0).getAsJsonObject()
                     .get("text").getAsString();
 
-            // Extract JSON from text (handles both raw JSON and markdown-wrapped JSON)
             String jsonContent = extractJsonFromText(text);
-
             JsonObject result = JsonParser.parseString(jsonContent).getAsJsonObject();
 
             // Validate response structure
-            if (!result.has("type") || !result.has("tags")) {
+            if (!result.has("summary") || !result.has("type") || !result.has("tags")) {
                 throw new RuntimeException("Invalid Gemini response format - missing required fields");
             }
 
+            // Parse summary
+            String summary = result.get("summary").getAsString().trim();
+            if (summary.length() > 100) {
+                summary = summary.substring(0, 97) + "...";
+            }
+
+            // Parse type
             PostType type;
             try {
                 type = PostType.valueOf(result.get("type").getAsString());
@@ -130,16 +146,18 @@ public class GeminiService {
                 type = PostType.SKILL;
             }
 
+            // Parse tags
             String tagsString = result.get("tags").getAsString();
             List<String> tags = Arrays.stream(tagsString.split(",\\s*"))
                     .filter(tag -> !tag.isBlank())
+                    .map(String::trim)
                     .toList();
 
             if (tags.isEmpty()) {
                 tags = List.of("General");
             }
 
-            return new GeminiResponse(type, tags);
+            return new GeminiResponse(summary, type, tags);
         } catch (JsonSyntaxException e) {
             log.error("Invalid JSON response from Gemini: {}", jsonResponse);
             throw new RuntimeException("Malformed JSON response from Gemini");
@@ -167,6 +185,7 @@ public class GeminiService {
     @Getter
     @RequiredArgsConstructor
     public static class GeminiResponse {
+        private final String summary;
         private final PostType postType;
         private final List<String> tags;
     }

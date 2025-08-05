@@ -33,4 +33,12 @@ public class ProfileController {
         profileService.initializeProfileForCurrentUser();
         return ResponseEntity.ok().build();
     }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<Profile> getProfileById(@PathVariable Long id) {
+        Profile profile = profileService.getProfileById(id);
+        return ResponseEntity.ok(profile);
+    }
+
+
 }

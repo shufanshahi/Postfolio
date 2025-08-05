@@ -1,6 +1,6 @@
-package com.example.postfolio.cv.controller;
+package com.example.postfolio.cvDownload.controller;
 
-import com.example.postfolio.cv.service.CvGeneratorService;
+import com.example.postfolio.cvDownload.service.CvGeneratorService;
 import com.example.postfolio.profile.service.ProfileService;
 import com.example.postfolio.post.service.PostService;
 import lombok.RequiredArgsConstructor;

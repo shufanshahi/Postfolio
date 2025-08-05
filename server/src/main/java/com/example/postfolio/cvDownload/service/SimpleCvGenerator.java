@@ -1,4 +1,4 @@
-package com.example.postfolio.cv.service;
+package com.example.postfolio.cvDownload.service;
 
 import com.example.postfolio.profile.entity.Profile;
 import com.example.postfolio.post.entity.Post;

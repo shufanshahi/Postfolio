@@ -1,5 +1,6 @@
 'use client';
 import { useState, useEffect } from 'react';
+import CvViewer from "@/component/CvViewer";
 
 export default function CvDownloadButton() {
     const [loading, setLoading] = useState(false);
@@ -68,6 +69,13 @@ export default function CvDownloadButton() {
                 {loading ? 'Generating CV...' : 'Download CV'}
             </button>
             {error && <p className="text-red-500 mt-2">{error}</p>}
+
+            <div>
+                <h1 className="text-3xl font-bold mb-6">My CV</h1>
+                <CvViewer profileId={profileId} />
+            </div>
         </div>
+
+
     );
 }
