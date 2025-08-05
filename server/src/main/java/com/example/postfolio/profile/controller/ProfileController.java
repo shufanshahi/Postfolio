@@ -27,4 +27,18 @@ public class ProfileController {
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
+
+    @PostMapping("/initialize")
+    public ResponseEntity<Void> initializeProfile() {
+        profileService.initializeProfileForCurrentUser();
+        return ResponseEntity.ok().build();
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<Profile> getProfileById(@PathVariable Long id) {
+        Profile profile = profileService.getProfileById(id);
+        return ResponseEntity.ok(profile);
+    }
+
+
 }

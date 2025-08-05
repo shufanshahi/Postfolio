@@ -1,5 +1,6 @@
 package com.example.postfolio.post.service;
 
+import com.example.postfolio.cvInApp.service.CvUpdateService;
 import com.example.postfolio.post.entity.Post;
 import com.example.postfolio.post.models.PostType;
 import com.example.postfolio.post.repository.PostRepository;
@@ -27,6 +28,7 @@ public class PostService {
     private final PostRepository postRepository;
     private final ProfileService profileService;
     private final GeminiService geminiService;
+    private final CvUpdateService cvUpdateService;  // Inject CV update service
 
     @Transactional
     public Post createPost(Long profileId, String content) {
@@ -34,22 +36,32 @@ public class PostService {
 
         try {
             GeminiService.GeminiResponse analysis = geminiService.analyzePost(content);
-            return savePost(
+            Post savedPost = savePost(
                     content,
                     profile,
                     analysis.getPostType(),
                     analysis.getTags(),
+                    analysis.getSummary(),
                     true
             );
+
+            cvUpdateService.updateCvFromPost(savedPost);  // Update CV after post creation
+
+            return savedPost;
         } catch (Exception e) {
             log.error("AI analysis failed for post content: {}. Error: {}", content, e.getMessage());
-            return savePost(
+            Post savedPost = savePost(
                     content,
                     profile,
                     PostType.SKILL,
                     List.of("General"),
+                    generateFallbackCvHeading(content),
                     false
             );
+
+            cvUpdateService.updateCvFromPost(savedPost);  // Update CV after fallback post creation
+
+            return savedPost;
         }
     }
 
@@ -63,10 +75,14 @@ public class PostService {
             GeminiService.GeminiResponse analysis = geminiService.analyzePost(post.getContent());
             post.setType(analysis.getPostType());
             post.setTags(analysis.getTags());
-            post.setCvHeading(generateCvHeading(post.getContent()));
+            post.setCvHeading(analysis.getSummary());
             post.setAutoTagged(true);
             post.setUpdatedAt(LocalDateTime.now());
-            return postRepository.save(post);
+            Post savedPost = postRepository.save(post);
+
+            cvUpdateService.updateCvFromPost(savedPost);  // Update CV after reprocessing
+
+            return savedPost;
         } catch (Exception e) {
             log.error("Failed to reprocess post {} with AI: {}", postId, e.getMessage());
             throw new ResponseStatusException(
@@ -120,10 +136,25 @@ public class PostService {
         Post post = getPostById(postId);
         validatePostOwnership(post, profileId);
         post.setContent(newContent);
-        post.setCvHeading(generateCvHeading(newContent)); // Update cv_heading too
+
+        try {
+            GeminiService.GeminiResponse analysis = geminiService.analyzePost(newContent);
+            post.setCvHeading(analysis.getSummary());
+            post.setType(analysis.getPostType());
+            post.setTags(analysis.getTags());
+        } catch (Exception e) {
+            log.error("Failed to generate CV heading for updated post, using fallback", e);
+            post.setCvHeading(generateFallbackCvHeading(newContent));
+        }
+
         post.setUpdatedAt(LocalDateTime.now());
         post.setAutoTagged(false);
-        return postRepository.save(post);
+
+        Post savedPost = postRepository.save(post);
+
+        cvUpdateService.updateCvFromPost(savedPost);  // Update CV after post update
+
+        return savedPost;
     }
 
     @Transactional
@@ -133,7 +164,12 @@ public class PostService {
         post.setTags(tags);
         post.setUpdatedAt(LocalDateTime.now());
         post.setAutoTagged(false);
-        return postRepository.save(post);
+
+        Post savedPost = postRepository.save(post);
+
+        cvUpdateService.updateCvFromPost(savedPost);  // Update CV after tags update
+
+        return savedPost;
     }
 
     @Transactional(readOnly = true)
@@ -151,16 +187,20 @@ public class PostService {
     public void deletePost(Long postId, Long profileId) {
         Post post = getPostById(postId);
         validatePostOwnership(post, profileId);
+
         postRepository.delete(post);
+
+        // Remove CV entries linked to this post
+        cvUpdateService.removeCvEntriesByPostId(postId);
     }
 
     private Post savePost(String content, Profile profile, PostType type,
-                          List<String> tags, boolean autoTagged) {
+                          List<String> tags, String cvHeading, boolean autoTagged) {
         return postRepository.save(Post.builder()
                 .content(content)
                 .type(type)
                 .tags(tags)
-                .cvHeading(generateCvHeading(content))
+                .cvHeading(cvHeading)
                 .autoTagged(autoTagged)
                 .profile(profile)
                 .createdAt(LocalDateTime.now())
@@ -168,10 +208,26 @@ public class PostService {
                 .build());
     }
 
-    private String generateCvHeading(String content) {
-        return content.length() > 50
-                ? content.substring(0, 47) + "..."
-                : content;
+    private String generateFallbackCvHeading(String content) {
+        if (content == null || content.isEmpty()) {
+            return "Untitled Post";
+        }
+
+        // Try to use the first complete sentence
+        int sentenceEnd = content.indexOf('.');
+        if (sentenceEnd > 0 && sentenceEnd <= 100) {
+            return content.substring(0, sentenceEnd).trim();
+        }
+
+        // Try to find a natural break point near 50 characters
+        if (content.length() > 50) {
+            int lastSpace = content.lastIndexOf(' ', 50);
+            if (lastSpace > 30) {
+                return content.substring(0, lastSpace).trim() + "...";
+            }
+            return content.substring(0, 47).trim() + "...";
+        }
+        return content;
     }
 
     private void validatePostOwnership(Post post, Long profileId) {

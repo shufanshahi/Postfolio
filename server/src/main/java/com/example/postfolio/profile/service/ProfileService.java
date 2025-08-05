@@ -69,4 +69,23 @@ public class ProfileService {
         return profileRepository.findById(profileId)
                 .orElseThrow(() -> new RuntimeException("Profile not found with id: " + profileId));
     }
+
+    public void initializeProfileForUser(User user) {
+        if (profileRepository.findByUser(user).isEmpty()) {
+            Profile profile = new Profile();
+            profile.setUser(user);
+            profileRepository.save(profile);
+        }
+    }
+
+    public void initializeProfileForCurrentUser() {
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        initializeProfileForUser(user);
+    }
+
+
+
+
 }
