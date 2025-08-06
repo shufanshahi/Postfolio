@@ -70,86 +70,72 @@ export default function CvDownloadButton() {
     };
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 py-12 px-4 sm:px-6 lg:px-8">
-            <div className="max-w-6xl mx-auto">
-                <div className="flex justify-between items-center mb-8">
-                    <h1 className="text-3xl font-bold text-gray-900">My Professional Profile</h1>
-                    <Button
-                        onClick={downloadCv}
-                        disabled={loading || !profileId}
-                        className="gap-2"
-                        size="lg"
-                    >
-                        {loading ? (
-                            <>
-                                <Loader2 className="h-4 w-4 animate-spin" />
-                                Generating CV...
-                            </>
-                        ) : (
-                            <>
-                                <Download className="h-4 w-4" />
-                                Download CV
-                            </>
-                        )}
-                    </Button>
+        <div className="min-h-screen w-full bg-gradient-to-br from-gray-900 via-gray-800 to-black">
+            {/* Header with dark theme - Full Width */}
+            <div className="bg-gray-900/50 backdrop-blur-sm border-b border-gray-700/50 sticky top-0 z-10 w-full">
+                <div className="w-full px-4 sm:px-6 lg:px-8 py-4">
+                    <div className="flex justify-between items-center">
+                        <h1 className="text-2xl font-bold text-white">My Professional Profile</h1>
+                        <Button
+                            onClick={downloadCv}
+                            disabled={loading || !profileId}
+                            className="gap-2 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white border-0 shadow-lg"
+                            size="lg"
+                        >
+                            {loading ? (
+                                <>
+                                    <Loader2 className="h-4 w-4 animate-spin" />
+                                    Generating CV...
+                                </>
+                            ) : (
+                                <>
+                                    <Download className="h-4 w-4" />
+                                    Download CV
+                                </>
+                            )}
+                        </Button>
+                    </div>
                 </div>
+            </div>
 
-                {error && (
-                    <Alert variant="destructive" className="mb-6">
+            {/* Error and Success Alerts - Full Width */}
+            {error && (
+                <div className="w-full px-4 sm:px-6 lg:px-8 pt-4">
+                    <Alert variant="destructive" className="mb-6 bg-red-900/50 border-red-700 text-red-200">
                         <AlertCircle className="h-4 w-4" />
                         <AlertTitle>Error</AlertTitle>
                         <AlertDescription>{error}</AlertDescription>
                     </Alert>
-                )}
+                </div>
+            )}
 
-                {success && (
-                    <Alert className="mb-6">
+            {success && (
+                <div className="w-full px-4 sm:px-6 lg:px-8 pt-4">
+                    <Alert className="mb-6 bg-green-900/50 border-green-700 text-green-200">
                         <CheckCircle2 className="h-4 w-4" />
                         <AlertTitle>Success!</AlertTitle>
                         <AlertDescription>CV downloaded successfully.</AlertDescription>
                     </Alert>
-                )}
-
-                <Card className="shadow-lg">
-                    <CardHeader>
-                        <CardTitle className="text-2xl flex items-center gap-2">
-                            <FileText className="h-6 w-6 text-primary" />
-                            Digital Curriculum Vitae
-                        </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        {!profileId ? (
-                            <div className="space-y-4">
-                                <Skeleton className="h-8 w-[200px]" />
-                                <Skeleton className="h-4 w-[250px]" />
-                                <Skeleton className="h-[400px] w-full" />
-                            </div>
-                        ) : (
-                            <CvViewer profileId={profileId} />
-                        )}
-                    </CardContent>
-                </Card>
-
-                <div className="mt-8 bg-white p-6 rounded-lg shadow-sm border">
-                    <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
-                        <Info className="h-5 w-5 text-blue-500" />
-                        Tips for Your Job Search
-                    </h2>
-                    <ul className="space-y-3 text-gray-700">
-                        <li className="flex items-start gap-2">
-                            <CheckCircle2 className="h-5 w-5 text-green-500 mt-0.5 flex-shrink-0" />
-                            <span>Customize your CV for each job application</span>
-                        </li>
-                        <li className="flex items-start gap-2">
-                            <CheckCircle2 className="h-5 w-5 text-green-500 mt-0.5 flex-shrink-0" />
-                            <span>Keep your CV concise (1-2 pages recommended)</span>
-                        </li>
-                        <li className="flex items-start gap-2">
-                            <CheckCircle2 className="h-5 w-5 text-green-500 mt-0.5 flex-shrink-0" />
-                            <span>Highlight measurable achievements with numbers</span>
-                        </li>
-                    </ul>
                 </div>
+            )}
+
+            {/* Main Content - Full Width */}
+            <div className="w-full">
+                {!profileId ? (
+                    <div className="h-screen flex items-center justify-center">
+                        <div className="space-y-4 text-center">
+                            <div className="relative">
+                                <div className="w-16 h-16 border-4 border-green-400 border-t-transparent rounded-full animate-spin mx-auto"></div>
+                                <div className="absolute inset-0 rounded-full border-2 border-green-200/20 animate-pulse"></div>
+                            </div>
+                            <p className="text-green-400 font-medium text-lg">Loading your profile...</p>
+                        </div>
+                    </div>
+                ) : (
+                    <div className="w-full">
+                        <CvViewer profileId={profileId} />
+                    </div>
+                )}
             </div>
         </div>
     );
