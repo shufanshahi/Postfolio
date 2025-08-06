@@ -3,9 +3,10 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
-import { ArrowLeft, Users, UserPlus, Clock } from 'lucide-react';
+import { ArrowLeft, Users, UserPlus, Clock, Search } from 'lucide-react';
 import PendingRequests from '@/components/PendingRequests';
 import ConnectionsList from '@/components/ConnectionsList';
+import UserSearch from '@/components/UserSearch';
 
 export default function ConnectionsPage() {
     const router = useRouter();
@@ -56,6 +57,14 @@ export default function ConnectionsPage() {
                         <UserPlus className="h-4 w-4" />
                         Sent Requests
                     </Button>
+                    <Button
+                        variant={activeTab === 'search' ? 'default' : 'ghost'}
+                        onClick={() => setActiveTab('search')}
+                        className="flex-1 gap-2"
+                    >
+                        <Search className="h-4 w-4" />
+                        Search People
+                    </Button>
                 </div>
 
                 {/* Content */}
@@ -63,6 +72,7 @@ export default function ConnectionsPage() {
                     {activeTab === 'connections' && <ConnectionsList />}
                     {activeTab === 'pending' && <PendingRequests />}
                     {activeTab === 'sent' && <SentRequests />}
+                    {activeTab === 'search' && <UserSearch />}
                 </div>
             </div>
         </div>
