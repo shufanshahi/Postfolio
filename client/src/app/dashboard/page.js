@@ -28,6 +28,10 @@ export default function Dashboard() {
         router.push('/mycv');
     };
 
+    const goToMyVideoCall = () => {
+        router.push('/videoCall');
+    };
+
 
 
     return (
@@ -39,6 +43,7 @@ export default function Dashboard() {
                 <button onClick={handleLogout}>Logout</button>
                 <button onClick={goToMyFeed}>My Feed</button>
                 <button onClick={goToMyCv}>My Cv</button>
+                <button onClick={goToMyVideoCall}>My Video Call</button>
             </div>
         </div>
     );
