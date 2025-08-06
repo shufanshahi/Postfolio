@@ -1,12 +1,14 @@
 'use client';
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Search, UserPlus, Clock, UserCheck, UserX, Loader2 } from 'lucide-react';
+import { Search, UserPlus, Clock, UserCheck, UserX, Loader2, ExternalLink } from 'lucide-react';
 import ConnectionButton from './ConnectionButton';
 
 const UserSearch = ({ className }) => {
+    const router = useRouter();
     const [searchTerm, setSearchTerm] = useState('');
     const [searchResults, setSearchResults] = useState([]);
     const [loading, setLoading] = useState(false);
@@ -48,6 +50,10 @@ const UserSearch = ({ className }) => {
 
         return () => clearTimeout(timeoutId);
     }, [searchTerm]);
+
+    const handleUserClick = (userId) => {
+        router.push(`/user/${userId}`);
+    };
 
     return (
         <Card className={className}>
@@ -93,19 +99,25 @@ const UserSearch = ({ className }) => {
                                 Found {searchResults.length} user{searchResults.length !== 1 ? 's' : ''}
                             </h3>
                             {searchResults.map((user) => (
-                                <div key={user.id} className="flex items-center justify-between p-4 border rounded-lg">
-                                    <div className="flex items-center gap-3">
+                                <div key={user.id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50 transition-colors duration-200">
+                                    <div 
+                                        className="flex items-center gap-3 flex-1 cursor-pointer"
+                                        onClick={() => handleUserClick(user.id)}
+                                    >
                                         <Avatar className="h-10 w-10">
                                             <AvatarFallback>
                                                 {user.name?.charAt(0)?.toUpperCase() || 'U'}
                                             </AvatarFallback>
                                         </Avatar>
-                                        <div>
-                                            <p className="font-medium">{user.name}</p>
-                                            <p className="text-sm text-muted-foreground">{user.email}</p>
+                                        <div className="flex-1">
+                                            <h4 className="font-medium text-gray-900">{user.name || 'Unknown User'}</h4>
+                                            <p className="text-sm text-gray-500">{user.email}</p>
                                         </div>
+                                        <ExternalLink className="h-4 w-4 text-gray-400" />
                                     </div>
-                                    <ConnectionButton targetUserId={user.id} />
+                                    <div className="ml-4">
+                                        <ConnectionButton targetUserId={user.id} />
+                                    </div>
                                 </div>
                             ))}
                         </div>
@@ -113,19 +125,8 @@ const UserSearch = ({ className }) => {
 
                     {/* No Results */}
                     {!loading && !error && searchTerm.length >= 2 && searchResults.length === 0 && (
-                        <div className="text-center py-8 text-muted-foreground">
-                            <Search className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                            <p>No users found</p>
-                            <p className="text-sm">Try searching with a different term</p>
-                        </div>
-                    )}
-
-                    {/* Initial State */}
-                    {!loading && !error && searchTerm.length < 2 && (
-                        <div className="text-center py-8 text-muted-foreground">
-                            <Search className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                            <p>Start typing to search for people</p>
-                            <p className="text-sm">Search by name or email address</p>
+                        <div className="text-center py-8 text-gray-500">
+                            No users found matching "{searchTerm}"
                         </div>
                     )}
                 </div>

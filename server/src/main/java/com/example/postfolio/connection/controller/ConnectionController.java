@@ -4,6 +4,7 @@ import com.example.postfolio.connection.dto.ConnectionRequest;
 import com.example.postfolio.connection.dto.ConnectionResponse;
 import com.example.postfolio.connection.entity.Connection;
 import com.example.postfolio.connection.service.ConnectionService;
+import com.example.postfolio.profile.repository.ProfileRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -18,6 +19,7 @@ import java.util.stream.Collectors;
 public class ConnectionController {
 
     private final ConnectionService connectionService;
+    private final ProfileRepository profileRepository;
 
     @PostMapping("/send")
     public ResponseEntity<ConnectionResponse> sendFriendRequest(@RequestBody ConnectionRequest request) {
@@ -83,14 +85,22 @@ public class ConnectionController {
     }
 
     private ConnectionResponse convertToResponse(Connection connection) {
+        // Get profile information for requester
+        var requesterProfile = profileRepository.findByUser(connection.getRequester());
+        var receiverProfile = profileRepository.findByUser(connection.getReceiver());
+
         return ConnectionResponse.builder()
                 .id(connection.getId())
                 .requesterId(connection.getRequester().getId())
                 .requesterName(connection.getRequester().getName())
                 .requesterEmail(connection.getRequester().getEmail())
+                .requesterProfileId(requesterProfile.map(p -> p.getId()).orElse(null))
+                .requesterPictureBase64(requesterProfile.map(p -> p.getPictureBase64()).orElse(null))
                 .receiverId(connection.getReceiver().getId())
                 .receiverName(connection.getReceiver().getName())
                 .receiverEmail(connection.getReceiver().getEmail())
+                .receiverProfileId(receiverProfile.map(p -> p.getId()).orElse(null))
+                .receiverPictureBase64(receiverProfile.map(p -> p.getPictureBase64()).orElse(null))
                 .status(connection.getStatus())
                 .createdAt(connection.getCreatedAt())
                 .updatedAt(connection.getUpdatedAt())

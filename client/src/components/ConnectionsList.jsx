@@ -1,12 +1,14 @@
 'use client';
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
-import { UserX, Loader2, Users, MessageCircle } from 'lucide-react';
+import { UserX, Loader2, Users, MessageCircle, ExternalLink } from 'lucide-react';
 
 const ConnectionsList = ({ className }) => {
+    const router = useRouter();
     const [connections, setConnections] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -59,16 +61,22 @@ const ConnectionsList = ({ className }) => {
     };
 
     const getConnectionUser = (connection) => {
-        // Determine which user is the other person (not the current user)
+        // Get current user's profile ID to determine which user is the other person
         const token = localStorage.getItem('token');
-        // This is a simplified approach - in a real app, you'd get the current user ID from context or state
-        // For now, we'll assume the first user is the other person
+        // For now, we'll use the requester as the other person
+        // In a real implementation, you'd compare with current user's profile ID
         return {
-            id: connection.requesterId,
+            id: connection.requesterProfileId || connection.requesterId, // Use profile ID if available, fallback to user ID
             name: connection.requesterName,
             email: connection.requesterEmail,
             pictureBase64: connection.requesterPictureBase64
         };
+    };
+
+    const handleUserClick = (profileId) => {
+        if (profileId) {
+            router.push(`/user/${profileId}`);
+        }
     };
 
     if (loading) {
@@ -113,64 +121,61 @@ const ConnectionsList = ({ className }) => {
             <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                     <Users className="h-5 w-5" />
-                    My Connections
-                    {connections.length > 0 && (
-                        <Badge variant="secondary" className="ml-2">
-                            {connections.length}
-                        </Badge>
-                    )}
+                    My Connections ({connections.length})
                 </CardTitle>
             </CardHeader>
             <CardContent>
                 {connections.length === 0 ? (
-                    <div className="text-center py-8 text-muted-foreground">
-                        <Users className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                    <div className="text-center py-8 text-gray-500">
+                        <Users className="h-12 w-12 mx-auto mb-4 text-gray-300" />
                         <p>No connections yet</p>
-                        <p className="text-sm">Start connecting with other users!</p>
+                        <p className="text-sm">Start connecting with other professionals!</p>
                     </div>
                 ) : (
                     <div className="space-y-4">
                         {connections.map((connection) => {
                             const user = getConnectionUser(connection);
                             return (
-                                <div key={connection.id} className="flex items-center justify-between p-4 border rounded-lg">
-                                    <div className="flex items-center gap-3">
+                                <div key={connection.id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50 transition-colors duration-200">
+                                    <div 
+                                        className="flex items-center gap-3 flex-1 cursor-pointer"
+                                        onClick={() => handleUserClick(user.id)}
+                                    >
                                         <Avatar className="h-10 w-10">
-                                            <AvatarImage src={`data:image/jpeg;base64,${user.pictureBase64}`} />
-                                            <AvatarFallback>
-                                                {user.name?.charAt(0)?.toUpperCase() || 'U'}
-                                            </AvatarFallback>
+                                            {user.pictureBase64 ? (
+                                                <AvatarImage src={`data:image/jpeg;base64,${user.pictureBase64}`} />
+                                            ) : (
+                                                <AvatarFallback>
+                                                    {user.name?.charAt(0)?.toUpperCase() || 'U'}
+                                                </AvatarFallback>
+                                            )}
                                         </Avatar>
-                                        <div>
-                                            <p className="font-medium">{user.name}</p>
-                                            <p className="text-sm text-muted-foreground">{user.email}</p>
-                                            <p className="text-xs text-muted-foreground">
-                                                Connected since {new Date(connection.createdAt).toLocaleDateString()}
-                                            </p>
+                                        <div className="flex-1">
+                                            <h4 className="font-medium text-gray-900">{user.name || 'Unknown User'}</h4>
+                                            <p className="text-sm text-gray-500">{user.email}</p>
                                         </div>
+                                        <ExternalLink className="h-4 w-4 text-gray-400" />
                                     </div>
-                                    <div className="flex gap-2">
+                                    <div className="flex items-center gap-2 ml-4">
                                         <Button
+                                            variant="ghost"
                                             size="sm"
-                                            variant="outline"
-                                            className="gap-1"
+                                            className="text-blue-600 hover:text-blue-700"
                                         >
-                                            <MessageCircle className="h-3 w-3" />
-                                            Message
+                                            <MessageCircle className="h-4 w-4" />
                                         </Button>
                                         <Button
+                                            variant="ghost"
                                             size="sm"
-                                            variant="outline"
                                             onClick={() => handleRemoveConnection(connection.id)}
                                             disabled={actionLoading[connection.id]}
-                                            className="gap-1"
+                                            className="text-red-600 hover:text-red-700"
                                         >
                                             {actionLoading[connection.id] ? (
-                                                <Loader2 className="h-3 w-3 animate-spin" />
+                                                <Loader2 className="h-4 w-4 animate-spin" />
                                             ) : (
-                                                <UserX className="h-3 w-3" />
+                                                <UserX className="h-4 w-4" />
                                             )}
-                                            Remove
                                         </Button>
                                     </div>
                                 </div>
