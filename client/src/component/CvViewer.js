@@ -1,6 +1,18 @@
 'use client';
 import { useState, useEffect } from 'react';
-import "./cv-viewer.css"
+import {
+    Avatar,
+    AvatarFallback,
+    AvatarImage,
+} from '@/components/ui/avatar';
+import {
+    Card,
+    CardContent,
+    CardHeader,
+    CardTitle,
+} from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Separator } from '@/components/ui/separator';
 
 export default function CvViewer({ profileId }) {
     const [cvEntries, setCvEntries] = useState([]);
@@ -27,7 +39,8 @@ export default function CvViewer({ profileId }) {
                     }),
                 ]);
 
-                if (!cvRes.ok || !profileRes.ok) throw new Error('Failed to fetch data');
+                if (!cvRes.ok || !profileRes.ok)
+                    throw new Error('Failed to fetch data');
 
                 const cvData = await cvRes.json();
                 const profileData = await profileRes.json();
@@ -45,56 +58,92 @@ export default function CvViewer({ profileId }) {
     }, [profileId]);
 
     const groupedEntries = cvEntries.reduce((acc, entry) => {
-        const type = entry.type || 'OTHER';
+        const type = entry.type?.toUpperCase() || 'OTHER';
         if (!acc[type]) acc[type] = [];
         acc[type].push(entry);
         return acc;
     }, {});
 
-    if (loading) {
-        return <div className="cv-loading">Loading CV...</div>;
-    }
+    if (loading) return <p className="text-center mt-10">Loading CV...</p>;
+    if (error) return <p className="text-center mt-10 text-red-500">Error: {error}</p>;
 
-    if (error) {
-        return <div className="cv-error">Error: {error}</div>;
-    }
+    // Extract skill entries and remove from main map
+    const skillEntries = groupedEntries['SKILL'] || [];
+    delete groupedEntries['SKILL'];
 
     return (
-        <div className="cv-container">
+        <div className="max-w-3xl mx-auto py-12 px-4 space-y-8">
             {profile && (
-                <div className="cv-header">
-                    <img
-                        src={
-                            profile.pictureBase64
-                                ? `data:image/jpeg;base64,${profile.pictureBase64}`
-                                : '/default-profile.png'
-                        }
-                        alt="Profile"
-                        className="cv-avatar"
-                    />
-                    <div className="cv-header-info">
-                        <h1 className="cv-name">{profile.name}</h1>
-                        <p className="cv-bio">{profile.bio || 'No bio provided.'}</p>
-                        <p className="cv-edu">{profile.universityResult || 'No education info.'}</p>
-                    </div>
-                </div>
+                <Card className="rounded-2xl shadow-md border">
+                    <CardHeader className="flex flex-row items-center gap-6">
+                        <Avatar className="w-24 h-24 shadow">
+                            <AvatarImage
+                                src={
+                                    profile.pictureBase64
+                                        ? `data:image/jpeg;base64,${profile.pictureBase64}`
+                                        : '/default-profile.png'
+                                }
+                                alt="Profile"
+                            />
+                            <AvatarFallback>{profile.name?.slice(0, 2) || 'NA'}</AvatarFallback>
+                        </Avatar>
+                        <div>
+                            <CardTitle className="text-2xl font-semibold">{profile.name}</CardTitle>
+                            <p className="text-sm text-muted-foreground mt-1">{profile.bio || 'No bio provided.'}</p>
+                            <p className="text-sm text-muted-foreground">{profile.universityResult || 'No education info.'}</p>
+                        </div>
+                    </CardHeader>
+                </Card>
             )}
 
-            {cvEntries.length === 0 ? (
-                <p className="cv-empty">No CV entries found.</p>
-            ) : (
-                Object.entries(groupedEntries).map(([type, entries]) => (
-                    <section key={type} className="cv-section">
-                        <h2 className="cv-section-title">{type.toLowerCase()}</h2>
-                        <ul className="cv-entry-list">
+            {/* Main CV Sections (excluding SKILLS) */}
+            {Object.entries(groupedEntries).map(([type, entries]) => (
+                <Card key={type} className="rounded-xl border shadow-sm">
+                    <CardHeader>
+                        <CardTitle className="capitalize text-lg tracking-wide text-primary">
+                            {type.toLowerCase()}
+                        </CardTitle>
+                    </CardHeader>
+                    <Separator className="mb-3" />
+                    <CardContent className="space-y-2 text-gray-800 text-sm">
+                        <ul className="list-disc list-inside">
                             {entries.map((entry) => (
-                                <li key={entry.id} className="cv-entry">
-                                    {entry.content}
-                                </li>
+                                <li key={entry.id}>{entry.content}</li>
                             ))}
                         </ul>
-                    </section>
-                ))
+                    </CardContent>
+                </Card>
+            ))}
+
+            {/* Skills at the bottom */}
+            {skillEntries.length > 0 && (
+                <Card className="rounded-xl border shadow-sm">
+                    <CardHeader>
+                        <CardTitle className="capitalize text-lg tracking-wide text-primary">
+                            skills
+                        </CardTitle>
+                    </CardHeader>
+                    <Separator className="mb-3" />
+                    <CardContent>
+                        <div className="flex flex-wrap gap-2">
+                            {skillEntries.flatMap((entry) =>
+                                entry.content.split(',').map((skill, i) => (
+                                    <Badge
+                                        key={i}
+                                        className="text-sm px-3 py-1 rounded-xl bg-blue-100 text-blue-800"
+                                    >
+                                        {skill.trim()}
+                                    </Badge>
+                                ))
+                            )}
+                        </div>
+                    </CardContent>
+                </Card>
+            )}
+
+            {/* No entries */}
+            {cvEntries.length === 0 && (
+                <p className="text-center text-gray-500 mt-6">No CV entries found.</p>
             )}
         </div>
     );
