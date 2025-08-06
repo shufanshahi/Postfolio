@@ -13,10 +13,35 @@ const ConnectionsList = ({ className }) => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [actionLoading, setActionLoading] = useState({});
+    const [currentUserProfileId, setCurrentUserProfileId] = useState(null);
 
     useEffect(() => {
-        fetchConnections();
+        fetchCurrentUserProfile();
     }, []);
+
+    useEffect(() => {
+        if (currentUserProfileId !== null) {
+            fetchConnections();
+        }
+    }, [currentUserProfileId]);
+
+    const fetchCurrentUserProfile = async () => {
+        try {
+            const token = localStorage.getItem('token');
+            const response = await fetch('http://localhost:8080/api/profile/me', {
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                },
+            });
+
+            if (!response.ok) throw new Error('Failed to fetch current user profile');
+
+            const data = await response.json();
+            setCurrentUserProfileId(data.id);
+        } catch (err) {
+            setError(err.message);
+        }
+    };
 
     const fetchConnections = async () => {
         try {
@@ -61,16 +86,26 @@ const ConnectionsList = ({ className }) => {
     };
 
     const getConnectionUser = (connection) => {
-        // Get current user's profile ID to determine which user is the other person
-        const token = localStorage.getItem('token');
-        // For now, we'll use the requester as the other person
-        // In a real implementation, you'd compare with current user's profile ID
-        return {
-            id: connection.requesterProfileId || connection.requesterId, // Use profile ID if available, fallback to user ID
-            name: connection.requesterName,
-            email: connection.requesterEmail,
-            pictureBase64: connection.requesterPictureBase64
-        };
+        // Determine which user is the "other person" (not the current user)
+        const isRequesterCurrentUser = connection.requesterProfileId === currentUserProfileId;
+        
+        if (isRequesterCurrentUser) {
+            // Current user is the requester, so return receiver info
+            return {
+                id: connection.receiverProfileId || connection.receiverId,
+                name: connection.receiverName,
+                email: connection.receiverEmail,
+                pictureBase64: connection.receiverPictureBase64
+            };
+        } else {
+            // Current user is the receiver, so return requester info
+            return {
+                id: connection.requesterProfileId || connection.requesterId,
+                name: connection.requesterName,
+                email: connection.requesterEmail,
+                pictureBase64: connection.requesterPictureBase64
+            };
+        }
     };
 
     const handleUserClick = (profileId) => {
