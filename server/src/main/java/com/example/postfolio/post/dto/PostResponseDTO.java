@@ -8,20 +8,18 @@ import lombok.Data;
 import java.time.LocalDateTime;
 import java.util.List;
 
-@Builder
 @Data
+@Builder
 public class PostResponseDTO {
     private Long id;
     private String content;
-    private String cvHeading;      // NEW: AI-generated summary
-    private PostType type;        // NEW: EXPERIENCE, PROJECT, etc.
-    private List<String> tags;    // NEW: AI-generated tags
-    private Boolean autoTagged;   // NEW: Flag for manual edits
+    private PostType type;
+    private List<String> tags;
+    private String cvHeading;
+    private Boolean autoTagged;
     private Long profileId;
-
-    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+    private String profileName;
+    private String profilePictureBase64;
     private LocalDateTime createdAt;
-
-    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime updatedAt;
 }

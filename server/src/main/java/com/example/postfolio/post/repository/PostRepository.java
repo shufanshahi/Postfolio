@@ -7,6 +7,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -46,4 +47,13 @@ public interface PostRepository extends JpaRepository<Post, Long> {
     // NEW: Count how many times a tag appears across a profile's posts
     @Query("SELECT COUNT(p) FROM Post p WHERE p.profile = :profile AND :tag MEMBER OF p.tags")
     long countByProfileAndTag(Profile profile, String tag);
+
+    // NEW: Get posts from friends and current user for feed - Fixed query
+    @Query("SELECT p FROM Post p WHERE p.profile.user IN " +
+           "(SELECT DISTINCT c.receiver FROM Connection c WHERE c.requester = :currentUser AND c.status = 'ACCEPTED') " +
+           "OR p.profile.user IN " +
+           "(SELECT DISTINCT c.requester FROM Connection c WHERE c.receiver = :currentUser AND c.status = 'ACCEPTED') " +
+           "OR p.profile.user = :currentUser " +
+           "ORDER BY p.createdAt DESC")
+    List<Post> findPostsFromFriendsAndSelf(@Param("currentUser") com.example.postfolio.user.entity.User currentUser);
 }

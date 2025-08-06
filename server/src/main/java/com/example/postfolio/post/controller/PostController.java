@@ -62,6 +62,7 @@ public class PostController {
         return ResponseEntity.ok(convertToDtoList(posts));
     }
 
+
     @GetMapping("/profile/{profileId}/type/{type}")
     public ResponseEntity<List<PostResponseDTO>> getPostsByType(
             @PathVariable Long profileId,
@@ -84,6 +85,12 @@ public class PostController {
             Pageable pageable) {
         Page<Post> posts = postService.getPostsNeedingReview(profileId, pageable);
         return ResponseEntity.ok(convertToDtoPage(posts));
+    }
+
+    @GetMapping("/feed")
+    public ResponseEntity<List<PostResponseDTO>> getFeedPosts() {
+        List<Post> posts = postService.getFeedPosts();
+        return ResponseEntity.ok(convertToDtoList(posts));
     }
 
     @PutMapping("/{postId}")
@@ -110,7 +117,6 @@ public class PostController {
         return ResponseEntity.ok(convertToDto(post));
     }
 
-    // New endpoint for reprocessing AI tags
     @PostMapping("/{postId}/retag")
     public ResponseEntity<PostResponseDTO> reprocessPostTags(
             @PathVariable Long postId,
@@ -120,7 +126,7 @@ public class PostController {
     }
 
     @DeleteMapping("/{postId}")
-    public ResponseEntity<Void> deletePost(
+    public ResponseEntity<ResponseEntity<Void>> deletePost(
             @PathVariable Long postId,
             @RequestParam Long profileId) {
         postService.deletePost(postId, profileId);
@@ -133,18 +139,18 @@ public class PostController {
         return ResponseEntity.ok(convertToDtoList(posts));
     }
 
-    // DTO conversion methods
     private PostResponseDTO convertToDto(Post post) {
         return PostResponseDTO.builder()
                 .id(post.getId())
                 .content(post.getContent())
-                .cvHeading(post.getCvHeading())
                 .type(post.getType())
                 .tags(post.getTags())
+                .cvHeading(post.getCvHeading())
                 .autoTagged(post.getAutoTagged())
                 .profileId(post.getProfile().getId())
+                .profileName(post.getProfile().getUser().getName())
+                .profilePictureBase64(post.getProfile().getPictureBase64())
                 .createdAt(post.getCreatedAt())
-                .updatedAt(post.getUpdatedAt())
                 .build();
     }
 
@@ -155,10 +161,7 @@ public class PostController {
     }
 
     private Page<PostResponseDTO> convertToDtoPage(Page<Post> postPage) {
-        List<PostResponseDTO> dtoList = postPage.getContent()
-                .stream()
-                .map(this::convertToDto)
-                .collect(Collectors.toList());
+        List<PostResponseDTO> dtoList = convertToDtoList(postPage.getContent());
         return new PageImpl<>(dtoList, postPage.getPageable(), postPage.getTotalElements());
     }
 }
