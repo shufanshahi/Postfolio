@@ -1,7 +1,6 @@
 package com.example.postfolio.post.dto;
 
 import com.example.postfolio.post.models.PostType;
-import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.Builder;
 import lombok.Data;
 
@@ -21,5 +20,5 @@ public class PostResponseDTO {
     private String profileName;
     private String profilePictureBase64;
     private LocalDateTime createdAt;
-    private LocalDateTime updatedAt;
+    private List<ReactionResponseDTO> reactions;
 }

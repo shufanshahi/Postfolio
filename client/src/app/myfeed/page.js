@@ -20,7 +20,13 @@ import {
     Clock,
     TrendingUp,
     Loader2,
-    AlertCircle
+    AlertCircle,
+    PartyPopper,
+    Sparkles,
+    Trophy,
+    Flame,
+    Star,
+    Zap
 } from 'lucide-react';
 
 export default function MyFeedPage() {
@@ -32,6 +38,7 @@ export default function MyFeedPage() {
     const [newPostContent, setNewPostContent] = useState('');
     const [posting, setPosting] = useState(false);
     const [profileId, setProfileId] = useState(null);
+    const [showReactions, setShowReactions] = useState({});
 
     useEffect(() => {
         fetchProfileId();
@@ -106,7 +113,6 @@ export default function MyFeedPage() {
             });
 
             if (!response.ok) throw new Error('Failed to create post');
-
             setNewPostContent('');
             setShowCreatePost(false);
             fetchFeed();
@@ -115,6 +121,32 @@ export default function MyFeedPage() {
         } finally {
             setPosting(false);
         }
+    };
+
+    const handleCelebrate = async (postId) => {
+        try {
+            const token = localStorage.getItem('token');
+            const response = await fetch(`http://localhost:8080/api/posts/${postId}/celebrate`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                }
+            });
+
+            if (response.ok) {
+                fetchFeed(); // Refresh to show updated reactions
+            }
+        } catch (err) {
+            console.error('Failed to celebrate post:', err);
+        }
+    };
+
+    const toggleReactions = (postId) => {
+        setShowReactions(prev => ({
+            ...prev,
+            [postId]: !prev[postId]
+        }));
     };
 
     const formatDate = (dateString) => {
@@ -129,6 +161,19 @@ export default function MyFeedPage() {
 
     const getInitials = (name) => {
         return name?.split(' ').map(n => n[0]).join('').toUpperCase() || 'U';
+    };
+
+    const getAchievementIcon = (post) => {
+        const content = post.content.toLowerCase();
+        if (content.includes('league') || content.includes('promoted')) {
+            return <Trophy className="h-8 w-8 text-blue-500" />;
+        } else if (content.includes('streak') || content.includes('day')) {
+            return <Flame className="h-8 w-8 text-orange-500" />;
+        } else if (content.includes('completed') || content.includes('finished')) {
+            return <Star className="h-8 w-8 text-yellow-500" />;
+        } else {
+            return <Zap className="h-8 w-8 text-green-500" />;
+        }
     };
 
     if (loading) {
@@ -266,8 +311,9 @@ export default function MyFeedPage() {
                         posts.map((post) => (
                             <Card key={post.id} className="bg-gray-800 border-gray-700 hover:border-green-500/30 transition-colors">
                                 <CardContent className="p-6">
-                                    <div className="flex items-start space-x-3">
-                                        <Avatar className="h-10 w-10">
+                                    <div className="flex items-start space-x-4">
+                                        {/* User Avatar */}
+                                        <Avatar className="h-12 w-12">
                                             {post.profilePictureBase64 ? (
                                                 <AvatarImage src={`data:image/jpeg;base64,${post.profilePictureBase64}`} />
                                             ) : (
@@ -278,28 +324,25 @@ export default function MyFeedPage() {
                                         </Avatar>
 
                                         <div className="flex-1">
+                                            {/* User Info and Time */}
                                             <div className="flex items-center justify-between mb-2">
-                                                <div className="flex items-center space-x-2">
-                                                    <h3 className="font-semibold text-white">
+                                                <div>
+                                                    <h3 className="font-semibold text-white text-lg">
                                                         {post.profileName || 'Anonymous'}
                                                     </h3>
-                                                    {post.autoTagged && (
-                                                        <Badge className="bg-gradient-to-r from-green-900/50 to-green-800/50 text-green-300 border-green-800">
-                                                            AI Tagged
-                                                        </Badge>
-                                                    )}
+                                                    <p className="text-gray-400 text-sm">{formatDate(post.createdAt)}</p>
                                                 </div>
-                                                <div className="flex items-center space-x-2 text-gray-400">
-                                                    <Clock className="h-4 w-4" />
-                                                    <span className="text-sm">{formatDate(post.createdAt)}</span>
-                                                    <MoreHorizontal className="h-4 w-4 cursor-pointer hover:text-white" />
+                                                <div className="flex items-center space-x-2">
+                                                    {getAchievementIcon(post)}
                                                 </div>
                                             </div>
 
-                                            <p className="text-gray-300 mb-4 leading-relaxed">
+                                            {/* Post Content */}
+                                            <p className="text-gray-300 mb-4 leading-relaxed text-lg">
                                                 {post.content}
                                             </p>
 
+                                            {/* Tags */}
                                             {post.tags && post.tags.length > 0 && (
                                                 <div className="flex flex-wrap gap-2 mb-4">
                                                     {post.tags.map((tag, index) => (
@@ -313,27 +356,70 @@ export default function MyFeedPage() {
                                                 </div>
                                             )}
 
+                                            {/* Celebrate Button */}
                                             <div className="flex items-center justify-between pt-4 border-t border-gray-700">
-                                                <div className="flex items-center space-x-6">
-                                                    <button className="flex items-center space-x-2 text-gray-400 hover:text-green-400 transition-colors">
-                                                        <Heart className="h-5 w-5" />
-                                                        <span className="text-sm">Like</span>
-                                                    </button>
-                                                    <button className="flex items-center space-x-2 text-gray-400 hover:text-blue-400 transition-colors">
-                                                        <MessageSquare className="h-5 w-5" />
-                                                        <span className="text-sm">Comment</span>
-                                                    </button>
-                                                    <button className="flex items-center space-x-2 text-gray-400 hover:text-purple-400 transition-colors">
-                                                        <Share2 className="h-5 w-5" />
-                                                        <span className="text-sm">Share</span>
-                                                    </button>
-                                                </div>
+                                                <Button
+                                                    onClick={() => handleCelebrate(post.id)}
+                                                    variant="ghost"
+                                                    className="bg-gray-700 hover:bg-gray-600 text-white border border-gray-600"
+                                                >
+                                                    <div className="flex items-center space-x-2">
+                                                        <div className="flex items-center space-x-1">
+                                                            <PartyPopper className="h-4 w-4 text-yellow-400" />
+                                                            <Sparkles className="h-3 w-3 text-pink-400" />
+                                                        </div>
+                                                        <span>CELEBRATE</span>
+                                                    </div>
+                                                </Button>
 
-                                                {post.type && (
-                                                    <Badge className="bg-gray-700 text-gray-300 border-gray-600">
-                                                        {post.type}
-                                                    </Badge>
-                                                )}
+                                                {/* Reaction Count */}
+                                                <div className="flex items-center space-x-2">
+                                                    <div className="flex items-center space-x-1 cursor-pointer" onClick={() => toggleReactions(post.id)}>
+                                                        <div className="flex items-center space-x-1">
+                                                            <PartyPopper className="h-4 w-4 text-yellow-400" />
+                                                            <Sparkles className="h-3 w-3 text-pink-400" />
+                                                        </div>
+                                                        <span className="text-gray-400 text-sm">
+                                                            {post.reactions?.length || 0}
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            {/* Reactions List */}
+                                            {showReactions[post.id] && post.reactions && post.reactions.length > 0 && (
+                                                <div className="mt-4 pt-4 border-t border-gray-700">
+                                                    <h4 className="text-sm font-medium text-gray-400 mb-2">Celebrations:</h4>
+                                                    <div className="space-y-2">
+                                                        {post.reactions.map((reaction, index) => (
+                                                            <div key={index} className="flex items-center space-x-2">
+                                                                <Avatar className="h-6 w-6">
+                                                                    <AvatarFallback className="bg-gradient-to-br from-green-500 to-blue-600 text-white text-xs">
+                                                                        {getInitials(reaction.userName)}
+                                                                    </AvatarFallback>
+                                                                </Avatar>
+                                                                <span className="text-sm text-gray-300">{reaction.userName}</span>
+                                                                <span className="text-xs text-gray-500">celebrated</span>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            )}
+
+                                            {/* Comment Input */}
+                                            <div className="mt-4 pt-4 border-t border-gray-700">
+                                                <div className="flex items-center space-x-3">
+                                                    <Avatar className="h-8 w-8">
+                                                        <AvatarFallback className="bg-gradient-to-br from-green-500 to-blue-600 text-white text-xs">
+                                                            {getInitials('You')}
+                                                        </AvatarFallback>
+                                                    </Avatar>
+                                                    <input
+                                                        type="text"
+                                                        placeholder="Add a comment..."
+                                                        className="flex-1 bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500"
+                                                    />
+                                                </div>
                                             </div>
                                         </div>
                                     </div>

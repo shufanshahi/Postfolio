@@ -24,6 +24,10 @@ import org.springframework.web.server.ResponseStatusException;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
+import com.example.postfolio.post.entity.Reaction;
+import com.example.postfolio.post.model.ReactionType;
+import com.example.postfolio.post.repository.ReactionRepository;
+import com.example.postfolio.post.dto.ReactionResponseDTO;
 
 @Slf4j
 @Service
@@ -35,6 +39,7 @@ public class PostService {
     private final GeminiService geminiService;
     private final CvUpdateService cvUpdateService;
     private final UserRepository userRepository;
+    private final ReactionRepository reactionRepository;
 
     @Transactional
     public Post createPost(Long profileId, String content) {
@@ -193,6 +198,31 @@ public class PostService {
         cvUpdateService.removeCvEntriesByPostId(postId);
     }
 
+    @Transactional
+    public void celebratePost(Long postId) {
+        Post post = getPostById(postId);
+        User currentUser = getCurrentUser();
+        
+        // Check if user already celebrated this post
+        if (reactionRepository.existsByPostAndUser(post, currentUser)) {
+            throw new RuntimeException("User already celebrated this post");
+        }
+        
+        Reaction reaction = Reaction.builder()
+                .post(post)
+                .user(currentUser)
+                .type(ReactionType.CELEBRATE)
+                .build();
+        
+        reactionRepository.save(reaction);
+    }
+
+    @Transactional(readOnly = true)
+    public List<Reaction> getPostReactions(Long postId) {
+        Post post = getPostById(postId);
+        return reactionRepository.findByPostWithUser(post);
+    }
+
     private Post savePost(String content, Profile profile, PostType type,
                           List<String> tags, String cvHeading, boolean autoTagged) {
         return postRepository.save(Post.builder()
@@ -224,5 +254,20 @@ public class PostService {
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
         return userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("User not found"));
+    }
+
+    public List<ReactionResponseDTO> convertReactionsToDto(List<Reaction> reactions) {
+        return reactions.stream()
+                .map(this::convertReactionToDto)
+                .collect(Collectors.toList());
+    }
+
+    public ReactionResponseDTO convertReactionToDto(Reaction reaction) {
+        return ReactionResponseDTO.builder()
+                .id(reaction.getId())
+                .type(reaction.getType())
+                .userName(reaction.getUser().getName())
+                .createdAt(reaction.getCreatedAt())
+                .build();
     }
 }
