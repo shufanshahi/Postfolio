@@ -28,7 +28,6 @@ export default function Dashboard() {
         router.push('/login');
     };
 
-<<<<<<< HEAD
     const menuItems = [
         {
             title: "Profile",
@@ -151,36 +150,6 @@ export default function Dashboard() {
                         </div>
                     </CardContent>
                 </Card>
-=======
-    const goToProfile = () => {
-        router.push('/profile');
-    };
-
-    const goToMyFeed = () => {
-        router.push('/myfeed');
-    };
-
-    const goToMyCv = () => {
-        router.push('/mycv');
-    };
-
-    const goToMyVideoCall = () => {
-        router.push('/videoCall');
-    };
-
-
-
-    return (
-        <div>
-            <h1>Dashboard</h1>
-            <p>Hello! You're logged in.</p>
-            <div style={{ display: 'flex', gap: '10px' }}>
-                <button onClick={goToProfile}>Profile</button>
-                <button onClick={handleLogout}>Logout</button>
-                <button onClick={goToMyFeed}>My Feed</button>
-                <button onClick={goToMyCv}>My Cv</button>
-                <button onClick={goToMyVideoCall}>My Video Call</button>
->>>>>>> origin/main
             </div>
         </div>
     );
