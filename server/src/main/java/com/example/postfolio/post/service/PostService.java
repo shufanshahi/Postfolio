@@ -1,24 +1,33 @@
 package com.example.postfolio.post.service;
 
 import com.example.postfolio.cvInApp.service.CvUpdateService;
+import com.example.postfolio.post.dto.CreatePostDTO;
+import com.example.postfolio.post.dto.PostResponseDTO;
+import com.example.postfolio.post.dto.UpdatePostDTO;
 import com.example.postfolio.post.entity.Post;
 import com.example.postfolio.post.models.PostType;
 import com.example.postfolio.post.repository.PostRepository;
 import com.example.postfolio.profile.entity.Profile;
 import com.example.postfolio.profile.service.ProfileService;
+import com.example.postfolio.user.entity.User;
+import com.example.postfolio.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
-import org.springframework.retry.annotation.Backoff;
-import org.springframework.retry.annotation.Retryable;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.stream.Collectors;
+import com.example.postfolio.post.entity.Reaction;
+import com.example.postfolio.post.model.ReactionType;
+import com.example.postfolio.post.repository.ReactionRepository;
+import com.example.postfolio.post.dto.ReactionResponseDTO;
 
 @Slf4j
 @Service
@@ -28,44 +37,33 @@ public class PostService {
     private final PostRepository postRepository;
     private final ProfileService profileService;
     private final GeminiService geminiService;
-    private final CvUpdateService cvUpdateService;  // Inject CV update service
+    private final CvUpdateService cvUpdateService;
+    private final UserRepository userRepository;
+    private final ReactionRepository reactionRepository;
 
     @Transactional
     public Post createPost(Long profileId, String content) {
         Profile profile = profileService.getProfileById(profileId);
-
+        
         try {
             GeminiService.GeminiResponse analysis = geminiService.analyzePost(content);
-            Post savedPost = savePost(
-                    content,
-                    profile,
-                    analysis.getPostType(),
-                    analysis.getTags(),
-                    analysis.getSummary(),
-                    true
-            );
-
-            cvUpdateService.updateCvFromPost(savedPost);  // Update CV after post creation
-
+            Post savedPost = savePost(content, profile, analysis.getPostType(), 
+                                    analysis.getTags(), analysis.getSummary(), true);
+            
+            cvUpdateService.updateCvFromPost(savedPost);
+            
             return savedPost;
         } catch (Exception e) {
-            log.error("AI analysis failed for post content: {}. Error: {}", content, e.getMessage());
-            Post savedPost = savePost(
-                    content,
-                    profile,
-                    PostType.SKILL,
-                    List.of("General"),
-                    generateFallbackCvHeading(content),
-                    false
-            );
-
-            cvUpdateService.updateCvFromPost(savedPost);  // Update CV after fallback post creation
-
+            log.error("Failed to generate CV heading for post, using fallback", e);
+            Post savedPost = savePost(content, profile, null, 
+                                    List.of(), generateFallbackCvHeading(content), false);
+            
+            cvUpdateService.updateCvFromPost(savedPost);
+            
             return savedPost;
         }
     }
 
-    @Retryable(maxAttempts = 3, backoff = @Backoff(delay = 1000))
     @Transactional
     public Post reprocessPostWithAI(Long postId, Long profileId) {
         Post post = getPostById(postId);
@@ -131,6 +129,12 @@ public class PostService {
         return postRepository.findByProfileAndTagsContaining(profile, tag);
     }
 
+    @Transactional(readOnly = true)
+    public List<Post> getFeedPosts() {
+        User currentUser = getCurrentUser();
+        return postRepository.findPostsFromFriendsAndSelf(currentUser);
+    }
+
     @Transactional
     public Post updatePost(Long postId, Long profileId, String newContent) {
         Post post = getPostById(postId);
@@ -194,6 +198,31 @@ public class PostService {
         cvUpdateService.removeCvEntriesByPostId(postId);
     }
 
+    @Transactional
+    public void celebratePost(Long postId) {
+        Post post = getPostById(postId);
+        User currentUser = getCurrentUser();
+        
+        // Check if user already celebrated this post
+        if (reactionRepository.existsByPostAndUser(post, currentUser)) {
+            throw new RuntimeException("User already celebrated this post");
+        }
+        
+        Reaction reaction = Reaction.builder()
+                .post(post)
+                .user(currentUser)
+                .type(ReactionType.CELEBRATE)
+                .build();
+        
+        reactionRepository.save(reaction);
+    }
+
+    @Transactional(readOnly = true)
+    public List<Reaction> getPostReactions(Long postId) {
+        Post post = getPostById(postId);
+        return reactionRepository.findByPostWithUser(post);
+    }
+
     private Post savePost(String content, Profile profile, PostType type,
                           List<String> tags, String cvHeading, boolean autoTagged) {
         return postRepository.save(Post.builder()
@@ -208,34 +237,37 @@ public class PostService {
                 .build());
     }
 
-    private String generateFallbackCvHeading(String content) {
-        if (content == null || content.isEmpty()) {
-            return "Untitled Post";
-        }
-
-        // Try to use the first complete sentence
-        int sentenceEnd = content.indexOf('.');
-        if (sentenceEnd > 0 && sentenceEnd <= 100) {
-            return content.substring(0, sentenceEnd).trim();
-        }
-
-        // Try to find a natural break point near 50 characters
-        if (content.length() > 50) {
-            int lastSpace = content.lastIndexOf(' ', 50);
-            if (lastSpace > 30) {
-                return content.substring(0, lastSpace).trim() + "...";
-            }
-            return content.substring(0, 47).trim() + "...";
-        }
-        return content;
-    }
-
     private void validatePostOwnership(Post post, Long profileId) {
         if (!post.getProfile().getId().equals(profileId)) {
             throw new ResponseStatusException(
                     HttpStatus.FORBIDDEN,
-                    "You don't have permission to modify this post"
+                    "You can only modify your own posts"
             );
         }
+    }
+
+    private String generateFallbackCvHeading(String content) {
+        return content.length() > 50 ? content.substring(0, 50) + "..." : content;
+    }
+
+    private User getCurrentUser() {
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        return userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+    }
+
+    public List<ReactionResponseDTO> convertReactionsToDto(List<Reaction> reactions) {
+        return reactions.stream()
+                .map(this::convertReactionToDto)
+                .collect(Collectors.toList());
+    }
+
+    public ReactionResponseDTO convertReactionToDto(Reaction reaction) {
+        return ReactionResponseDTO.builder()
+                .id(reaction.getId())
+                .type(reaction.getType())
+                .userName(reaction.getUser().getName())
+                .createdAt(reaction.getCreatedAt())
+                .build();
     }
 }

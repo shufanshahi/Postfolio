@@ -44,8 +44,6 @@ public class ModelMapperConfig {
                     mapper.map(Post::getAutoTagged, PostResponseDTO::setAutoTagged);
                     mapper.using(localDateTimeToStringConverter)
                             .map(Post::getCreatedAt, PostResponseDTO::setCreatedAt);
-                    mapper.using(localDateTimeToStringConverter)
-                            .map(Post::getUpdatedAt, PostResponseDTO::setUpdatedAt);
                 });
 
         return modelMapper;

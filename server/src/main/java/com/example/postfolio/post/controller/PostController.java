@@ -14,12 +14,17 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.stream.Collectors;
+import com.example.postfolio.post.entity.Reaction;
+import com.example.postfolio.post.model.ReactionType;
+import com.example.postfolio.post.repository.ReactionRepository;
+import com.example.postfolio.post.dto.ReactionResponseDTO;
 
 @RestController
 @RequestMapping("/api/posts")
 @RequiredArgsConstructor
 public class PostController {
     private final PostService postService;
+    private final ReactionRepository reactionRepository;
 
     @PostMapping
     public ResponseEntity<PostResponseDTO> createPost(
@@ -62,6 +67,7 @@ public class PostController {
         return ResponseEntity.ok(convertToDtoList(posts));
     }
 
+
     @GetMapping("/profile/{profileId}/type/{type}")
     public ResponseEntity<List<PostResponseDTO>> getPostsByType(
             @PathVariable Long profileId,
@@ -84,6 +90,12 @@ public class PostController {
             Pageable pageable) {
         Page<Post> posts = postService.getPostsNeedingReview(profileId, pageable);
         return ResponseEntity.ok(convertToDtoPage(posts));
+    }
+
+    @GetMapping("/feed")
+    public ResponseEntity<List<PostResponseDTO>> getFeedPosts() {
+        List<Post> posts = postService.getFeedPosts();
+        return ResponseEntity.ok(convertToDtoList(posts));
     }
 
     @PutMapping("/{postId}")
@@ -110,7 +122,6 @@ public class PostController {
         return ResponseEntity.ok(convertToDto(post));
     }
 
-    // New endpoint for reprocessing AI tags
     @PostMapping("/{postId}/retag")
     public ResponseEntity<PostResponseDTO> reprocessPostTags(
             @PathVariable Long postId,
@@ -119,8 +130,20 @@ public class PostController {
         return ResponseEntity.ok(convertToDto(post));
     }
 
+    @PostMapping("/{postId}/celebrate")
+    public ResponseEntity<Void> celebratePost(@PathVariable Long postId) {
+        postService.celebratePost(postId);
+        return ResponseEntity.ok().build();
+    }
+
+    @GetMapping("/{postId}/reactions")
+    public ResponseEntity<List<ReactionResponseDTO>> getPostReactions(@PathVariable Long postId) {
+        List<Reaction> reactions = postService.getPostReactions(postId);
+        return ResponseEntity.ok(postService.convertReactionsToDto(reactions));
+    }
+
     @DeleteMapping("/{postId}")
-    public ResponseEntity<Void> deletePost(
+    public ResponseEntity<ResponseEntity<Void>> deletePost(
             @PathVariable Long postId,
             @RequestParam Long profileId) {
         postService.deletePost(postId, profileId);
@@ -133,18 +156,22 @@ public class PostController {
         return ResponseEntity.ok(convertToDtoList(posts));
     }
 
-    // DTO conversion methods
     private PostResponseDTO convertToDto(Post post) {
+        List<Reaction> reactions = reactionRepository.findByPostWithUser(post);
+        List<ReactionResponseDTO> reactionDtos = postService.convertReactionsToDto(reactions);
+        
         return PostResponseDTO.builder()
                 .id(post.getId())
                 .content(post.getContent())
-                .cvHeading(post.getCvHeading())
                 .type(post.getType())
                 .tags(post.getTags())
+                .cvHeading(post.getCvHeading())
                 .autoTagged(post.getAutoTagged())
                 .profileId(post.getProfile().getId())
+                .profileName(post.getProfile().getUser().getName())
+                .profilePictureBase64(post.getProfile().getPictureBase64())
                 .createdAt(post.getCreatedAt())
-                .updatedAt(post.getUpdatedAt())
+                .reactions(reactionDtos)
                 .build();
     }
 
@@ -155,10 +182,22 @@ public class PostController {
     }
 
     private Page<PostResponseDTO> convertToDtoPage(Page<Post> postPage) {
-        List<PostResponseDTO> dtoList = postPage.getContent()
-                .stream()
-                .map(this::convertToDto)
-                .collect(Collectors.toList());
+        List<PostResponseDTO> dtoList = convertToDtoList(postPage.getContent());
         return new PageImpl<>(dtoList, postPage.getPageable(), postPage.getTotalElements());
+    }
+
+    private List<ReactionResponseDTO> convertReactionsToDto(List<Reaction> reactions) {
+        return reactions.stream()
+                .map(this::convertReactionToDto)
+                .collect(Collectors.toList());
+    }
+
+    private ReactionResponseDTO convertReactionToDto(Reaction reaction) {
+        return ReactionResponseDTO.builder()
+                .id(reaction.getId())
+                .type(reaction.getType())
+                .userName(reaction.getUser().getName())
+                .createdAt(reaction.getCreatedAt())
+                .build();
     }
 }

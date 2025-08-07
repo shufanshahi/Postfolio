@@ -1,6 +1,7 @@
 package com.example.postfolio.profile.service;
 
 import com.example.postfolio.profile.dto.ProfileRequest;
+import com.example.postfolio.profile.dto.ProfileResponse;
 import com.example.postfolio.profile.entity.Profile;
 import com.example.postfolio.profile.repository.ProfileRepository;
 import com.example.postfolio.user.entity.User;
@@ -59,14 +60,31 @@ public class ProfileService {
         profileRepository.save(profile);
     }
 
+    // Method that returns ProfileResponse for external API calls
+    public Optional<ProfileResponse> getMyProfileResponse() {
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        return userRepository.findByEmail(email)
+                .flatMap(profileRepository::findByUserWithUser)
+                .map(ProfileResponse::fromProfile);
+    }
+
+    // Method that returns ProfileResponse for external API calls
+    public ProfileResponse getProfileResponseById(Long profileId) {
+        Profile profile = profileRepository.findByIdWithUser(profileId)
+                .orElseThrow(() -> new RuntimeException("Profile not found with id: " + profileId));
+        return ProfileResponse.fromProfile(profile);
+    }
+
+    // Method that returns Profile entity for internal service calls
     public Optional<Profile> getMyProfile() {
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
         return userRepository.findByEmail(email)
                 .flatMap(profileRepository::findByUser);
     }
 
+    // Method that returns Profile entity for internal service calls
     public Profile getProfileById(Long profileId) {
-        return profileRepository.findById(profileId)
+        return profileRepository.findByIdWithUser(profileId)
                 .orElseThrow(() -> new RuntimeException("Profile not found with id: " + profileId));
     }
 
@@ -84,8 +102,4 @@ public class ProfileService {
                 .orElseThrow(() -> new RuntimeException("User not found"));
         initializeProfileForUser(user);
     }
-
-
-
-
 }

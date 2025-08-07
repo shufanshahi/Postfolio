@@ -1,7 +1,7 @@
 package com.example.postfolio.profile.controller;
 
 import com.example.postfolio.profile.dto.ProfileRequest;
-import com.example.postfolio.profile.entity.Profile;
+import com.example.postfolio.profile.dto.ProfileResponse;
 import com.example.postfolio.profile.service.ProfileService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
@@ -22,8 +22,8 @@ public class ProfileController {
     }
 
     @GetMapping("/me")
-    public ResponseEntity<Profile> getMyProfile() {
-        return profileService.getMyProfile()
+    public ResponseEntity<ProfileResponse> getMyProfile() {
+        return profileService.getMyProfileResponse()
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
@@ -35,10 +35,8 @@ public class ProfileController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Profile> getProfileById(@PathVariable Long id) {
-        Profile profile = profileService.getProfileById(id);
+    public ResponseEntity<ProfileResponse> getProfileById(@PathVariable Long id) {
+        ProfileResponse profile = profileService.getProfileResponseById(id);
         return ResponseEntity.ok(profile);
     }
-
-
 }
