@@ -20,18 +20,30 @@ export default function JobPostings() {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      router.push("/login");
+      return;
+    }
     fetchJobs();
   }, []);
 
   const fetchJobs = async () => {
     setLoading(true);
     const token = localStorage.getItem("token");
-    const res = await fetch("/api/jobs/my", {
+    if (!token) {
+      setLoading(false);
+      alert("You are not logged in. Please login first.");
+      router.push("/login");
+      return;
+    }
+    const res = await fetch("http://localhost:8080/api/jobs", {
       headers: { Authorization: `Bearer ${token}` },
     });
     if (res.ok) {
       setJobs(await res.json());
     }
+    console.log("Jobs fetched successfully:", jobs);
     setLoading(false);
   };
 
@@ -43,7 +55,13 @@ export default function JobPostings() {
     e.preventDefault();
     setLoading(true);
     const token = localStorage.getItem("token");
-    const res = await fetch("/api/jobs", {
+    if (!token) {
+      setLoading(false);
+      alert("You are not logged in. Please login first.");
+      router.push("/login");
+      return;
+    }
+    const res = await fetch("http://localhost:8080/api/jobs", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -57,7 +75,7 @@ export default function JobPostings() {
     });
     if (res.ok) {
       setShowNewJob(false);
-  setForm({ title: "", position: "", description: "", requirements: "", endDate: "" });
+      setForm({ title: "", position: "", description: "", requirements: "", endDate: "" });
       fetchJobs();
     }
     setLoading(false);
