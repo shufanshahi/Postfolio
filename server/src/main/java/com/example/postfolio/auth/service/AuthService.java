@@ -40,10 +40,9 @@ public class AuthService {
 
 
         User savedUser = userRepository.save(user);
-
         profileService.initializeProfileForUser(savedUser);
         String jwt = jwtService.generateToken(user);
-        return new AuthResponse(jwt);
+        return new AuthResponse(jwt, user.getRole());
     }
 
     public AuthResponse login(AuthRequest request) {
@@ -57,6 +56,6 @@ public class AuthService {
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
         String jwt = jwtService.generateToken(user);
-        return new AuthResponse(jwt);
+        return new AuthResponse(jwt, user.getRole());
     }
 }

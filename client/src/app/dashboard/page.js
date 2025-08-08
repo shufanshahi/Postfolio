@@ -1,5 +1,5 @@
 'use client';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import {
     User,
@@ -16,11 +16,15 @@ import { Separator } from '@/components/ui/separator';
 
 export default function Dashboard() {
     const router = useRouter();
+    const [role, setRole] = useState(null);
 
     useEffect(() => {
         if (!localStorage.getItem('token')) {
             router.push('/login');
         }
+        // Get role from localStorage
+        const storedRole = localStorage.getItem('role');
+        setRole(storedRole);
     }, []);
 
     const handleLogout = () => {
@@ -28,7 +32,7 @@ export default function Dashboard() {
         router.push('/login');
     };
 
-    const menuItems = [
+    const baseMenuItems = [
         {
             title: "Profile",
             description: "Manage your personal information",
@@ -62,6 +66,21 @@ export default function Dashboard() {
             iconColor: "text-yellow-400"
         }
     ];
+
+    // Add Job Postings menu for Employer
+    const menuItems = role === 'Employer'
+        ? [
+            ...baseMenuItems,
+            {
+                title: "Job Postings",
+                description: "Manage your job listings",
+                icon: <FileText className="h-5 w-5 text-pink-400" />,
+                path: "/job-postings",
+                color: "bg-pink-500/10",
+                iconColor: "text-pink-400"
+            }
+        ]
+        : baseMenuItems;
 
     return (
         <div className="min-h-screen bg-gray-900 p-6">

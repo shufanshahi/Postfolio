@@ -1,4 +1,6 @@
 package com.example.postfolio.auth.dto;
 
-public record AuthResponse(String token) {
+import com.example.postfolio.user.model.Role;
+
+public record AuthResponse(String token, Role role) {
 }
