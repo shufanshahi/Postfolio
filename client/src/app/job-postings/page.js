@@ -37,13 +37,22 @@ export default function JobPostings() {
       router.push("/login");
       return;
     }
-    const res = await fetch("http://localhost:8080/api/jobs", {
+    // Get user profile to extract employerId
+    const profileRes = await fetch("http://localhost:8080/api/profile/me", {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (!profileRes.ok) {
+      setLoading(false);
+      alert("Failed to get user profile. Please try again.");
+      return;
+    }
+    const profile = await profileRes.json();
+    const res = await fetch(`http://localhost:8080/api/jobs/employer/${profile.id}`, {
       headers: { Authorization: `Bearer ${token}` },
     });
     if (res.ok) {
       setJobs(await res.json());
     }
-    console.log("Jobs fetched successfully:", jobs);
     setLoading(false);
   };
 
