@@ -19,12 +19,23 @@ export default function Dashboard() {
     const [role, setRole] = useState(null);
 
     useEffect(() => {
-        if (!localStorage.getItem('token')) {
-            router.push('/login');
+        async function fetchProfileAndSetRole() {
+            if (!localStorage.getItem('token')) {
+                router.push('/login');
+                return;
+            }
+            const token = localStorage.getItem('token');
+            const profileRes = await fetch("http://localhost:8080/api/profile/me", {
+                headers: { Authorization: `Bearer ${token}` },
+            });
+            if (!profileRes.ok) {
+                alert("Failed to get user profile. Please try again.");
+                return;
+            }
+            const profile = await profileRes.json();
+            setRole(profile.role);
         }
-        // Get role from localStorage
-        const storedRole = localStorage.getItem('role');
-        setRole(storedRole);
+        fetchProfileAndSetRole();
     }, []);
 
     const handleLogout = () => {
@@ -67,9 +78,10 @@ export default function Dashboard() {
         }
     ];
 
-    // Add Job Postings menu for Employer
-    const menuItems = role === 'Employer'
-        ? [
+    // Add Job Postings menu for Employer, Find Jobs for User
+    let menuItems = baseMenuItems;
+    if (role === 'Employer') {
+        menuItems = [
             ...baseMenuItems,
             {
                 title: "Job Postings",
@@ -79,8 +91,20 @@ export default function Dashboard() {
                 color: "bg-pink-500/10",
                 iconColor: "text-pink-400"
             }
-        ]
-        : baseMenuItems;
+        ];
+    } else if (role === 'User') {
+        menuItems = [
+            ...baseMenuItems,
+            {
+                title: "Find Jobs",
+                description: "Browse and apply to available jobs",
+                icon: <FileText className="h-5 w-5 text-cyan-400" />,
+                path: "/find-jobs",
+                color: "bg-cyan-500/10",
+                iconColor: "text-cyan-400"
+            }
+        ];
+    }
 
     return (
         <div className="min-h-screen bg-gray-900 p-6">
