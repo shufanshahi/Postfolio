@@ -12,4 +12,5 @@ public interface JobService {
     List<JobResponse> getAllJobs();
     JobResponse applyToJob(Long jobId, Long applicantId);
     JobResponse selectApplicant(Long jobId, Long applicantId);
+    List<JobResponse> getJobsByEmployer(Long employerId);
 }

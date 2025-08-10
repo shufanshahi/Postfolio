@@ -1,3 +1,4 @@
+ 
 package com.example.postfolio.job.service;
 
 import com.example.postfolio.job.dto.JobRequest;
@@ -17,6 +18,14 @@ import java.util.stream.Collectors;
 public class JobServiceImpl implements JobService {
     private final JobRepository jobRepository;
     private final UserRepository userRepository;
+
+    @Override
+    public List<JobResponse> getJobsByEmployer(Long employerId) {
+        return jobRepository.findAll().stream()
+            .filter(job -> job.getEmployer() != null && job.getEmployer().getId().equals(employerId))
+            .map(this::toResponse)
+            .collect(java.util.stream.Collectors.toList());
+    }
 
     @Override
     public JobResponse createJob(JobRequest request) {

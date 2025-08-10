@@ -1,6 +1,7 @@
 package com.example.postfolio.profile.dto;
 
 import com.example.postfolio.profile.entity.Profile;
+import com.example.postfolio.user.model.Role;
 import lombok.Builder;
 import lombok.Data;
 
@@ -21,6 +22,7 @@ public class ProfileResponse {
     private String positionOrInstitue;
     private String phoneNumber;
     private String address;
+    private Role role;
 
     public static ProfileResponse fromProfile(Profile profile) {
         return ProfileResponse.builder()
@@ -36,6 +38,7 @@ public class ProfileResponse {
                 .positionOrInstitue(profile.getPositionOrInstitue())
                 .phoneNumber(profile.getPhoneNumber())
                 .address(profile.getAddress())
+                .role(profile.getUser().getRole())
                 .build();
     }
 } 

@@ -19,6 +19,12 @@ public class JobController {
         return ResponseEntity.ok(jobService.createJob(request));
     }
 
+    @GetMapping("/employer/{employerId}")
+    public ResponseEntity<List<JobResponse>> getJobsByEmployer(@PathVariable Long employerId) {
+        return ResponseEntity.ok(jobService.getJobsByEmployer(employerId));
+    }
+
+
     @PutMapping("/{jobId}")
     public ResponseEntity<JobResponse> updateJob(@PathVariable Long jobId, @RequestBody JobRequest request) {
         return ResponseEntity.ok(jobService.updateJob(jobId, request));
