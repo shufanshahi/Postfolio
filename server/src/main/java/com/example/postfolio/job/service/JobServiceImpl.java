@@ -70,6 +70,14 @@ public class JobServiceImpl implements JobService {
         return toResponse(job);
     }
 
+    @Override
+    public JobResponse getJobById(Long jobId) {
+        Job job = jobRepository.findById(jobId).orElseThrow(() -> 
+            new RuntimeException("Job not found with id: " + jobId));
+        
+        return toResponse(job);
+    }
+
     private JobResponse toResponse(Job job) {
         JobResponse res = new JobResponse();
     res.setJobId(job.getJobId());
