@@ -2,6 +2,7 @@ package com.example.postfolio.job.entity;
 
 import com.example.postfolio.job.model.JobStatus;
 import com.example.postfolio.user.entity.User;
+import com.example.postfolio.profile.entity.Profile;
 import jakarta.persistence.*;
 import lombok.*;
 import java.time.LocalDate;
@@ -40,7 +41,7 @@ public class Job {
         inverseJoinColumns = @JoinColumn(name = "applicant_id")
     )
     @Builder.Default
-    private List<User> applicants = new ArrayList<>();
+    private List<Profile> applicants = new ArrayList<>();
 
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(
@@ -49,5 +50,5 @@ public class Job {
         inverseJoinColumns = @JoinColumn(name = "selected_applicant_id")
     )
     @Builder.Default
-    private List<User> selectedApplicants = new ArrayList<>();
+    private List<Profile> selectedApplicants = new ArrayList<>();
 }

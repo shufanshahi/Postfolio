@@ -24,35 +24,9 @@ public class JobController {
         return ResponseEntity.ok(jobService.getJobsByEmployer(employerId));
     }
 
-
-    @PutMapping("/{jobId}")
-    public ResponseEntity<JobResponse> updateJob(@PathVariable Long jobId, @RequestBody JobRequest request) {
-        return ResponseEntity.ok(jobService.updateJob(jobId, request));
-    }
-
-    @DeleteMapping("/{jobId}")
-    public ResponseEntity<Void> deleteJob(@PathVariable Long jobId) {
-        jobService.deleteJob(jobId);
-        return ResponseEntity.noContent().build();
-    }
-
-    @GetMapping("/{jobId}")
-    public ResponseEntity<JobResponse> getJobById(@PathVariable Long jobId) {
-        return ResponseEntity.ok(jobService.getJobById(jobId));
-    }
-
     @GetMapping
     public ResponseEntity<List<JobResponse>> getAllJobs() {
         return ResponseEntity.ok(jobService.getAllJobs());
     }
 
-    @PostMapping("/{jobId}/apply/{applicantId}")
-    public ResponseEntity<JobResponse> applyToJob(@PathVariable Long jobId, @PathVariable Long applicantId) {
-        return ResponseEntity.ok(jobService.applyToJob(jobId, applicantId));
-    }
-
-    @PostMapping("/{jobId}/select/{applicantId}")
-    public ResponseEntity<JobResponse> selectApplicant(@PathVariable Long jobId, @PathVariable Long applicantId) {
-        return ResponseEntity.ok(jobService.selectApplicant(jobId, applicantId));
-    }
 }

@@ -8,6 +8,7 @@ import com.example.postfolio.job.model.JobStatus;
 import com.example.postfolio.job.repository.JobRepository;
 import com.example.postfolio.user.entity.User;
 import com.example.postfolio.user.repository.UserRepository;
+import com.example.postfolio.profile.entity.Profile;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import java.util.List;
@@ -44,55 +45,10 @@ public class JobServiceImpl implements JobService {
         return toResponse(job);
     }
 
-    @Override
-    public JobResponse updateJob(Long jobId, JobRequest request) {
-        Job job = jobRepository.findById(jobId).orElseThrow();
-    job.setTitle(request.getTitle());
-    job.setPosition(request.getPosition());
-    job.setDescription(request.getDescription());
-    job.setDatePosted(request.getDatePosted());
-    job.setEndDate(request.getEndDate());
-    job.setRequirements(request.getRequirements());
-        jobRepository.save(job);
-        return toResponse(job);
-    }
-
-    @Override
-    public void deleteJob(Long jobId) {
-        jobRepository.deleteById(jobId);
-    }
-
-    @Override
-    public JobResponse getJobById(Long jobId) {
-        Job job = jobRepository.findById(jobId).orElseThrow();
-        return toResponse(job);
-    }
 
     @Override
     public List<JobResponse> getAllJobs() {
         return jobRepository.findAll().stream().map(this::toResponse).collect(Collectors.toList());
-    }
-
-    @Override
-    public JobResponse applyToJob(Long jobId, Long applicantId) {
-        Job job = jobRepository.findById(jobId).orElseThrow();
-        User applicant = userRepository.findById(applicantId).orElseThrow();
-        if (!job.getApplicants().contains(applicant)) {
-            job.getApplicants().add(applicant);
-            jobRepository.save(job);
-        }
-        return toResponse(job);
-    }
-
-    @Override
-    public JobResponse selectApplicant(Long jobId, Long applicantId) {
-        Job job = jobRepository.findById(jobId).orElseThrow();
-        User applicant = userRepository.findById(applicantId).orElseThrow();
-        if (!job.getSelectedApplicants().contains(applicant)) {
-            job.getSelectedApplicants().add(applicant);
-            jobRepository.save(job);
-        }
-        return toResponse(job);
     }
 
     private JobResponse toResponse(Job job) {
@@ -106,8 +62,8 @@ public class JobServiceImpl implements JobService {
     res.setRequirements(job.getRequirements());
     res.setStatus(job.getStatus());
     res.setEmployerId(job.getEmployer() != null ? job.getEmployer().getId() : null);
-    res.setApplicantIds(job.getApplicants().stream().map(User::getId).collect(Collectors.toList()));
-    res.setSelectedApplicantIds(job.getSelectedApplicants().stream().map(User::getId).collect(Collectors.toList()));
+    res.setApplicantIds(job.getApplicants().stream().map(Profile::getId).collect(Collectors.toList()));
+    res.setSelectedApplicantIds(job.getSelectedApplicants().stream().map(Profile::getId).collect(Collectors.toList()));
         return res;
     }
 }
