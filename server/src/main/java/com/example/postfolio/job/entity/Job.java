@@ -38,7 +38,7 @@ public class Job {
     @JoinTable(
         name = "job_applicants",
         joinColumns = @JoinColumn(name = "job_id"),
-        inverseJoinColumns = @JoinColumn(name = "applicant_id")
+        inverseJoinColumns = @JoinColumn(name = "applicant_id", referencedColumnName = "id")
     )
     @Builder.Default
     private List<Profile> applicants = new ArrayList<>();
@@ -47,7 +47,7 @@ public class Job {
     @JoinTable(
         name = "job_selected_applicants",
         joinColumns = @JoinColumn(name = "job_id"),
-        inverseJoinColumns = @JoinColumn(name = "selected_applicant_id")
+        inverseJoinColumns = @JoinColumn(name = "selected_applicant_id", referencedColumnName = "id")
     )
     @Builder.Default
     private List<Profile> selectedApplicants = new ArrayList<>();

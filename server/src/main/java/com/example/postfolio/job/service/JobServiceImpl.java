@@ -9,6 +9,7 @@ import com.example.postfolio.job.repository.JobRepository;
 import com.example.postfolio.user.entity.User;
 import com.example.postfolio.user.repository.UserRepository;
 import com.example.postfolio.profile.entity.Profile;
+import com.example.postfolio.profile.repository.ProfileRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import java.util.List;
@@ -19,6 +20,7 @@ import java.util.stream.Collectors;
 public class JobServiceImpl implements JobService {
     private final JobRepository jobRepository;
     private final UserRepository userRepository;
+    private final ProfileRepository profileRepository;
 
     @Override
     public List<JobResponse> getJobsByEmployer(Long employerId) {
@@ -49,6 +51,23 @@ public class JobServiceImpl implements JobService {
     @Override
     public List<JobResponse> getAllJobs() {
         return jobRepository.findAll().stream().map(this::toResponse).collect(Collectors.toList());
+    }
+
+    @Override
+    public JobResponse applyForJob(Long jobId, Long applicantId) {
+        Job job = jobRepository.findById(jobId).orElseThrow(() -> 
+            new RuntimeException("Job not found with id: " + jobId));
+        
+        Profile applicant = profileRepository.findById(applicantId).orElseThrow(() -> 
+            new RuntimeException("Profile not found with id: " + applicantId));
+        
+        // Check if the profile is already an applicant
+        if (!job.getApplicants().contains(applicant)) {
+            job.getApplicants().add(applicant);
+            jobRepository.save(job);
+        }
+        
+        return toResponse(job);
     }
 
     private JobResponse toResponse(Job job) {

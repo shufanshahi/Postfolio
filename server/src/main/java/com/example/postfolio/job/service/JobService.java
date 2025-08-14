@@ -8,4 +8,5 @@ public interface JobService {
     JobResponse createJob(JobRequest request);
     List<JobResponse> getAllJobs();
     List<JobResponse> getJobsByEmployer(Long employerId);
+    JobResponse applyForJob(Long jobId, Long applicantId);
 }

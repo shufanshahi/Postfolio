@@ -29,4 +29,11 @@ public class JobController {
         return ResponseEntity.ok(jobService.getAllJobs());
     }
 
+    @PostMapping("/{jobId}/apply/{applicantId}")
+    public ResponseEntity<JobResponse> applyForJob(
+            @PathVariable Long jobId, 
+            @PathVariable Long applicantId) {
+        return ResponseEntity.ok(jobService.applyForJob(jobId, applicantId));
+    }
+
 }
