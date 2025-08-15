@@ -22,41 +22,5 @@ import org.springframework.stereotype.Service;
 @Service
 @RequiredArgsConstructor
 public class AuthService {
-
-    private final UserRepository userRepository;
-    private final PasswordEncoder passwordEncoder;
-    private final JwtService jwtService;
-    private final AuthenticationManager authenticationManager;
-    private final ProfileService profileService;
-
-    public AuthResponse register(RegisterRequest request) {
-        User user = User.builder()
-                .name(request.name())
-                .email(request.email())
-                .password(passwordEncoder.encode(request.password()))
-                .role(request.role())
-                .build();
-
-
-
-        User savedUser = userRepository.save(user);
-
-        profileService.initializeProfileForUser(savedUser);
-        String jwt = jwtService.generateToken(user);
-        return new AuthResponse(jwt);
-    }
-
-    public AuthResponse login(AuthRequest request) {
-        authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(
-                        request.email(),
-                        request.password()
-                )
-        );
-        User user = userRepository.findByEmail(request.email())
-                .orElseThrow(() -> new RuntimeException("User not found"));
-
-        String jwt = jwtService.generateToken(user);
-        return new AuthResponse(jwt);
-    }
+    // Deprecated placeholder to avoid breaking injections if any remain.
 }

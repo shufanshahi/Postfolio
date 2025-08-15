@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
+import { apiFetch } from '@/lib/api';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 
 export default function FindJobs() {
@@ -14,9 +15,7 @@ export default function FindJobs() {
         window.location.href = "/login";
         return;
       }
-      const res = await fetch("http://localhost:8080/api/jobs", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const res = await apiFetch('/api/jobs');
       if (res.ok) {
         setJobs(await res.json());
       }

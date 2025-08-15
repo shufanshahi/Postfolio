@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
+import { apiFetch } from '@/lib/api';
 import { useRouter } from "next/navigation";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -38,18 +39,14 @@ export default function JobPostings() {
       return;
     }
     // Get user profile to extract employerId
-    const profileRes = await fetch("http://localhost:8080/api/profile/me", {
-      headers: { Authorization: `Bearer ${token}` },
-    });
+    const profileRes = await apiFetch('/api/profile/me');
     if (!profileRes.ok) {
       setLoading(false);
       alert("Failed to get user profile. Please try again.");
       return;
     }
     const profile = await profileRes.json();
-    const res = await fetch(`http://localhost:8080/api/jobs/employer/${profile.id}`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
+    const res = await apiFetch(`/api/jobs/employer/${profile.id}`);
     if (res.ok) {
       setJobs(await res.json());
     }
@@ -72,9 +69,7 @@ export default function JobPostings() {
     }
     
     // Get user profile to extract userId
-    const profileRes = await fetch("http://localhost:8080/api/profile/me", {
-      headers: { Authorization: `Bearer ${token}` },
-    });
+    const profileRes = await apiFetch('/api/profile/me');
     
     if (!profileRes.ok) {
       setLoading(false);
@@ -84,12 +79,8 @@ export default function JobPostings() {
     
     const profile = await profileRes.json();
     
-    const res = await fetch("http://localhost:8080/api/jobs", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
+    const res = await apiFetch('/api/jobs', {
+      method: 'POST',
       body: JSON.stringify({
         ...form,
         datePosted: new Date().toISOString().slice(0, 10),

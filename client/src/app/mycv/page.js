@@ -1,5 +1,6 @@
 'use client';
 import { useState, useEffect } from 'react';
+import { apiFetch } from '@/lib/api';
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -16,12 +17,7 @@ export default function CvDownloadButton() {
     useEffect(() => {
         const fetchProfileId = async () => {
             try {
-                const token = localStorage.getItem('token');
-                const response = await fetch('http://localhost:8080/api/profile/me', {
-                    headers: {
-                        'Authorization': `Bearer ${token}`,
-                    },
-                });
+                const response = await apiFetch('/api/profile/me');
 
                 if (!response.ok) throw new Error('Failed to fetch profile ID');
 
@@ -42,12 +38,7 @@ export default function CvDownloadButton() {
         setError(null);
         setSuccess(false);
         try {
-            const token = localStorage.getItem('token');
-            const response = await fetch(`http://localhost:8080/api/cv/generate/${profileId}`, {
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                },
-            });
+            const response = await apiFetch(`/api/cv/generate/${profileId}`);
 
             if (!response.ok) throw new Error('Failed to generate CV');
 

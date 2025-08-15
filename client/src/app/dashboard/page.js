@@ -1,6 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { apiFetch } from '@/lib/api';
 import {
     User,
     Users,
@@ -25,9 +26,7 @@ export default function Dashboard() {
                 return;
             }
             const token = localStorage.getItem('token');
-            const profileRes = await fetch("http://localhost:8080/api/profile/me", {
-                headers: { Authorization: `Bearer ${token}` },
-            });
+            const profileRes = await apiFetch('/api/profile/me');
             if (!profileRes.ok) {
                 alert("Failed to get user profile. Please try again.");
                 return;

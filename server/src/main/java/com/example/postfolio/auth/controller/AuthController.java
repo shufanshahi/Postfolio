@@ -14,17 +14,14 @@ import org.springframework.web.bind.annotation.*;
 @RequiredArgsConstructor
 public class AuthController {
 
-    private final AuthService authService;
-
+    // Deprecated: This server no longer handles auth.
     @PostMapping("/register")
-    public ResponseEntity<AuthResponse> register(@RequestBody RegisterRequest request) {
-        AuthResponse response = authService.register(request);
-        return ResponseEntity.ok(response);
+    public ResponseEntity<String> register() {
+        return ResponseEntity.status(404).body("Auth moved to auth-service");
     }
 
     @PostMapping("/login")
-    public ResponseEntity<AuthResponse> login(@RequestBody AuthRequest request) {
-        AuthResponse response = authService.login(request);
-        return ResponseEntity.ok(response);
+    public ResponseEntity<String> login() {
+        return ResponseEntity.status(404).body("Auth moved to auth-service");
     }
 }

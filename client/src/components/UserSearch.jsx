@@ -1,5 +1,6 @@
 'use client';
 import { useState, useEffect } from 'react';
+import { apiFetch } from '@/lib/api';
 import { useRouter } from 'next/navigation';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -24,12 +25,7 @@ const UserSearch = ({ className }) => {
         setError(null);
 
         try {
-            const token = localStorage.getItem('token');
-            const response = await fetch(`http://localhost:8080/api/search/users?q=${encodeURIComponent(term)}`, {
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                },
-            });
+            const response = await apiFetch(`/api/search/users?q=${encodeURIComponent(term)}`);
 
             if (!response.ok) throw new Error('Failed to search users');
 

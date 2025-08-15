@@ -1,5 +1,6 @@
 'use client';
 import { useState, useEffect } from 'react';
+import { apiFetch } from '@/lib/api';
 import {
     Avatar,
     AvatarFallback,
@@ -45,15 +46,9 @@ export default function CvViewer({ profileId }) {
             setError(null);
 
             try {
-                const token = localStorage.getItem('token');
-
                 const [cvRes, profileRes] = await Promise.all([
-                    fetch(`http://localhost:8080/api/cv/entries/${profileId}`, {
-                        headers: { Authorization: `Bearer ${token}` },
-                    }),
-                    fetch(`http://localhost:8080/api/profile/${profileId}`, {
-                        headers: { Authorization: `Bearer ${token}` },
-                    }),
+                    apiFetch(`/api/cv/entries/${profileId}`),
+                    apiFetch(`/api/profile/${profileId}`),
                 ]);
 
                 if (!cvRes.ok || !profileRes.ok)

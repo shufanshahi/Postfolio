@@ -1,5 +1,6 @@
 'use client';
 import { useState, useEffect } from 'react';
+import { apiFetch } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { UserPlus, UserCheck, UserX, Clock, Loader2 } from 'lucide-react';
 
@@ -17,12 +18,7 @@ const ConnectionButton = ({ targetUserId, className }) => {
 
     const fetchConnectionStatus = async () => {
         try {
-            const token = localStorage.getItem('token');
-            const response = await fetch(`http://localhost:8080/api/connections/status/${targetUserId}`, {
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                },
-            });
+            const response = await apiFetch(`/api/connections/status/${targetUserId}`);
 
             if (!response.ok) throw new Error('Failed to fetch connection status');
 
@@ -38,13 +34,8 @@ const ConnectionButton = ({ targetUserId, className }) => {
     const sendFriendRequest = async () => {
         setActionLoading(true);
         try {
-            const token = localStorage.getItem('token');
-            const response = await fetch('http://localhost:8080/api/connections/send', {
+            const response = await apiFetch('/api/connections/send', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`,
-                },
                 body: JSON.stringify({ receiverId: targetUserId }),
             });
 
@@ -61,13 +52,8 @@ const ConnectionButton = ({ targetUserId, className }) => {
     const acceptRequest = async () => {
         setActionLoading(true);
         try {
-            const token = localStorage.getItem('token');
             // First, we need to get the connection ID for the pending request
-            const pendingResponse = await fetch('http://localhost:8080/api/connections/pending/received', {
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                },
-            });
+            const pendingResponse = await apiFetch('/api/connections/pending/received');
 
             if (!pendingResponse.ok) throw new Error('Failed to fetch pending requests');
 
@@ -76,12 +62,7 @@ const ConnectionButton = ({ targetUserId, className }) => {
 
             if (!connection) throw new Error('Connection not found');
 
-            const response = await fetch(`http://localhost:8080/api/connections/${connection.id}/accept`, {
-                method: 'PUT',
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                },
-            });
+            const response = await apiFetch(`/api/connections/${connection.id}/accept`, { method: 'PUT' });
 
             if (!response.ok) throw new Error('Failed to accept friend request');
 
@@ -96,13 +77,8 @@ const ConnectionButton = ({ targetUserId, className }) => {
     const rejectRequest = async () => {
         setActionLoading(true);
         try {
-            const token = localStorage.getItem('token');
             // First, we need to get the connection ID for the pending request
-            const pendingResponse = await fetch('http://localhost:8080/api/connections/pending/received', {
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                },
-            });
+            const pendingResponse = await apiFetch('/api/connections/pending/received');
 
             if (!pendingResponse.ok) throw new Error('Failed to fetch pending requests');
 
@@ -111,12 +87,7 @@ const ConnectionButton = ({ targetUserId, className }) => {
 
             if (!connection) throw new Error('Connection not found');
 
-            const response = await fetch(`http://localhost:8080/api/connections/${connection.id}/reject`, {
-                method: 'PUT',
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                },
-            });
+            const response = await apiFetch(`/api/connections/${connection.id}/reject`, { method: 'PUT' });
 
             if (!response.ok) throw new Error('Failed to reject friend request');
 
@@ -131,13 +102,8 @@ const ConnectionButton = ({ targetUserId, className }) => {
     const removeConnection = async () => {
         setActionLoading(true);
         try {
-            const token = localStorage.getItem('token');
             // First, we need to get the connection ID
-            const connectionsResponse = await fetch('http://localhost:8080/api/connections/my', {
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                },
-            });
+            const connectionsResponse = await apiFetch('/api/connections/my');
 
             if (!connectionsResponse.ok) throw new Error('Failed to fetch connections');
 
@@ -146,12 +112,7 @@ const ConnectionButton = ({ targetUserId, className }) => {
 
             if (!connection) throw new Error('Connection not found');
 
-            const response = await fetch(`http://localhost:8080/api/connections/${connection.id}`, {
-                method: 'DELETE',
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                },
-            });
+            const response = await apiFetch(`/api/connections/${connection.id}`, { method: 'DELETE' });
 
             if (!response.ok) throw new Error('Failed to remove connection');
 
