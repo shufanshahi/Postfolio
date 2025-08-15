@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
-import { apiFetch } from '@/lib/api';
+import { jobServiceFetch } from '@/lib/api';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 
 export default function FindJobs() {
@@ -15,7 +15,7 @@ export default function FindJobs() {
         window.location.href = "/login";
         return;
       }
-      const res = await apiFetch('/api/jobs');
+      const res = await jobServiceFetch('/api/jobs');
       if (res.ok) {
         setJobs(await res.json());
       }

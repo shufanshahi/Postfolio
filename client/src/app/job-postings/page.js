@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
-import { apiFetch } from '@/lib/api';
+import { apiFetch, jobServiceFetch } from '@/lib/api';
 import { useRouter } from "next/navigation";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -46,7 +46,7 @@ export default function JobPostings() {
       return;
     }
     const profile = await profileRes.json();
-    const res = await apiFetch(`/api/jobs/employer/${profile.id}`);
+    const res = await jobServiceFetch(`/api/jobs/employer/${profile.id}`);
     if (res.ok) {
       setJobs(await res.json());
     }
@@ -79,7 +79,7 @@ export default function JobPostings() {
     
     const profile = await profileRes.json();
     
-    const res = await apiFetch('/api/jobs', {
+    const res = await jobServiceFetch('/api/jobs', {
       method: 'POST',
       body: JSON.stringify({
         ...form,

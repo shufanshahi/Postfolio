@@ -1,6 +1,6 @@
 'use client';
 import { useState, useEffect } from 'react';
-import { apiFetch } from '@/lib/api';
+import { apiFetch, postServiceFetch } from '@/lib/api';
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -68,7 +68,7 @@ export default function MyFeedPage() {
             setLoading(true);
             let url = '/api/posts/feed';
             if (filter === 'me') url = `/api/posts/profile/${profileId}`;
-            const response = await apiFetch(url);
+            const response = await postServiceFetch(url);
 
             if (!response.ok) throw new Error('Failed to fetch feed');
             const data = await response.json();
@@ -85,7 +85,7 @@ export default function MyFeedPage() {
 
         try {
             setPosting(true);
-            const response = await apiFetch('/api/posts', {
+            const response = await postServiceFetch('/api/posts', {
                 method: 'POST',
                 body: JSON.stringify({
                     content: newPostContent,
@@ -106,7 +106,7 @@ export default function MyFeedPage() {
 
     const handleCelebrate = async (postId) => {
         try {
-            const response = await apiFetch(`/api/posts/${postId}/celebrate`, { method: 'POST' });
+            const response = await postServiceFetch(`/api/posts/${postId}/celebrate`, { method: 'POST' });
 
             if (response.ok) {
                 fetchFeed(); // Refresh to show updated reactions
