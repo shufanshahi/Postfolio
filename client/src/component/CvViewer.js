@@ -1,6 +1,6 @@
 'use client';
 import { useState, useEffect } from 'react';
-import { apiFetch } from '@/lib/api';
+import { apiFetch, postServiceFetch } from '@/lib/api';
 import {
     Avatar,
     AvatarFallback,
@@ -47,7 +47,7 @@ export default function CvViewer({ profileId }) {
 
             try {
                 const [cvRes, profileRes] = await Promise.all([
-                    apiFetch(`/api/cv/entries/${profileId}`),
+                    postServiceFetch(`/api/cv/entries/${profileId}`),
                     apiFetch(`/api/profile/${profileId}`),
                 ]);
 

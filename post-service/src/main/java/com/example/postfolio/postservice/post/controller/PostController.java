@@ -87,9 +87,9 @@ public class PostController {
         return ResponseEntity.ok(convertToDtoPage(posts));
     }
 
-    @GetMapping("/feed")
-    public ResponseEntity<List<PostResponseDTO>> getFeedPosts() {
-        List<Post> posts = postService.getFeedPosts();
+    @GetMapping("/feed/{profileId}")
+    public ResponseEntity<List<PostResponseDTO>> getFeedPosts(@PathVariable Long profileId) {
+        List<Post> posts = postService.getFeedPosts(profileId);
         return ResponseEntity.ok(convertToDtoList(posts));
     }
 
@@ -118,8 +118,10 @@ public class PostController {
     }
 
     @PostMapping("/{postId}/celebrate")
-    public ResponseEntity<Void> celebratePost(@PathVariable Long postId) {
-        postService.celebratePost(postId);
+    public ResponseEntity<Void> celebratePost(
+            @PathVariable Long postId,
+            @RequestParam Long profileId) {
+        postService.celebratePost(postId, profileId);
         return ResponseEntity.ok().build();
     }
 

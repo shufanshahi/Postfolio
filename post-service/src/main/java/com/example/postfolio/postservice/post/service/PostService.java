@@ -15,6 +15,7 @@ import com.example.postfolio.postservice.profile.entity.Profile;
 import com.example.postfolio.postservice.profile.repository.ProfileRepository;
 import com.example.postfolio.postservice.user.entity.User;
 import com.example.postfolio.postservice.user.repository.UserRepository;
+import com.example.postfolio.postservice.cv.service.CvUpdateService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -39,6 +40,7 @@ public class PostService {
     private final GeminiService geminiService;
     private final UserRepository userRepository;
     private final ReactionRepository reactionRepository;
+    private final CvUpdateService cvUpdateService;
 
     @Transactional
     public Post createPost(Long profileId, String content) {
@@ -49,11 +51,13 @@ public class PostService {
             GeminiResponse analysis = geminiService.analyzePost(content);
             Post savedPost = savePost(content, profile, analysis.getPostType(), 
                                     analysis.getTags(), analysis.getPostType().toString(), true);
+            cvUpdateService.updateCvFromPost(savedPost);
             return savedPost;
         } catch (Exception e) {
             log.error("Failed to generate CV heading for post, using fallback", e);
             Post savedPost = savePost(content, profile, null, 
                                     List.of(), generateFallbackCvHeading(content), false);
+            cvUpdateService.updateCvFromPost(savedPost);
             return savedPost;
         }
     }
@@ -103,11 +107,12 @@ public class PostService {
     }
 
     @Transactional(readOnly = true)
-    public List<Post> getFeedPosts() {
-        User currentUser = getCurrentUser();
+    public List<Post> getFeedPosts(Long profileId) {
+        Profile profile = profileRepository.findById(profileId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Profile not found"));
         // Simplified feed - only returns current user's posts
         // In a full microservice setup, this would call the connection service
-        return postRepository.findPostsFromFriendsAndSelf(currentUser);
+        return postRepository.findByProfileOrderByCreatedAtDesc(profile);
     }
 
     @Transactional
@@ -163,17 +168,19 @@ public class PostService {
     }
 
     @Transactional
-    public void celebratePost(Long postId) {
+    public void celebratePost(Long postId, Long profileId) {
         Post post = getPostById(postId);
-        User currentUser = getCurrentUser();
+        Profile profile = profileRepository.findById(profileId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Profile not found"));
+        User user = profile.getUser();
         
-        if (reactionRepository.existsByPostAndUser(post, currentUser)) {
+        if (reactionRepository.existsByPostAndUser(post, user)) {
             throw new RuntimeException("User already celebrated this post");
         }
         
         Reaction reaction = Reaction.builder()
                 .post(post)
-                .user(currentUser)
+                .user(user)
                 .type(ReactionType.CELEBRATE)
                 .build();
         
@@ -213,11 +220,7 @@ public class PostService {
         return content.length() > 50 ? content.substring(0, 50) + "..." : content;
     }
 
-    private User getCurrentUser() {
-        String email = SecurityContextHolder.getContext().getAuthentication().getName();
-        return userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("User not found"));
-    }
+
 
     public List<ReactionResponseDTO> convertReactionsToDto(List<Reaction> reactions) {
         return reactions.stream()

@@ -66,7 +66,7 @@ export default function MyFeedPage() {
     const fetchFeed = async () => {
         try {
             setLoading(true);
-            let url = '/api/posts/feed';
+            let url = `/api/posts/feed/${profileId}`;
             if (filter === 'me') url = `/api/posts/profile/${profileId}`;
             const response = await postServiceFetch(url);
 
@@ -106,7 +106,7 @@ export default function MyFeedPage() {
 
     const handleCelebrate = async (postId) => {
         try {
-            const response = await postServiceFetch(`/api/posts/${postId}/celebrate`, { method: 'POST' });
+            const response = await postServiceFetch(`/api/posts/${postId}/celebrate?profileId=${profileId}`, { method: 'POST' });
 
             if (response.ok) {
                 fetchFeed(); // Refresh to show updated reactions

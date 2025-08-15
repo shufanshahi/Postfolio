@@ -1,15 +1,16 @@
 # Post Service
 
-A microservice for managing posts in the Postfolio application.
+A microservice for managing posts, CV generation, and CV entries in the Postfolio application.
 
 ## Features
 
 - Create, read, update, and delete posts
-- AI-powered post analysis and tagging using Gemini API
-- Post reactions (celebrations)
-- Profile-based post filtering
-- Feed generation for connected users
-- Skill-based post retrieval
+- AI-powered post analysis and tagging using Google Gemini
+- CV generation from posts and profile data
+- CV entry management for in-app CV viewing
+- Post reactions and celebrations
+- Feed management
+- Profile skills extraction
 
 ## Technology Stack
 
@@ -18,6 +19,7 @@ A microservice for managing posts in the Postfolio application.
 - Spring Data JPA
 - PostgreSQL
 - Google Gemini AI API
+- iText PDF (for CV generation)
 - Maven
 
 ## Configuration
@@ -30,30 +32,26 @@ The service runs on port 8082 and connects to the shared PostgreSQL database.
 - `spring.datasource.username`: Database username
 - `spring.datasource.password`: Database password
 - `jwt.secret`: JWT secret key (shared with other services)
+- `gemini.api.key`: Google Gemini API key (optional, falls back to mock service)
 
 ## API Endpoints
 
 ### Posts
 - `POST /api/posts` - Create a new post
+- `GET /api/posts` - Get all posts
 - `GET /api/posts/{postId}` - Get a specific post
 - `PUT /api/posts/{postId}` - Update a post
 - `DELETE /api/posts/{postId}` - Delete a post
-- `GET /api/posts/latest` - Get latest posts
-
-### Profile Posts
-- `GET /api/posts/profile/{profileId}` - Get all posts for a profile
-- `GET /api/posts/profile/{profileId}/paginated` - Get paginated posts for a profile
-- `GET /api/posts/profile/{profileId}/type/{type}` - Get posts by type
-- `GET /api/posts/profile/{profileId}/skills` - Get profile skills
-- `GET /api/posts/profile/{profileId}/skills/{skill}` - Get posts by skill
-- `GET /api/posts/profile/{profileId}/needs-review` - Get posts needing review
-
-### Reactions
+- `GET /api/posts/profile/{profileId}` - Get posts by profile
+- `GET /api/posts/feed` - Get feed posts
 - `POST /api/posts/{postId}/celebrate` - Celebrate a post
-- `GET /api/posts/{postId}/reactions` - Get post reactions
 
-### Feed
-- `GET /api/posts/feed` - Get feed posts for current user
+### CV Generation
+- `GET /api/cv/generate/{profileId}` - Generate PDF CV for a profile
+
+### CV Entries
+- `GET /api/cv/entries/{profileId}` - Get CV entries for a profile
+- `DELETE /api/cv/entries/post/{postId}` - Delete CV entries by post ID
 
 ### Health
 - `GET /health` - Health check endpoint
@@ -73,4 +71,23 @@ The service uses the same database as other microservices, sharing the following
 - `profiles` - User profiles
 - `posts` - Post content and metadata
 - `reactions` - Post reactions
-- `post_tags` - Post tags (element collection) 
+- `cv_entries` - CV entries for in-app viewing
+
+## AI Integration
+
+The service integrates with Google Gemini AI for:
+- Post type classification (EXPERIENCE, PROJECT, ACHIEVEMENT, SKILL)
+- Automatic tag generation
+- CV heading generation
+
+If the Gemini API key is not configured, the service falls back to a mock AI service.
+
+## CV Generation
+
+The service can generate professional PDF CVs that include:
+- Personal information from profile
+- Education details
+- Experience from posts
+- Projects from posts
+- Achievements from posts
+- Skills extracted from post tags 

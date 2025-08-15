@@ -1,5 +1,12 @@
 E:\Coding101\competition\Javafest\Postfolio\post-service\src\main\java\com\example\postfolio\postservice\config\AppConfig.java
 E:\Coding101\competition\Javafest\Postfolio\post-service\src\main\java\com\example\postfolio\postservice\config\SecurityConfig.java
+E:\Coding101\competition\Javafest\Postfolio\post-service\src\main\java\com\example\postfolio\postservice\cv\controller\CvController.java
+E:\Coding101\competition\Javafest\Postfolio\post-service\src\main\java\com\example\postfolio\postservice\cv\controller\CvControllerInApp.java
+E:\Coding101\competition\Javafest\Postfolio\post-service\src\main\java\com\example\postfolio\postservice\cv\entity\CvEntry.java
+E:\Coding101\competition\Javafest\Postfolio\post-service\src\main\java\com\example\postfolio\postservice\cv\model\CvType.java
+E:\Coding101\competition\Javafest\Postfolio\post-service\src\main\java\com\example\postfolio\postservice\cv\repository\CvEntryRepository.java
+E:\Coding101\competition\Javafest\Postfolio\post-service\src\main\java\com\example\postfolio\postservice\cv\service\CvGeneratorService.java
+E:\Coding101\competition\Javafest\Postfolio\post-service\src\main\java\com\example\postfolio\postservice\cv\service\CvUpdateService.java
 E:\Coding101\competition\Javafest\Postfolio\post-service\src\main\java\com\example\postfolio\postservice\health\HealthController.java
 E:\Coding101\competition\Javafest\Postfolio\post-service\src\main\java\com\example\postfolio\postservice\post\controller\PostController.java
 E:\Coding101\competition\Javafest\Postfolio\post-service\src\main\java\com\example\postfolio\postservice\post\dto\CreatePostDTO.java

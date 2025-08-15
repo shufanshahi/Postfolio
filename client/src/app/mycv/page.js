@@ -1,6 +1,6 @@
 'use client';
 import { useState, useEffect } from 'react';
-import { apiFetch } from '@/lib/api';
+import { apiFetch, postServiceFetch } from '@/lib/api';
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -38,7 +38,7 @@ export default function CvDownloadButton() {
         setError(null);
         setSuccess(false);
         try {
-            const response = await apiFetch(`/api/cv/generate/${profileId}`);
+            const response = await postServiceFetch(`/api/cv/generate/${profileId}`);
 
             if (!response.ok) throw new Error('Failed to generate CV');
 
