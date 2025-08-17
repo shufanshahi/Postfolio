@@ -1,5 +1,6 @@
 'use client';
 import { useState, useEffect } from 'react';
+import { apiFetch } from '@/lib/api';
 import { useParams, useRouter } from 'next/navigation';
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
@@ -49,12 +50,8 @@ export default function UserProfilePage() {
             setLoading(true);
             setError(null);
 
-            const token = localStorage.getItem('token');
-            
             // Get current user's profile to check if this is their own profile
-            const currentUserResponse = await fetch('http://localhost:8080/api/profile/me', {
-                headers: { Authorization: `Bearer ${token}` },
-            });
+            const currentUserResponse = await apiFetch('/api/profile/me');
             
             if (currentUserResponse.ok) {
                 const currentUser = await currentUserResponse.json();
@@ -62,9 +59,7 @@ export default function UserProfilePage() {
             }
 
             // Get the target user's profile
-            const response = await fetch(`http://localhost:8080/api/profile/${userId}`, {
-                headers: { Authorization: `Bearer ${token}` },
-            });
+            const response = await apiFetch(`/api/profile/${userId}`);
 
             if (!response.ok) {
                 if (response.status === 404) {

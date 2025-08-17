@@ -1,5 +1,6 @@
 'use client';
 import { useState, useEffect } from 'react';
+import { apiFetch } from '@/lib/api';
 import { useRouter } from 'next/navigation';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -27,12 +28,7 @@ const ConnectionsList = ({ className }) => {
 
     const fetchCurrentUserProfile = async () => {
         try {
-            const token = localStorage.getItem('token');
-            const response = await fetch('http://localhost:8080/api/profile/me', {
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                },
-            });
+            const response = await apiFetch('/api/profile/me');
 
             if (!response.ok) throw new Error('Failed to fetch current user profile');
 
@@ -45,12 +41,7 @@ const ConnectionsList = ({ className }) => {
 
     const fetchConnections = async () => {
         try {
-            const token = localStorage.getItem('token');
-            const response = await fetch('http://localhost:8080/api/connections/my', {
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                },
-            });
+            const response = await apiFetch('/api/connections/my');
 
             if (!response.ok) throw new Error('Failed to fetch connections');
 
@@ -66,13 +57,7 @@ const ConnectionsList = ({ className }) => {
     const handleRemoveConnection = async (connectionId) => {
         setActionLoading(prev => ({ ...prev, [connectionId]: true }));
         try {
-            const token = localStorage.getItem('token');
-            const response = await fetch(`http://localhost:8080/api/connections/${connectionId}`, {
-                method: 'DELETE',
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                },
-            });
+            const response = await apiFetch(`/api/connections/${connectionId}`, { method: 'DELETE' });
 
             if (!response.ok) throw new Error('Failed to remove connection');
 

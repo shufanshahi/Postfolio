@@ -1,5 +1,6 @@
 'use client';
 import { useState, useEffect } from 'react';
+import { apiFetch } from '@/lib/api';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -29,10 +30,7 @@ export default function UserPosts({ profileId }) {
             setLoading(true);
             setError(null);
 
-            const token = localStorage.getItem('token');
-            const response = await fetch(`http://localhost:8080/api/posts/profile/${profileId}`, {
-                headers: { Authorization: `Bearer ${token}` },
-            });
+            const response = await apiFetch(`/api/posts/profile/${profileId}`);
 
             if (!response.ok) {
                 throw new Error('Failed to fetch posts');
