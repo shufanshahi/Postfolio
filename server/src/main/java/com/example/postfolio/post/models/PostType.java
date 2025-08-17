@@ -5,5 +5,6 @@ public enum PostType {
     EDUCATION,
     SKILL,
     PROJECT,
-    ACHIEVEMENT
+    ACHIEVEMENT,
+    GENERAL
 }

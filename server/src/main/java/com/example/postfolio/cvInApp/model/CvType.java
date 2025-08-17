@@ -1,7 +1,7 @@
 package com.example.postfolio.cvInApp.model;
 
 public enum CvType {
-    PERSONAL,
+    GENERAL,
     EDUCATION,
     EXPERIENCE,
     PROJECT,
