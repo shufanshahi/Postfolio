@@ -53,9 +53,9 @@ public class ProfileService {
             profile.setBirthDate(LocalDate.parse(request.birthDate));
         }
 
-        profile.setSscResult(request.sscResult);
-        profile.setHscResult(request.hscResult);
-        profile.setUniversityResult(request.universityResult);
+//        profile.setSscResult(request.sscResult);
+//        profile.setHscResult(request.hscResult);
+//        profile.setUniversityResult(request.universityResult);
 
         profileRepository.save(profile);
     }

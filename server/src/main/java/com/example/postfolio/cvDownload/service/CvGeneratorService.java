@@ -36,7 +36,7 @@ public class CvGeneratorService {
                 filterPostsByType(posts, PostType.EXPERIENCE));
 
         // 3. Education Section
-        addEducationSection(document, profile);
+        //addEducationSection(document, profile);
 
         // 4. Projects Section
         addPostSection(document, "PROJECTS",
@@ -83,32 +83,32 @@ public class CvGeneratorService {
         document.add(Chunk.NEWLINE);
     }
 
-    private void addEducationSection(Document document, Profile profile) throws DocumentException {
-        Paragraph sectionTitle = new Paragraph("EDUCATION", HEADER_FONT);
-        sectionTitle.setSpacingAfter(10f);
-        document.add(sectionTitle);
-
-        boolean hasEducation = false;
-
-        if (profile.getUniversityResult() != null) {
-            document.add(new Paragraph("University: " + profile.getUniversityResult(), NORMAL_FONT));
-            hasEducation = true;
-        }
-        if (profile.getHscResult() != null) {
-            document.add(new Paragraph("Higher Secondary: " + profile.getHscResult(), NORMAL_FONT));
-            hasEducation = true;
-        }
-        if (profile.getSscResult() != null) {
-            document.add(new Paragraph("Secondary: " + profile.getSscResult(), NORMAL_FONT));
-            hasEducation = true;
-        }
-
-        if (!hasEducation) {
-            document.add(new Paragraph("No education information provided", ITALIC_FONT));
-        }
-
-        document.add(Chunk.NEWLINE);
-    }
+//    private void addEducationSection(Document document, Profile profile) throws DocumentException {
+//        Paragraph sectionTitle = new Paragraph("EDUCATION", HEADER_FONT);
+//        sectionTitle.setSpacingAfter(10f);
+//        document.add(sectionTitle);
+//
+//        boolean hasEducation = false;
+//
+//        if (profile.getUniversityResult() != null) {
+//            document.add(new Paragraph("University: " + profile.getUniversityResult(), NORMAL_FONT));
+//            hasEducation = true;
+//        }
+//        if (profile.getHscResult() != null) {
+//            document.add(new Paragraph("Higher Secondary: " + profile.getHscResult(), NORMAL_FONT));
+//            hasEducation = true;
+//        }
+//        if (profile.getSscResult() != null) {
+//            document.add(new Paragraph("Secondary: " + profile.getSscResult(), NORMAL_FONT));
+//            hasEducation = true;
+//        }
+//
+//        if (!hasEducation) {
+//            document.add(new Paragraph("No education information provided", ITALIC_FONT));
+//        }
+//
+//        document.add(Chunk.NEWLINE);
+//    }
 
     private void addPostSection(Document document, String sectionName, List<Post> posts) throws DocumentException {
         Paragraph sectionTitle = new Paragraph(sectionName, HEADER_FONT);
