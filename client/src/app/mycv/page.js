@@ -6,6 +6,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { Download, AlertCircle, CheckCircle2, FileText, Info, Loader2 } from 'lucide-react';
 import CvViewer from "@/component/CvViewer";
+import EducationManagement from "@/components/EducationManagement";
 
 export default function CvDownloadButton() {
     const [loading, setLoading] = useState(false);
@@ -132,8 +133,28 @@ export default function CvDownloadButton() {
                         </div>
                     </div>
                 ) : (
-                    <div className="w-full">
-                        <CvViewer profileId={profileId} />
+                    <div className="w-full px-4 sm:px-6 lg:px-8 py-6">
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                            {/* Left Half - Map/CV Viewer */}
+                            <div className="w-full">
+                                <Card className="bg-gray-800/50 border-gray-700/50">
+                                    <CardHeader>
+                                        <CardTitle className="text-white flex items-center gap-2">
+                                            <FileText className="h-5 w-5" />
+                                            CV Map & Preview
+                                        </CardTitle>
+                                    </CardHeader>
+                                    <CardContent className="p-0">
+                                        <CvViewer profileId={profileId} />
+                                    </CardContent>
+                                </Card>
+                            </div>
+
+                            {/* Right Half - Education Management */}
+                            <div className="w-full">
+                                <EducationManagement userId={profileId} />
+                            </div>
+                        </div>
                     </div>
                 )}
             </div>

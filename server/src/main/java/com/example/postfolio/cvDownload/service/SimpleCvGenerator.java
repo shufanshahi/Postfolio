@@ -89,9 +89,9 @@ public class SimpleCvGenerator {
         document.add(section);
 
         List<String> education = new ArrayList<>();
-        if (profile.getUniversityResult() != null) education.add("University: " + profile.getUniversityResult());
-        if (profile.getHscResult() != null) education.add("Higher Secondary: " + profile.getHscResult());
-        if (profile.getSscResult() != null) education.add("Secondary: " + profile.getSscResult());
+//        if (profile.getUniversityResult() != null) education.add("University: " + profile.getUniversityResult());
+//        if (profile.getHscResult() != null) education.add("Higher Secondary: " + profile.getHscResult());
+//        if (profile.getSscResult() != null) education.add("Secondary: " + profile.getSscResult());
 
         if (education.isEmpty()) {
             document.add(new Paragraph("No education information provided", italicFont(12)));
