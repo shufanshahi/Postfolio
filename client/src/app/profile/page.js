@@ -2,7 +2,6 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Modal from 'react-modal';
-import { apiFetch } from '@/lib/api';
 
 // Initialize modal only on client side
 if (typeof window !== 'undefined') {
@@ -33,7 +32,14 @@ export default function ProfilePage() {
 
     const fetchProfile = async () => {
         try {
-            const response = await apiFetch('/api/profile/me');
+            const token = localStorage.getItem('token');
+            console.log(token);
+            const response = await fetch('http://localhost:8080/api/profile/me', {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
 
             if (!response.ok) throw new Error('Failed to fetch profile');
 
@@ -70,6 +76,7 @@ export default function ProfilePage() {
     const handleSubmit = async (e) => {
         e.preventDefault();
         try {
+            const token = localStorage.getItem('token');
             const formDataToSend = new FormData();
 
             Object.entries(formData).forEach(([key, value]) => {
@@ -78,9 +85,11 @@ export default function ProfilePage() {
                 }
             });
 
-            const response = await apiFetch('/api/profile', {
+            const response = await fetch('http://localhost:8080/api/profile', {
                 method: 'POST',
-                headers: {},
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                },
                 body: formDataToSend
             });
 

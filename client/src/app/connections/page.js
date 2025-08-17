@@ -10,7 +10,6 @@ import { Badge } from '@/components/ui/badge';
 import PendingRequests from '@/components/PendingRequests';
 import ConnectionsList from '@/components/ConnectionsList';
 import UserSearch from '@/components/UserSearch';
-import { apiFetch } from '@/lib/api';
 
 export default function ConnectionsPage() {
     const router = useRouter();
@@ -154,9 +153,15 @@ const SentRequests = () => {
     const [error, setError] = useState(null);
 
     useEffect(() => {
+        // Keep original data fetching logic
         const fetchSentRequests = async () => {
             try {
-                const response = await apiFetch('/api/connections/pending/sent');
+                const token = localStorage.getItem('token');
+                const response = await fetch('http://localhost:8080/api/connections/pending/sent', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                    },
+                });
 
                 if (!response.ok) throw new Error('Failed to fetch sent requests');
                 const data = await response.json();

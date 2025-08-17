@@ -1,12 +1,15 @@
 package com.example.postfolio.profile.entity;
 
+
+
 import com.example.postfolio.user.entity.User;
-import com.example.postfolio.profile.model.OccupationType;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "profiles")
@@ -20,23 +23,26 @@ public class Profile {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "profile_picture", length = 10485760) // ~10MB
+    @Column(name = "profile_picture", length = 10485760)
     private String pictureBase64;
 
-
     private String bio;
-
     private LocalDate birthDate;
-
-    private String sscResult;
-    private String hscResult;
-    private String universityResult;
     private String positionOrInstitue;
     private String phoneNumber;
     private String address;
+
+    @OneToMany(mappedBy = "profile", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @JsonIgnore
+    private List<School> schools = new ArrayList<>();
+
+    @OneToMany(mappedBy = "profile", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @JsonIgnore
+    private List<University> universities = new ArrayList<>();
 
     @OneToOne
     @JoinColumn(name = "user_id", nullable = false, unique = true)
     @JsonIgnore
     private User user;
 }
+

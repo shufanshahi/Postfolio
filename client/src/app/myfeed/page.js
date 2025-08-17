@@ -1,6 +1,5 @@
 'use client';
 import { useState, useEffect } from 'react';
-import { apiFetch, postServiceFetch } from '@/lib/api';
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -53,7 +52,13 @@ export default function MyFeedPage() {
 
     const fetchProfileId = async () => {
         try {
-            const response = await apiFetch('/api/profile/me');
+            const token = localStorage.getItem('token');
+            const response = await fetch('http://localhost:8080/api/profile/me', {
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                }
+            });
 
             if (!response.ok) throw new Error('Failed to fetch profile');
             const data = await response.json();
@@ -66,9 +71,17 @@ export default function MyFeedPage() {
     const fetchFeed = async () => {
         try {
             setLoading(true);
-            let url = `/api/posts/feed/${profileId}`;
+            const token = localStorage.getItem('token');
+
+            let url = '/api/posts/feed';
             if (filter === 'me') url = `/api/posts/profile/${profileId}`;
-            const response = await postServiceFetch(url);
+
+            const response = await fetch(`http://localhost:8080${url}`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                }
+            });
 
             if (!response.ok) throw new Error('Failed to fetch feed');
             const data = await response.json();
@@ -85,11 +98,17 @@ export default function MyFeedPage() {
 
         try {
             setPosting(true);
-            const response = await postServiceFetch('/api/posts', {
+            const token = localStorage.getItem('token');
+
+            const response = await fetch('http://localhost:8080/api/posts', {
                 method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                },
                 body: JSON.stringify({
                     content: newPostContent,
-                    profileId
+                    profileId: profileId
                 })
             });
 
@@ -106,7 +125,14 @@ export default function MyFeedPage() {
 
     const handleCelebrate = async (postId) => {
         try {
-            const response = await postServiceFetch(`/api/posts/${postId}/celebrate?profileId=${profileId}`, { method: 'POST' });
+            const token = localStorage.getItem('token');
+            const response = await fetch(`http://localhost:8080/api/posts/${postId}/celebrate`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                }
+            });
 
             if (response.ok) {
                 fetchFeed(); // Refresh to show updated reactions

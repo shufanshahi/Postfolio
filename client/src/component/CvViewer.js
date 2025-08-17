@@ -323,7 +323,7 @@ export default function CvViewer({ profileId }) {
                             {skillEntries.flatMap((entry) =>
                                 entry.content.split(',').map((skill, i) => (
                                     <Badge
-                                        key={i}
+                                        key={`${entry.id || 'entry'}-${skill.trim()}-${i}`}
                                         className="px-3 py-1.5 rounded-full bg-gradient-to-r from-green-900/50 to-teal-900/50 text-green-300 border border-green-800 hover:from-green-800/50 hover:to-teal-800/50 transition-all duration-300 hover:scale-105 font-medium text-xs"
                                     >
                                         {skill.trim()}
@@ -345,7 +345,7 @@ export default function CvViewer({ profileId }) {
                             </div>
                             <h3 className="text-lg font-semibold text-white mb-2">No CV entries found</h3>
                             <p className="text-gray-400 max-w-md mx-auto text-sm">
-                                This profile doesn't have any CV entries yet. Start adding your professional experiences, projects, and achievements!
+                                This profile doesnt have any CV entries yet. Start adding your professional experiences, projects, and achievements!
                             </p>
                         </div>
                     </CardContent>
