@@ -1,6 +1,7 @@
 'use client';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { authFetch } from '@/lib/api';
 
 export default function Register() {
     const [name, setName] = useState('');
@@ -30,9 +31,8 @@ export default function Register() {
         setIsLoading(true);
 
         try {
-            const response = await fetch('http://localhost:8080/api/auth/register', {
+            const response = await authFetch('/api/auth/register', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ name, email, password, role })
             });
 

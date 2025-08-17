@@ -1,13 +1,15 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { apiFetch } from '@/lib/api';
 import {
     User,
     Users,
     FileText,
     Rss,
     LogOut,
-    ChevronRight
+    ChevronRight,
+    Video
 } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -25,9 +27,7 @@ export default function Dashboard() {
                 return;
             }
             const token = localStorage.getItem('token');
-            const profileRes = await fetch("http://localhost:8080/api/profile/me", {
-                headers: { Authorization: `Bearer ${token}` },
-            });
+            const profileRes = await apiFetch('/api/profile/me');
             if (!profileRes.ok) {
                 alert("Failed to get user profile. Please try again.");
                 return;
@@ -102,7 +102,15 @@ export default function Dashboard() {
                 path: "/find-jobs",
                 color: "bg-cyan-500/10",
                 iconColor: "text-cyan-400"
-            }
+            },
+        {
+            title: "My Interviews",
+            description: "View and manage your interviews",
+            icon: <Video className="h-5 w-5 text-orange-400" />,
+            path: "/my-interviews",
+            color: "bg-orange-500/10",
+            iconColor: "text-orange-400"
+        }
         ];
     }
 

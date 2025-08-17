@@ -1,10 +1,10 @@
 "use client"
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useParams } from 'next/navigation';
 import io from 'socket.io-client';
 
 const VideoCall = () => {
-  const searchParams = useSearchParams();
+  const params = useParams();
   const [roomName, setRoomName] = useState('');
   const [isConnected, setIsConnected] = useState(false);
   const [isInRoom, setIsInRoom] = useState(false);
@@ -122,46 +122,6 @@ const VideoCall = () => {
     }
   }, [roomName]);
 
-  const createOffer = useCallback(async () => {
-    try {
-      console.log('Creating offer...');
-      const offer = await peerConnectionRef.current.createOffer();
-      await peerConnectionRef.current.setLocalDescription(offer);
-      console.log('Offer created and set as local description');
-      socketRef.current.emit('offer', {
-        type: 'offer',
-        sdp: offer,
-        room: roomName,
-      });
-    } catch (error) {
-      console.error('Error creating offer:', error);
-    }
-  }, [roomName]);
-
-  const handleOffer = useCallback(async (offer) => {
-    try {
-      console.log('Handling offer...');
-      remoteDescriptionPromiseRef.current = peerConnectionRef.current.setRemoteDescription(
-        new RTCSessionDescription(offer)
-      );
-      
-      await remoteDescriptionPromiseRef.current;
-      console.log('Remote description set successfully');
-      
-      const answer = await peerConnectionRef.current.createAnswer();
-      await peerConnectionRef.current.setLocalDescription(answer);
-      console.log('Answer created and set as local description');
-      
-      socketRef.current.emit('answer', {
-        type: 'answer',
-        sdp: answer,
-        room: roomName,
-      });
-    } catch (error) {
-      console.error('Error handling offer:', error);
-    }
-  }, [roomName]);
-
   // Periodic check for remote video stream
   useEffect(() => {
     if (hasRemoteStream && peerConnectionRef.current) {
@@ -223,21 +183,75 @@ const VideoCall = () => {
     }
   }, [hasRemoteStream]);
 
-  // Check if room name is provided in URL params and auto-join
-  useEffect(() => {
-    const roomFromUrl = searchParams.get('room');
-    if (roomFromUrl) {
-      setRoomName(roomFromUrl);
+  const createOffer = useCallback(async () => {
+    try {
+      console.log('Creating offer...');
+      const offer = await peerConnectionRef.current.createOffer();
+      await peerConnectionRef.current.setLocalDescription(offer);
+      console.log('Offer created and set as local description');
+      socketRef.current.emit('offer', {
+        type: 'offer',
+        sdp: offer,
+        room: roomName,
+      });
+    } catch (error) {
+      console.error('Error creating offer:', error);
     }
-  }, [searchParams]);
+  }, [roomName]);
 
-  // Auto-join room if room name is set from URL and connected
+  const handleOffer = useCallback(async (offer) => {
+    try {
+      console.log('Handling offer...');
+      remoteDescriptionPromiseRef.current = peerConnectionRef.current.setRemoteDescription(
+        new RTCSessionDescription(offer)
+      );
+      
+      await remoteDescriptionPromiseRef.current;
+      console.log('Remote description set successfully');
+      
+      const answer = await peerConnectionRef.current.createAnswer();
+      await peerConnectionRef.current.setLocalDescription(answer);
+      console.log('Answer created and set as local description');
+      
+      socketRef.current.emit('answer', {
+        type: 'answer',
+        sdp: answer,
+        room: roomName,
+      });
+    } catch (error) {
+      console.error('Error handling offer:', error);
+    }
+  }, [roomName]);
+
+  const handleJoinRoom = useCallback(() => {
+    if (!roomName.trim()) {
+      console.log('Room name is empty, cannot join');
+      return;
+    }
+    
+    if (!isConnected) {
+      console.log('Not connected to server yet');
+      return;
+    }
+
+    console.log('Joining room:', roomName);
+    socketRef.current.emit('joinRoom', roomName);
+    setIsInRoom(true);
+  }, [roomName, isConnected]);
+
+  // Set room name from URL params
   useEffect(() => {
-    const roomFromUrl = searchParams.get('room');
-    if (roomFromUrl && isConnected && !isInRoom) {
+    if (params.roomId) {
+      setRoomName(params.roomId);
+    }
+  }, [params.roomId]);
+
+  // Auto-join room when connected and room name is set
+  useEffect(() => {
+    if (roomName && isConnected && !isInRoom) {
       handleJoinRoom();
     }
-  }, [searchParams, isConnected, isInRoom, handleJoinRoom]);
+  }, [roomName, isConnected, isInRoom, handleJoinRoom]);
 
   useEffect(() => {
     // Connect to Socket.IO server
@@ -365,22 +379,6 @@ const VideoCall = () => {
     };
   }, [roomName, isCaller, getUserMedia, createPeerConnection, createOffer, handleOffer]);
 
-  const handleJoinRoom = useCallback(() => {
-    if (!roomName.trim()) {
-      alert('Room name cannot be empty');
-      return;
-    }
-    
-    if (!isConnected) {
-      alert('Not connected to server. Please wait...');
-      return;
-    }
-
-    console.log('Joining room:', roomName);
-    socketRef.current.emit('joinRoom', roomName);
-    setIsInRoom(true);
-  }, [roomName, isConnected]);
-
   const toggleVideo = () => {
     if (localStreamRef.current) {
       const videoTrack = localStreamRef.current.getVideoTracks()[0];
@@ -418,145 +416,108 @@ const VideoCall = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-gray-900 to-slate-800">
-      {!isInRoom ? (
-        <div className="flex items-center justify-center min-h-screen p-4">
-          <div className="bg-white/10 backdrop-blur-md rounded-2xl border border-white/20 shadow-2xl p-8 w-full max-w-md">
-            <div className="text-center mb-8">
-              <div className="w-16 h-16 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full mx-auto mb-4 flex items-center justify-center">
-                <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                </svg>
-              </div>
-              <h1 className="text-3xl font-bold text-white mb-2">Video Call</h1>
-              <p className="text-gray-300">Enter a room name to start your call</p>
-            </div>
-            
-            <div className="space-y-4">
-              <div className="relative">
-                <input
-                  type="text"
-                  placeholder="Enter room name"
-                  value={roomName}
-                  onChange={(e) => setRoomName(e.target.value)}
-                  className="w-full px-4 py-3 bg-white/5 border border-white/20 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
-                  onKeyPress={(e) => e.key === 'Enter' && handleJoinRoom()}
-                />
-              </div>
-              
-              <button 
-                onClick={handleJoinRoom}
-                disabled={!isConnected}
-                className="w-full px-6 py-3 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-xl hover:from-blue-600 hover:to-purple-700 disabled:from-gray-500 disabled:to-gray-600 disabled:cursor-not-allowed transition-all duration-200 font-semibold shadow-lg hover:shadow-xl transform hover:scale-[1.02] disabled:transform-none"
-              >
-                {isConnected ? 'Join Room' : 'Connecting...'}
-              </button>
-              
-              {!isConnected && (
-                <div className="flex items-center justify-center space-x-2">
-                  <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce"></div>
-                  <div className="w-2 h-2 bg-purple-500 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
-                  <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
-                  <span className="text-gray-300 ml-2">Connecting to server...</span>
+      <div className="relative w-full h-screen overflow-hidden">
+        {/* Remote Video - Full Screen */}
+        <div className="absolute inset-0 bg-gray-900">
+          <video
+            ref={remoteVideoRef}
+            autoPlay
+            playsInline
+            className="w-full h-full object-cover"
+          />
+          {/* Overlay when no remote video */}
+          {!hasRemoteStream && (
+            <div className="absolute inset-0 bg-gradient-to-br from-slate-800 to-gray-900 flex items-center justify-center">
+              <div className="text-center">
+                <div className="w-24 h-24 bg-white/10 rounded-full mx-auto mb-4 flex items-center justify-center">
+                  <svg className="w-12 h-12 text-white/60" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                  </svg>
                 </div>
+                <p className="text-white/60 text-lg">Waiting for participant...</p>
+                {roomName && (
+                  <p className="text-white/40 text-sm mt-2">Room: {roomName}</p>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Local Video - Corner */}
+        <div className="absolute top-4 right-4 w-64 h-48 bg-gray-800 rounded-xl overflow-hidden shadow-2xl border-2 border-white/20 backdrop-blur-sm">
+          <video
+            ref={localVideoRef}
+            autoPlay
+            playsInline
+            muted
+            className="w-full h-full object-cover"
+          />
+          <div className="absolute bottom-2 left-2">
+            <span className="bg-black/50 text-white text-xs px-2 py-1 rounded-full">You</span>
+          </div>
+        </div>
+
+        {/* Top Header */}
+        <div className="absolute top-4 left-4 right-80">
+          <div className="bg-black/30 backdrop-blur-md rounded-xl px-4 py-2 border border-white/20">
+            <div className="flex items-center space-x-3">
+              <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
+              <span className="text-white font-medium">Room: {roomName}</span>
+              <span className="text-white/60">•</span>
+              <span className="text-white/60">{isCaller ? 'Host' : 'Participant'}</span>
+              {isConnected && (
+                <>
+                  <span className="text-white/60">•</span>
+                  <span className="text-green-400 text-sm">Connected</span>
+                </>
               )}
             </div>
           </div>
         </div>
-      ) : (
-        <div className="relative w-full h-screen overflow-hidden">
-          {/* Remote Video - Full Screen */}
-          <div className="absolute inset-0 bg-gray-900">
-            <video
-              ref={remoteVideoRef}
-              autoPlay
-              playsInline
-              className="w-full h-full object-cover"
-            />
-            {/* Overlay when no remote video */}
-            {!hasRemoteStream && (
-              <div className="absolute inset-0 bg-gradient-to-br from-slate-800 to-gray-900 flex items-center justify-center">
-                <div className="text-center">
-                  <div className="w-24 h-24 bg-white/10 rounded-full mx-auto mb-4 flex items-center justify-center">
-                    <svg className="w-12 h-12 text-white/60" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                    </svg>
-                  </div>
-                  <p className="text-white/60 text-lg">Waiting for participant...</p>
-                </div>
-              </div>
-            )}
-          </div>
 
-          {/* Local Video - Corner */}
-          <div className="absolute top-4 right-4 w-64 h-48 bg-gray-800 rounded-xl overflow-hidden shadow-2xl border-2 border-white/20 backdrop-blur-sm">
-            <video
-              ref={localVideoRef}
-              autoPlay
-              playsInline
-              muted
-              className="w-full h-full object-cover"
-            />
-            <div className="absolute bottom-2 left-2">
-              <span className="bg-black/50 text-white text-xs px-2 py-1 rounded-full">You</span>
-            </div>
-          </div>
+        {/* Bottom Controls */}
+        <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2">
+          <div className="bg-black/40 backdrop-blur-md rounded-2xl px-6 py-4 border border-white/20 shadow-2xl">
+            <div className="flex items-center space-x-4">
+              <button
+                onClick={toggleVideo}
+                className="w-12 h-12 bg-white/10 hover:bg-white/20 rounded-full flex items-center justify-center transition-all duration-200 border border-white/20 hover:border-white/40"
+              >
+                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                </svg>
+              </button>
+              
+              <button
+                onClick={toggleAudio}
+                className="w-12 h-12 bg-white/10 hover:bg-white/20 rounded-full flex items-center justify-center transition-all duration-200 border border-white/20 hover:border-white/40"
+              >
+                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
+                </svg>
+              </button>
 
-          {/* Top Header */}
-          <div className="absolute top-4 left-4 right-80">
-            <div className="bg-black/30 backdrop-blur-md rounded-xl px-4 py-2 border border-white/20">
-              <div className="flex items-center space-x-3">
-                <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
-                <span className="text-white font-medium">Room: {roomName}</span>
-                <span className="text-white/60">•</span>
-                <span className="text-white/60">{isCaller ? 'Host' : 'Participant'}</span>
-              </div>
-            </div>
-          </div>
+              <button
+                onClick={refreshRemoteVideo}
+                className="w-12 h-12 bg-blue-500/80 hover:bg-blue-600 rounded-full flex items-center justify-center transition-all duration-200 border border-blue-400/50 hover:border-blue-300"
+              >
+                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8 8 0 0116.5 2.5M9 11H3m12 0h1.01M12 7h.01M12 17h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </button>
 
-          {/* Bottom Controls */}
-          <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2">
-            <div className="bg-black/40 backdrop-blur-md rounded-2xl px-6 py-4 border border-white/20 shadow-2xl">
-              <div className="flex items-center space-x-4">
-                <button
-                  onClick={toggleVideo}
-                  className="w-12 h-12 bg-white/10 hover:bg-white/20 rounded-full flex items-center justify-center transition-all duration-200 border border-white/20 hover:border-white/40"
-                >
-                  <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                  </svg>
-                </button>
-                
-                <button
-                  onClick={toggleAudio}
-                  className="w-12 h-12 bg-white/10 hover:bg-white/20 rounded-full flex items-center justify-center transition-all duration-200 border border-white/20 hover:border-white/40"
-                >
-                  <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
-                  </svg>
-                </button>
-
-                <button
-                  onClick={refreshRemoteVideo}
-                  className="w-12 h-12 bg-blue-500/80 hover:bg-blue-600 rounded-full flex items-center justify-center transition-all duration-200 border border-blue-400/50 hover:border-blue-300"
-                >
-                  <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8 0 004.646 9.646 8 8 0 0118 16m0 0H6m0 0V4" />
-                  </svg>
-                </button>
-
-                <button
-                  onClick={() => window.location.reload()}
-                  className="w-12 h-12 bg-red-500/80 hover:bg-red-600 rounded-full flex items-center justify-center transition-all duration-200 border border-red-400/50 hover:border-red-300"
-                >
-                  <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
-              </div>
+              <button
+                onClick={() => window.location.href = '/job-postings'}
+                className="w-12 h-12 bg-red-500/80 hover:bg-red-600 rounded-full flex items-center justify-center transition-all duration-200 border border-red-400/50 hover:border-red-300"
+              >
+                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
             </div>
           </div>
         </div>
-      )}
+      </div>
     </div>
   );
 };

@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { UserCheck, UserX, Loader2, Users, ExternalLink } from 'lucide-react';
+import { apiFetch } from '@/lib/api';
 
 const PendingRequests = ({ className }) => {
     const router = useRouter();
@@ -20,12 +21,7 @@ const PendingRequests = ({ className }) => {
 
     const fetchPendingRequests = async () => {
         try {
-            const token = localStorage.getItem('token');
-            const response = await fetch('http://localhost:8080/api/connections/pending/received', {
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                },
-            });
+            const response = await apiFetch('/api/connections/pending/received');
 
             if (!response.ok) throw new Error('Failed to fetch pending requests');
 
@@ -41,12 +37,8 @@ const PendingRequests = ({ className }) => {
     const handleAccept = async (connectionId) => {
         setActionLoading(prev => ({ ...prev, [connectionId]: true }));
         try {
-            const token = localStorage.getItem('token');
-            const response = await fetch(`http://localhost:8080/api/connections/${connectionId}/accept`, {
+            const response = await apiFetch(`/api/connections/${connectionId}/accept`, {
                 method: 'PUT',
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                },
             });
 
             if (!response.ok) throw new Error('Failed to accept friend request');
@@ -62,12 +54,8 @@ const PendingRequests = ({ className }) => {
     const handleReject = async (connectionId) => {
         setActionLoading(prev => ({ ...prev, [connectionId]: true }));
         try {
-            const token = localStorage.getItem('token');
-            const response = await fetch(`http://localhost:8080/api/connections/${connectionId}/reject`, {
+            const response = await apiFetch(`/api/connections/${connectionId}/reject`, {
                 method: 'PUT',
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                },
             });
 
             if (!response.ok) throw new Error('Failed to reject friend request');

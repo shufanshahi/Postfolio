@@ -1,10 +1,12 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
+import { apiFetch, jobServiceFetch } from '@/lib/api';
 import { useRouter } from "next/navigation";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 
 export default function JobPostings() {
   const router = useRouter();
@@ -19,16 +21,7 @@ export default function JobPostings() {
     });
   const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    const token = localStorage.getItem("token");
-    if (!token) {
-      router.push("/login");
-      return;
-    }
-    fetchJobs();
-  }, []);
-
-  const fetchJobs = async () => {
+  const fetchJobs = useCallback(async () => {
     setLoading(true);
     const token = localStorage.getItem("token");
     if (!token) {
@@ -38,26 +31,36 @@ export default function JobPostings() {
       return;
     }
     // Get user profile to extract employerId
-    const profileRes = await fetch("http://localhost:8080/api/profile/me", {
-      headers: { Authorization: `Bearer ${token}` },
-    });
+    const profileRes = await apiFetch('/api/profile/me');
     if (!profileRes.ok) {
       setLoading(false);
       alert("Failed to get user profile. Please try again.");
       return;
     }
     const profile = await profileRes.json();
-    const res = await fetch(`http://localhost:8080/api/jobs/employer/${profile.id}`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
+    const res = await jobServiceFetch(`/api/jobs/employer/${profile.id}`);
     if (res.ok) {
       setJobs(await res.json());
     }
     setLoading(false);
-  };
+  }, [router]);
+
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      router.push("/login");
+      return;
+    }
+    fetchJobs();
+  }, [router, fetchJobs]);
 
   const handleInputChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
+  };
+
+  const handleViewApplicants = (jobId) => {
+    // Navigate to applicants page or show applicants modal
+    router.push(`/job-applicants/${jobId}`);
   };
 
   const handleNewJob = async (e) => {
@@ -72,9 +75,7 @@ export default function JobPostings() {
     }
     
     // Get user profile to extract userId
-    const profileRes = await fetch("http://localhost:8080/api/profile/me", {
-      headers: { Authorization: `Bearer ${token}` },
-    });
+    const profileRes = await apiFetch('/api/profile/me');
     
     if (!profileRes.ok) {
       setLoading(false);
@@ -84,12 +85,8 @@ export default function JobPostings() {
     
     const profile = await profileRes.json();
     
-    const res = await fetch("http://localhost:8080/api/jobs", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
+    const res = await jobServiceFetch('/api/jobs', {
+      method: 'POST',
       body: JSON.stringify({
         ...form,
         datePosted: new Date().toISOString().slice(0, 10),
@@ -185,12 +182,34 @@ export default function JobPostings() {
           )}
           {jobs.map((job) => (
             <Card key={job.jobId} className="bg-gray-800 border-gray-700">
-              <CardHeader>
-                <CardTitle className="text-white">{job.title}</CardTitle>
-                <CardDescription className="text-gray-400">
-                    <span className="font-semibold">Position:</span> {job.position} <br />
-                  Posted: {job.datePosted} | Ends: {job.endDate}
-                </CardDescription>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
+                <div className="space-y-1">
+                  <CardTitle className="text-white">{job.title}</CardTitle>
+                  <CardDescription className="text-gray-400">
+                      <span className="font-semibold">Position:</span> {job.position} <br />
+                    Posted: {job.datePosted} | Ends: {job.endDate}
+                  </CardDescription>
+                </div>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" className="h-8 w-8 p-0 text-gray-400 hover:text-white">
+                      <span className="sr-only">Open menu</span>
+                      <div className="flex flex-col items-center justify-center space-y-0.5">
+                        <div className="w-1 h-1 bg-current rounded-full"></div>
+                        <div className="w-1 h-1 bg-current rounded-full"></div>
+                        <div className="w-1 h-1 bg-current rounded-full"></div>
+                      </div>
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="bg-gray-700 border-gray-600">
+                    <DropdownMenuItem 
+                      onClick={() => handleViewApplicants(job.jobId)}
+                      className="text-gray-300 hover:text-white hover:bg-gray-600"
+                    >
+                      View Applicants
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </CardHeader>
               <CardContent className="text-gray-300">
                 <div>
