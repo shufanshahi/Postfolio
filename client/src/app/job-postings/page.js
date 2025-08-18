@@ -122,6 +122,46 @@ export default function JobPostings() {
     setLoading(false);
   };
 
+  const handleDeletePost = async (jobId) => {
+    setLoading(true);
+        const token = localStorage.getItem("token");
+        const res = await fetch(`http://localhost:8080/api/jobs/${jobId}`, {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    if (res.ok) {
+      alert("Job post deleted successfully!");
+      fetchJobs();
+    } else {
+      alert("Failed to delete the job post. Please try again.");
+    }
+    setLoading(false);
+  };
+
+  const handleTogglePostStatus = async (jobId, currentStatus) => {
+    setLoading(true);
+          const token = localStorage.getItem("token");
+
+    const newStatus = currentStatus === "CLOSED" ? "OPEN" : "CLOSED";
+    const res = await fetch(`http://localhost:8080/api/jobs/${jobId}/status?status=${newStatus}`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    if (res.ok) {
+      alert(`Job post status changed to ${newStatus} successfully!`);
+      fetchJobs();
+    } else {
+      alert("Failed to change the job post status. Please try again.");
+    }
+    setLoading(false);
+  };
+
   return (
     <div className="min-h-screen bg-gray-900 p-6">
       <div className="max-w-4xl mx-auto space-y-8">
@@ -261,6 +301,18 @@ export default function JobPostings() {
                       className="text-gray-300 hover:text-white hover:bg-gray-600"
                     >
                       View Applicants
+                    </DropdownMenuItem>
+                    <DropdownMenuItem 
+                      onClick={() => handleTogglePostStatus(job.jobId, job.status)}
+                      className="text-gray-300 hover:text-white hover:bg-gray-600"
+                    >
+                      {job.status === "CLOSED" ? "Open Post" : "Close Post"}
+                    </DropdownMenuItem>
+                    <DropdownMenuItem 
+                      onClick={() => handleDeletePost(job.jobId)}
+                      className="text-gray-300 hover:text-white hover:bg-gray-600"
+                    >
+                      Delete Post
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>

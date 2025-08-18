@@ -61,7 +61,7 @@ public class SecurityConfig {
         // Configuration for all endpoints - more permissive for development
         CorsConfiguration defaultConfig = new CorsConfiguration();
         defaultConfig.setAllowedOriginPatterns(List.of("*"));
-        defaultConfig.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        defaultConfig.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS","PATCH"));
         defaultConfig.setAllowedHeaders(List.of("*"));
         defaultConfig.setAllowCredentials(true);
         defaultConfig.setMaxAge(3600L);
