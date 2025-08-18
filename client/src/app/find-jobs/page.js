@@ -132,7 +132,19 @@ export default function FindJobs() {
               </CardHeader>
               <CardContent className="text-gray-300">
                 <div>
-                  <span className="font-semibold">Requirements:</span> {job.requirements}
+                  <span className="font-semibold">Description:</span> {job.description || 'N/A'}
+                </div>
+                <div className="mt-2">
+                  <span className="font-semibold">Required Project:</span> {job.requiredProject || 'N/A'}
+                </div>
+                <div className="mt-2">
+                  <span className="font-semibold">Required Experience:</span> {job.requiredExperience || 'N/A'}
+                </div>
+                <div className="mt-2">
+                  <span className="font-semibold">Required Skills:</span> {job.requiredSkills || 'N/A'}
+                </div>
+                <div className="mt-2">
+                  <span className="font-semibold">Required Education:</span> {job.requiredEducation || 'N/A'}
                 </div>
                 <div className="mt-2">
                   <span className="font-semibold">Status:</span> {job.status}
