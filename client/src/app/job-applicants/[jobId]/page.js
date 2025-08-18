@@ -142,9 +142,9 @@ export default function JobApplicants() {
       });
       
       if (updateRes.ok) {
-        // Use interview ID as room name and redirect to video call
-        const roomName = `interview-${interviewData.id}`;
-        router.push(`/videoCall/${roomName}`);
+        // Use plain interview ID as room ID and mark this user as host
+        const roomId = `${interviewData.id}`;
+        router.push(`/videoCall/${roomId}?role=host`);
       } else {
         alert("Failed to update interview status.");
       }

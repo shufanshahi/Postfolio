@@ -120,9 +120,9 @@ export default function MyInterviews() {
       
       const interviewData = await interviewRes.json();
       
-      // Use interview ID as room name and redirect to video call
-      const roomName = `interview-${interviewData.id}`;
-      router.push(`/videoCall/${roomName}`);
+      // Use interview ID as room ID and join as participant (not host)
+      const roomId = `${interviewData.id}`;
+      router.push(`/videoCall/${roomId}?role=participant`);
     } catch (error) {
       console.error("Error joining interview:", error);
       alert("Error joining interview.");
