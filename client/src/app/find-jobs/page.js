@@ -32,7 +32,19 @@ export default function FindJobs() {
       const res = await jobServiceFetch('/api/jobs');
       if (res.ok) {
         const jobsData = await res.json();
-        setJobs(jobsData.map(job => ({ ...job, isApplied: job.applicantIds?.includes(profile.id) })));
+        const jobsWithEmployerInfo = await Promise.all(
+          jobsData.map(async (job) => {
+            const employerRes = await fetch(`http://localhost:8080/api/profile/${job.employerId}`, {
+              method: 'GET',
+              headers: {
+                'Authorization': `Bearer ${token}`,
+              },
+            });
+            const employer = employerRes.ok ? await employerRes.json() : { name: 'Unknown' };
+            return { ...job, employerName: employer.name };
+          })
+        );
+        setJobs(jobsWithEmployerInfo.map(job => ({ ...job, isApplied: job.applicantIds?.includes(profile.id) })));
       }
       setLoading(false);
     }
@@ -109,7 +121,10 @@ export default function FindJobs() {
           {jobs.map((job) => (
             <Card key={job.jobId} className="bg-gray-800 border-gray-700">
               <CardHeader>
-                <CardTitle className="text-white">{job.title}</CardTitle>
+                <CardTitle className="text-white">
+                  {job.title} <br />
+                  <span className="text-gray-400 text-sm">Posted by: {job.employerName || 'Loading...'}</span>
+                </CardTitle>
                 <CardDescription className="text-gray-400">
                   <span className="font-semibold">Position:</span> {job.position} <br />
                   Posted: {job.datePosted} | Ends: {job.endDate}

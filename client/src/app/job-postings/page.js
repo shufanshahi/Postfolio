@@ -23,6 +23,7 @@ export default function JobPostings() {
       endDate: "",
     });
   const [loading, setLoading] = useState(false);
+  const [profileInfo, setProfileInfo] = useState(null);
 
   const fetchJobs = useCallback(async () => {
     setLoading(true);
@@ -56,6 +57,23 @@ export default function JobPostings() {
     }
     fetchJobs();
   }, [router, fetchJobs]);
+
+  useEffect(() => {
+    const fetchProfile = async () => {
+      const profileRes = await apiFetch('/api/profile/me');
+
+      if (!profileRes.ok) {
+        setLoading(false);
+        alert("Failed to get user profile. Please try again.");
+        return;
+      }
+
+      const profile = await profileRes.json();
+      setProfileInfo(profile);
+    };
+
+    fetchProfile();
+  }, []);
 
   const handleInputChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -217,7 +235,10 @@ export default function JobPostings() {
             <Card key={job.jobId} className="bg-gray-800 border-gray-700">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
                 <div className="space-y-1">
-                  <CardTitle className="text-white">{job.title}</CardTitle>
+                  <CardTitle className="text-white">
+                    {job.title} <br />
+                    <span className="text-gray-400 text-sm">Posted by: {profileInfo?.name || 'Loading...'}</span>
+                  </CardTitle>
                   <CardDescription className="text-gray-400">
                       <span className="font-semibold">Position:</span> {job.position} <br />
                     Posted: {job.datePosted} | Ends: {job.endDate}
