@@ -11,15 +11,15 @@ public class JobResponse {
     private String title;
     private String position;
     private String description;
+    private String requiredProject;
+    private String requiredExperience;
+    private String requiredSkills;
+    private String requiredEducation;
     private LocalDate datePosted;
     private LocalDate endDate;
-    private String requiredProject;
-    private String requiredAchievements;
-    private String requiredEducation;
-    private String requiredSkills;
     private JobStatus status;
     private Long employerId;
     private List<Long> applicantIds;
     private List<Long> selectedApplicantIds;
-    private List<Long> rejectedApplicantIds;
+    private  List<Long> rejectedApplicantIds;
 }

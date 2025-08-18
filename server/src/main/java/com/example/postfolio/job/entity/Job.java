@@ -61,7 +61,7 @@ public class Job {
     private List<Profile> rejectedApplicants = new ArrayList<>();
 
     private String requiredProject;
-    private String requiredAchievements;
+    private String requiredExperience;
     private String requiredEducation;
     private String requiredSkills;
 }

@@ -24,9 +24,9 @@ public class JobServiceImpl implements JobService {
     @Override
     public List<JobResponse> getJobsByEmployer(Long employerId) {
         return jobRepository.findAll().stream()
-            .filter(job -> job.getEmployer() != null && job.getEmployer().getId().equals(employerId))
-            .map(this::toResponse)
-            .collect(java.util.stream.Collectors.toList());
+                .filter(job -> job.getEmployer() != null && job.getEmployer().getId().equals(employerId))
+                .map(this::toResponse)
+                .collect(java.util.stream.Collectors.toList());
     }
 
     @Override
@@ -38,17 +38,13 @@ public class JobServiceImpl implements JobService {
         .description(request.getDescription())
         .datePosted(request.getDatePosted())
         .endDate(request.getEndDate())
+        .requiredProject(request.getRequiredProject())
+        .requiredSkills(request.getRequiredSkills())
+        .requiredEducation(request.getRequiredEducation())
+        .requiredExperience(request.getRequiredExperience())
         .status(JobStatus.OPEN)
         .employer(employer)
         .build();
-
-        // Set the new fields
-        job.setRequiredProject(request.getRequiredProject());
-job.setRequiredAchievements(request.getRequiredAchievements());
-job.setRequiredEducation(request.getRequiredEducation());
-job.setRequiredSkills(request.getRequiredSkills());
-job.setRejectedApplicants(request.getRejectedApplicantIds().stream().map(id -> profileRepository.findById(id).orElseThrow(() -> new RuntimeException("Profile not found with id: " + id))).collect(Collectors.toList()));
-
         jobRepository.save(job);
         return toResponse(job);
     }
@@ -61,28 +57,28 @@ job.setRejectedApplicants(request.getRejectedApplicantIds().stream().map(id -> p
 
     @Override
     public JobResponse applyForJob(Long jobId, Long applicantId) {
-        Job job = jobRepository.findById(jobId).orElseThrow(() -> 
-            new RuntimeException("Job not found with id: " + jobId));
-        
-        Profile applicant = profileRepository.findById(applicantId).orElseThrow(() -> 
-            new RuntimeException("Profile not found with id: " + applicantId));
-        
+        Job job = jobRepository.findById(jobId).orElseThrow(() ->
+                new RuntimeException("Job not found with id: " + jobId));
+
+        Profile applicant = profileRepository.findById(applicantId).orElseThrow(() ->
+                new RuntimeException("Profile not found with id: " + applicantId));
+
         // Check if the profile is already an applicant
         if (!job.getApplicants().contains(applicant)) {
             job.getApplicants().add(applicant);
             jobRepository.save(job);
         }
-        
+
         return toResponse(job);
     }
 
     @Override
     public JobResponse withdrawApplication(Long jobId, Long applicantId) {
-        Job job = jobRepository.findById(jobId).orElseThrow(() -> 
-            new RuntimeException("Job not found with id: " + jobId));
+        Job job = jobRepository.findById(jobId).orElseThrow(() ->
+                new RuntimeException("Job not found with id: " + jobId));
 
-        Profile applicant = profileRepository.findById(applicantId).orElseThrow(() -> 
-            new RuntimeException("Profile not found with id: " + applicantId));
+        Profile applicant = profileRepository.findById(applicantId).orElseThrow(() ->
+                new RuntimeException("Profile not found with id: " + applicantId));
 
         // Remove the applicant from the job's applicants list
         if (job.getApplicants().contains(applicant)) {
@@ -95,29 +91,29 @@ job.setRejectedApplicants(request.getRejectedApplicantIds().stream().map(id -> p
 
     @Override
     public JobResponse getJobById(Long jobId) {
-        Job job = jobRepository.findById(jobId).orElseThrow(() -> 
-            new RuntimeException("Job not found with id: " + jobId));
-        
+        Job job = jobRepository.findById(jobId).orElseThrow(() ->
+                new RuntimeException("Job not found with id: " + jobId));
+
         return toResponse(job);
     }
 
     private JobResponse toResponse(Job job) {
         JobResponse res = new JobResponse();
-    res.setJobId(job.getJobId());
-    res.setTitle(job.getTitle());
-    res.setPosition(job.getPosition());
-    res.setDescription(job.getDescription());
-    res.setDatePosted(job.getDatePosted());
-    res.setEndDate(job.getEndDate());
-    res.setStatus(job.getStatus());
-    res.setEmployerId(job.getEmployer() != null ? job.getEmployer().getId() : null);
-    res.setApplicantIds(job.getApplicants().stream().map(Profile::getId).collect(Collectors.toList()));
-    res.setSelectedApplicantIds(job.getSelectedApplicants().stream().map(Profile::getId).collect(Collectors.toList()));
-    res.setRejectedApplicantIds(job.getRejectedApplicants().stream().map(Profile::getId).collect(Collectors.toList()));
-    res.setRequiredProject(job.getRequiredProject());
-    res.setRequiredAchievements(job.getRequiredAchievements());
-    res.setRequiredEducation(job.getRequiredEducation());
-    res.setRequiredSkills(job.getRequiredSkills());
+        res.setJobId(job.getJobId());
+        res.setTitle(job.getTitle());
+        res.setPosition(job.getPosition());
+        res.setDescription(job.getDescription());
+        res.setDatePosted(job.getDatePosted());
+        res.setEndDate(job.getEndDate());
+        res.setRequiredProject(job.getRequiredProject());
+        res.setRequiredSkills(job.getRequiredSkills());
+        res.setRequiredEducation(job.getRequiredEducation());
+        res.setRequiredExperience(job.getRequiredExperience());
+        res.setStatus(job.getStatus());
+        res.setEmployerId(job.getEmployer() != null ? job.getEmployer().getId() : null);
+        res.setApplicantIds(job.getApplicants().stream().map(Profile::getId).collect(Collectors.toList()));
+        res.setRejectedApplicantIds(job.getRejectedApplicants().stream().map(Profile::getId).collect(Collectors.toList()));
+        res.setSelectedApplicantIds(job.getSelectedApplicants().stream().map(Profile::getId).collect(Collectors.toList()));
         return res;
     }
 }
