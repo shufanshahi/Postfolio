@@ -57,6 +57,15 @@ public class InterviewServiceImpl implements InterviewService {
         return mapToResponse(interview);
     }
     
+    @Override
+    public InterviewResponse getInterviewById(Long interviewId) {
+        Interview interview = interviewRepository.findById(interviewId).orElse(null);
+        if (interview == null) {
+            return null;
+        }
+        return mapToResponse(interview);
+    }
+    
     private InterviewResponse mapToResponse(Interview interview) {
         InterviewResponse response = new InterviewResponse();
         BeanUtils.copyProperties(interview, response);
