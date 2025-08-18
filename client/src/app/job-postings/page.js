@@ -11,7 +11,10 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 export default function JobPostings() {
   const router = useRouter();
   const [jobs, setJobs] = useState([]);
+  const [filteredJobs, setFilteredJobs] = useState([]);
   const [showNewJob, setShowNewJob] = useState(false);
+  const [searchTitle, setSearchTitle] = useState("");
+  const [statusFilter, setStatusFilter] = useState("ALL");
   const [form, setForm] = useState({
       title: "",
       position: "",
@@ -48,6 +51,25 @@ export default function JobPostings() {
     }
     setLoading(false);
   }, [router]);
+
+  // Filter jobs based on search title and status
+  useEffect(() => {
+    let filtered = jobs;
+
+    // Filter by status
+    if (statusFilter !== "ALL") {
+      filtered = filtered.filter(job => job.status === statusFilter);
+    }
+
+    // Filter by title search
+    if (searchTitle.trim()) {
+      filtered = filtered.filter(job => 
+        job.title.toLowerCase().includes(searchTitle.toLowerCase())
+      );
+    }
+
+    setFilteredJobs(filtered);
+  }, [jobs, searchTitle, statusFilter]);
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -171,6 +193,59 @@ export default function JobPostings() {
             {showNewJob ? "Cancel" : "New Post"}
           </Button>
         </div>
+
+        {/* Filter Section */}
+        <Card className="bg-gray-800 border-gray-700">
+          <CardContent className="pt-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {/* Search by Title */}
+              <div>
+                <label className="block text-gray-300 mb-2 text-sm font-medium">Search by Title</label>
+                <Input
+                  type="text"
+                  placeholder="Enter job title..."
+                  value={searchTitle}
+                  onChange={(e) => setSearchTitle(e.target.value)}
+                  className="bg-gray-700 text-white border-gray-600 focus:border-blue-500"
+                />
+              </div>
+
+              {/* Status Filter */}
+              <div>
+                <label className="block text-gray-300 mb-2 text-sm font-medium">Filter by Status</label>
+                <select
+                  value={statusFilter}
+                  onChange={(e) => setStatusFilter(e.target.value)}
+                  className="w-full p-2 bg-gray-700 text-white border border-gray-600 rounded-md focus:border-blue-500 focus:outline-none"
+                >
+                  <option value="ALL">All Jobs</option>
+                  <option value="OPEN">Open Jobs</option>
+                  <option value="CLOSED">Closed Jobs</option>
+                </select>
+              </div>
+
+              {/* Results Count and Clear Filters */}
+              <div className="flex items-end justify-between">
+                <div className="text-gray-400 text-sm">
+                  Showing {filteredJobs.length} of {jobs.length} jobs
+                </div>
+                {(searchTitle || statusFilter !== "ALL") && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      setSearchTitle("");
+                      setStatusFilter("ALL");
+                    }}
+                    className="bg-gray-700 border-gray-600 text-gray-300 hover:bg-gray-600 hover:text-white"
+                  >
+                    Clear Filters
+                  </Button>
+                )}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
         {showNewJob && (
           <Card className="bg-gray-800 border-gray-700 mb-6">
             <CardHeader>
@@ -268,10 +343,13 @@ export default function JobPostings() {
         )}
         <div className="space-y-4">
           {loading && <div className="text-gray-400">Loading...</div>}
-          {!loading && jobs.length === 0 && (
+          {!loading && filteredJobs.length === 0 && jobs.length === 0 && (
             <div className="text-gray-400">No jobs posted yet.</div>
           )}
-          {jobs.map((job) => (
+          {!loading && filteredJobs.length === 0 && jobs.length > 0 && (
+            <div className="text-gray-400">No jobs match your current filters.</div>
+          )}
+          {filteredJobs.map((job) => (
             <Card key={job.jobId} className="bg-gray-800 border-gray-700">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
                 <div className="space-y-1">
