@@ -116,7 +116,8 @@ export default function JobPostings() {
     });
     if (res.ok) {
       setShowNewJob(false);
-  setForm({ title: "", position: "", description: "", requiredProject: "", requiredExperience: "", requiredSkills: "", requiredEducation: "", endDate: "" });
+      setForm({ title: "", position: "", description: "", requiredProject: "", requiredExperience: "", requiredSkills: "", requiredEducation: "", endDate: "" });
+      // Optional: trigger any background matching, but our matching is computed on demand per user
       fetchJobs();
     }
     setLoading(false);

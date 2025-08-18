@@ -5,12 +5,14 @@ import com.example.postfolio.job.dto.JobResponse;
 import com.example.postfolio.job.entity.Job;
 import com.example.postfolio.job.model.JobStatus;
 import com.example.postfolio.job.repository.JobRepository;
+import com.example.postfolio.jobMatchingEngine.service.JobMatchingService;
 import com.example.postfolio.user.entity.User;
 import com.example.postfolio.user.repository.UserRepository;
 import com.example.postfolio.profile.entity.Profile;
 import com.example.postfolio.profile.repository.ProfileRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -20,6 +22,7 @@ public class JobServiceImpl implements JobService {
     private final JobRepository jobRepository;
     private final UserRepository userRepository;
     private final ProfileRepository profileRepository;
+    private final JobMatchingService jobMatchingService;
 
     @Override
     public List<JobResponse> getJobsByEmployer(Long employerId) {
@@ -30,23 +33,28 @@ public class JobServiceImpl implements JobService {
     }
 
     @Override
+    @Transactional
     public JobResponse createJob(JobRequest request) {
         User employer = userRepository.findById(request.getEmployerId()).orElseThrow();
-    Job job = Job.builder()
-        .title(request.getTitle())
-        .position(request.getPosition())
-        .description(request.getDescription())
-        .datePosted(request.getDatePosted())
-        .endDate(request.getEndDate())
-        .requiredProject(request.getRequiredProject())
-        .requiredSkills(request.getRequiredSkills())
-        .requiredEducation(request.getRequiredEducation())
-        .requiredExperience(request.getRequiredExperience())
-        .status(JobStatus.OPEN)
-        .employer(employer)
-        .build();
-        jobRepository.save(job);
-        return toResponse(job);
+        Job job = Job.builder()
+            .title(request.getTitle())
+            .position(request.getPosition())
+            .description(request.getDescription())
+            .datePosted(request.getDatePosted())
+            .endDate(request.getEndDate())
+            .requiredProject(request.getRequiredProject())
+            .requiredSkills(request.getRequiredSkills())
+            .requiredEducation(request.getRequiredEducation())
+            .requiredExperience(request.getRequiredExperience())
+            .status(JobStatus.OPEN)
+            .employer(employer)
+            .build();
+        Job savedJob = jobRepository.save(job);
+        
+        // Invalidate job matching cache for this new job
+        jobMatchingService.invalidateJobCache(savedJob);
+        
+        return toResponse(savedJob);
     }
 
 
@@ -56,6 +64,7 @@ public class JobServiceImpl implements JobService {
     }
 
     @Override
+    @Transactional
     public JobResponse applyForJob(Long jobId, Long applicantId) {
         Job job = jobRepository.findById(jobId).orElseThrow(() ->
                 new RuntimeException("Job not found with id: " + jobId));
@@ -73,6 +82,7 @@ public class JobServiceImpl implements JobService {
     }
 
     @Override
+    @Transactional
     public JobResponse withdrawApplication(Long jobId, Long applicantId) {
         Job job = jobRepository.findById(jobId).orElseThrow(() ->
                 new RuntimeException("Job not found with id: " + jobId));
@@ -98,6 +108,7 @@ public class JobServiceImpl implements JobService {
     }
 
     @Override
+    @Transactional
     public void deleteJob(Long jobId) {
         Job job = jobRepository.findById(jobId).orElseThrow(() ->
                 new RuntimeException("Job not found with id: " + jobId));
@@ -105,12 +116,30 @@ public class JobServiceImpl implements JobService {
     }
 
     @Override
+    @Transactional
     public JobResponse updateJobStatus(Long jobId, JobStatus status) {
         Job job = jobRepository.findById(jobId).orElseThrow(() ->
                 new RuntimeException("Job not found with id: " + jobId));
         job.setStatus(status);
-        jobRepository.save(job);
-        return toResponse(job);
+        Job savedJob = jobRepository.save(job);
+        
+        // Invalidate job matching cache for this updated job
+        jobMatchingService.invalidateJobCache(savedJob);
+        
+        return toResponse(savedJob);
+    }
+
+    @Override
+    public List<Job> findAllActiveJobs() {
+        return jobRepository.findAll().stream()
+                .filter(job -> job.getStatus() == JobStatus.OPEN)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public Job findById(Long jobId) {
+        return jobRepository.findById(jobId)
+                .orElseThrow(() -> new RuntimeException("Job not found with id: " + jobId));
     }
 
     private JobResponse toResponse(Job job) {

@@ -1,5 +1,6 @@
 package com.example.postfolio.profile.service;
 
+import com.example.postfolio.jobMatchingEngine.service.JobMatchingService;
 import com.example.postfolio.profile.dto.ProfileRequest;
 import com.example.postfolio.profile.dto.ProfileResponse;
 import com.example.postfolio.profile.entity.Profile;
@@ -10,6 +11,7 @@ import lombok.RequiredArgsConstructor;
 import org.apache.commons.io.IOUtils;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.io.IOException;
 import java.time.LocalDate;
@@ -22,7 +24,9 @@ public class ProfileService {
 
     private final ProfileRepository profileRepository;
     private final UserRepository userRepository;
+    private final JobMatchingService jobMatchingService;
 
+    @Transactional
     public void createOrUpdateProfile(ProfileRequest request) {
         // Get currently logged in user
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
@@ -57,7 +61,10 @@ public class ProfileService {
 //        profile.setHscResult(request.hscResult);
 //        profile.setUniversityResult(request.universityResult);
 
-        profileRepository.save(profile);
+        Profile savedProfile = profileRepository.save(profile);
+        
+        // Invalidate job matching cache for this profile
+        jobMatchingService.invalidateProfileCache(savedProfile);
     }
 
     // Method that returns ProfileResponse for external API calls

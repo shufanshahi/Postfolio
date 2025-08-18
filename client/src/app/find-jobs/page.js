@@ -29,7 +29,8 @@ export default function FindJobs() {
       }
       const profile = await profileRes.json();
 
-      const res = await jobServiceFetch('/api/jobs');
+      // Fetch matched jobs with scores
+      const res = await jobServiceFetch('/api/jobs/matched');
       if (res.ok) {
         const jobsData = await res.json();
         const jobsWithEmployerInfo = await Promise.all(
@@ -44,7 +45,10 @@ export default function FindJobs() {
             return { ...job, employerName: employer.name };
           })
         );
-        setJobs(jobsWithEmployerInfo.map(job => ({ ...job, isApplied: job.applicantIds?.includes(profile.id) })));
+        const withAppliedFlag = jobsWithEmployerInfo.map(job => ({ ...job, isApplied: job.applicantIds?.includes(profile.id) }));
+        // Ensure sort by score descending (backend already sorts, but keep client-side safety)
+        withAppliedFlag.sort((a, b) => (b?.matchingScore?.totalScore || 0) - (a?.matchingScore?.totalScore || 0));
+        setJobs(withAppliedFlag);
       }
       setLoading(false);
     }
@@ -122,7 +126,11 @@ export default function FindJobs() {
             <Card key={job.jobId} className="bg-gray-800 border-gray-700">
               <CardHeader>
                 <CardTitle className="text-white">
-                  {job.title} <br />
+                  {job.title}
+                  {typeof job?.matchingScore?.totalScore === 'number' && (
+                    <span className="ml-2 text-green-400 text-sm">Score: {job.matchingScore.totalScore}</span>
+                  )}
+                  <br />
                   <span className="text-gray-400 text-sm">Posted by: {job.employerName || 'Loading...'}</span>
                 </CardTitle>
                 <CardDescription className="text-gray-400">
