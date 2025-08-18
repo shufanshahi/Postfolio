@@ -22,6 +22,13 @@ public class InterviewServiceImpl implements InterviewService {
 
     @Override
     public String scheduleInterview(InterviewRequest request) {
+        Interview existingInterview = interviewRepository.findByProfileIdAndJobId(request.getProfileId(), request.getJobId());
+        if (existingInterview != null) {
+            existingInterview.setSchedule(request.getSchedule());
+            existingInterview.setNotes(request.getNotes());
+            interviewRepository.save(existingInterview);
+            return "Interview schedule updated successfully.";
+        }
         Interview interview = Interview.builder()
                 .jobId(request.getJobId())
                 .profileId(request.getProfileId())
