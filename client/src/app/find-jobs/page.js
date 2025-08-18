@@ -24,6 +24,35 @@ export default function FindJobs() {
     fetchJobs();
   }, []);
 
+  const handleApply = async (jobId) => {
+    setLoading(true);
+    const profileRes = await fetch('http://localhost:8080/api/profile/me', {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${localStorage.getItem('token')}`,
+      },
+    });
+    if (!profileRes.ok) {
+      setLoading(false);
+      alert("Failed to get user profile. Please try again.");
+      return;
+    }
+    const profile = await profileRes.json();
+
+    const applyRes = await fetch(`http://localhost:8080/api/jobs/${jobId}/apply/${profile.id}`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${localStorage.getItem('token')}`,
+      },
+    });
+    if (applyRes.ok) {
+      alert("Application successful!");
+    } else {
+      alert("Failed to apply for the job. Please try again.");
+    }
+    setLoading(false);
+  };
+
   return (
     <div className="min-h-screen bg-gray-900 p-6">
       <div className="max-w-4xl mx-auto space-y-8">
@@ -55,6 +84,12 @@ export default function FindJobs() {
                 <div className="mt-2">
                   <span className="font-semibold">Selected:</span> {job.selectedApplicantIds?.length || 0}
                 </div>
+                <button
+                  onClick={() => handleApply(job.jobId)}
+                  className="mt-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+                >
+                  Apply
+                </button>
               </CardContent>
             </Card>
           ))}
