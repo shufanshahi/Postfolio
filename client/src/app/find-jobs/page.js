@@ -155,20 +155,22 @@ export default function FindJobs() {
                 <div className="mt-2">
                   <span className="font-semibold">Selected:</span> {job.selectedApplicantIds?.length || 0}
                 </div>
-                {job.isApplied ? (
-                  <button
-                    onClick={() => handleWithdraw(job.jobId)}
-                    className="mt-4 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 ml-2"
-                  >
-                    Withdraw
-                  </button>
-                ) : (
-                  <button
-                    onClick={() => handleApply(job.jobId)}
-                    className="mt-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-                  >
-                    Apply
-                  </button>
+                {job.status !== "CLOSED" && (
+                  job.isApplied ? (
+                    <button
+                      onClick={() => handleWithdraw(job.jobId)}
+                      className="mt-4 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 ml-2"
+                    >
+                      Withdraw
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => handleApply(job.jobId)}
+                      className="mt-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+                    >
+                      Apply
+                    </button>
+                  )
                 )}
               </CardContent>
             </Card>
