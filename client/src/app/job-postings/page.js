@@ -16,7 +16,10 @@ export default function JobPostings() {
       title: "",
       position: "",
       description: "",
-      requirements: "",
+      requiredProject: "",
+      requiredExperience: "",
+      requiredSkills: "",
+      requiredEducation: "",
       endDate: "",
     });
   const [loading, setLoading] = useState(false);
@@ -95,7 +98,7 @@ export default function JobPostings() {
     });
     if (res.ok) {
       setShowNewJob(false);
-      setForm({ title: "", position: "", description: "", requirements: "", endDate: "" });
+  setForm({ title: "", position: "", description: "", requiredProject: "", requiredExperience: "", requiredSkills: "", requiredEducation: "", endDate: "" });
       fetchJobs();
     }
     setLoading(false);
@@ -148,10 +151,40 @@ export default function JobPostings() {
                     />
                   </div>
                   <div>
-                    <label className="block text-gray-300 mb-1">Requirements</label>
+                    <label className="block text-gray-300 mb-1">Required Project</label>
                     <Textarea
-                      name="requirements"
-                      value={form.requirements}
+                      name="requiredProject"
+                      value={form.requiredProject}
+                      onChange={handleInputChange}
+                      required
+                      className="bg-gray-700 text-white"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-gray-300 mb-1">Required Experience</label>
+                    <Textarea
+                      name="requiredExperience"
+                      value={form.requiredExperience}
+                      onChange={handleInputChange}
+                      required
+                      className="bg-gray-700 text-white"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-gray-300 mb-1">Required Skills</label>
+                    <Textarea
+                      name="requiredSkills"
+                      value={form.requiredSkills}
+                      onChange={handleInputChange}
+                      required
+                      className="bg-gray-700 text-white"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-gray-300 mb-1">Required Education</label>
+                    <Textarea
+                      name="requiredEducation"
+                      value={form.requiredEducation}
                       onChange={handleInputChange}
                       required
                       className="bg-gray-700 text-white"
@@ -213,7 +246,16 @@ export default function JobPostings() {
               </CardHeader>
               <CardContent className="text-gray-300">
                 <div>
-                  <span className="font-semibold">Requirements:</span> {job.requirements}
+                  <span className="font-semibold">Required Project:</span> {job.requiredProject}
+                </div>
+                <div className="mt-2">
+                  <span className="font-semibold">Required Experience:</span> {job.requiredExperience}
+                </div>
+                <div className="mt-2">
+                  <span className="font-semibold">Required Skills:</span> {job.requiredSkills}
+                </div>
+                <div className="mt-2">
+                  <span className="font-semibold">Required Education:</span> {job.requiredEducation}
                 </div>
                 <div className="mt-2">
                   <span className="font-semibold">Status:</span> {job.status}
