@@ -25,7 +25,6 @@ public class Job {
     private String description;
     private LocalDate datePosted;
     private LocalDate endDate;
-    private String requirements;
 
     @Enumerated(EnumType.STRING)
     private JobStatus status;
@@ -51,4 +50,18 @@ public class Job {
     )
     @Builder.Default
     private List<Profile> selectedApplicants = new ArrayList<>();
+
+    @ManyToMany(fetch = FetchType.LAZY)
+    @JoinTable(
+        name = "job_rejected_applicants",
+        joinColumns = @JoinColumn(name = "job_id"),
+        inverseJoinColumns = @JoinColumn(name = "rejected_applicant_id", referencedColumnName = "id")
+    )
+    @Builder.Default
+    private List<Profile> rejectedApplicants = new ArrayList<>();
+
+    private String requiredProject;
+    private String requiredExperience;
+    private String requiredEducation;
+    private String requiredSkills;
 }

@@ -16,10 +16,14 @@ export default function JobPostings() {
       title: "",
       position: "",
       description: "",
-      requirements: "",
+      requiredProject: "",
+      requiredExperience: "",
+      requiredSkills: "",
+      requiredEducation: "",
       endDate: "",
     });
   const [loading, setLoading] = useState(false);
+  const [profileInfo, setProfileInfo] = useState(null);
 
   const fetchJobs = useCallback(async () => {
     setLoading(true);
@@ -53,6 +57,23 @@ export default function JobPostings() {
     }
     fetchJobs();
   }, [router, fetchJobs]);
+
+  useEffect(() => {
+    const fetchProfile = async () => {
+      const profileRes = await apiFetch('/api/profile/me');
+
+      if (!profileRes.ok) {
+        setLoading(false);
+        alert("Failed to get user profile. Please try again.");
+        return;
+      }
+
+      const profile = await profileRes.json();
+      setProfileInfo(profile);
+    };
+
+    fetchProfile();
+  }, []);
 
   const handleInputChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -95,8 +116,48 @@ export default function JobPostings() {
     });
     if (res.ok) {
       setShowNewJob(false);
-      setForm({ title: "", position: "", description: "", requirements: "", endDate: "" });
+  setForm({ title: "", position: "", description: "", requiredProject: "", requiredExperience: "", requiredSkills: "", requiredEducation: "", endDate: "" });
       fetchJobs();
+    }
+    setLoading(false);
+  };
+
+  const handleDeletePost = async (jobId) => {
+    setLoading(true);
+        const token = localStorage.getItem("token");
+        const res = await fetch(`http://localhost:8080/api/jobs/${jobId}`, {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    if (res.ok) {
+      alert("Job post deleted successfully!");
+      fetchJobs();
+    } else {
+      alert("Failed to delete the job post. Please try again.");
+    }
+    setLoading(false);
+  };
+
+  const handleTogglePostStatus = async (jobId, currentStatus) => {
+    setLoading(true);
+          const token = localStorage.getItem("token");
+
+    const newStatus = currentStatus === "CLOSED" ? "OPEN" : "CLOSED";
+    const res = await fetch(`http://localhost:8080/api/jobs/${jobId}/status?status=${newStatus}`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    if (res.ok) {
+      alert(`Job post status changed to ${newStatus} successfully!`);
+      fetchJobs();
+    } else {
+      alert("Failed to change the job post status. Please try again.");
     }
     setLoading(false);
   };
@@ -148,10 +209,40 @@ export default function JobPostings() {
                     />
                   </div>
                   <div>
-                    <label className="block text-gray-300 mb-1">Requirements</label>
+                    <label className="block text-gray-300 mb-1">Required Project</label>
                     <Textarea
-                      name="requirements"
-                      value={form.requirements}
+                      name="requiredProject"
+                      value={form.requiredProject}
+                      onChange={handleInputChange}
+                      required
+                      className="bg-gray-700 text-white"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-gray-300 mb-1">Required Experience</label>
+                    <Textarea
+                      name="requiredExperience"
+                      value={form.requiredExperience}
+                      onChange={handleInputChange}
+                      required
+                      className="bg-gray-700 text-white"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-gray-300 mb-1">Required Skills</label>
+                    <Textarea
+                      name="requiredSkills"
+                      value={form.requiredSkills}
+                      onChange={handleInputChange}
+                      required
+                      className="bg-gray-700 text-white"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-gray-300 mb-1">Required Education</label>
+                    <Textarea
+                      name="requiredEducation"
+                      value={form.requiredEducation}
                       onChange={handleInputChange}
                       required
                       className="bg-gray-700 text-white"
@@ -184,7 +275,10 @@ export default function JobPostings() {
             <Card key={job.jobId} className="bg-gray-800 border-gray-700">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
                 <div className="space-y-1">
-                  <CardTitle className="text-white">{job.title}</CardTitle>
+                  <CardTitle className="text-white">
+                    {job.title} <br />
+                    <span className="text-gray-400 text-sm">Posted by: {profileInfo?.name || 'Loading...'}</span>
+                  </CardTitle>
                   <CardDescription className="text-gray-400">
                       <span className="font-semibold">Position:</span> {job.position} <br />
                     Posted: {job.datePosted} | Ends: {job.endDate}
@@ -208,12 +302,33 @@ export default function JobPostings() {
                     >
                       View Applicants
                     </DropdownMenuItem>
+                    <DropdownMenuItem 
+                      onClick={() => handleTogglePostStatus(job.jobId, job.status)}
+                      className="text-gray-300 hover:text-white hover:bg-gray-600"
+                    >
+                      {job.status === "CLOSED" ? "Open Post" : "Close Post"}
+                    </DropdownMenuItem>
+                    <DropdownMenuItem 
+                      onClick={() => handleDeletePost(job.jobId)}
+                      className="text-gray-300 hover:text-white hover:bg-gray-600"
+                    >
+                      Delete Post
+                    </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
               </CardHeader>
               <CardContent className="text-gray-300">
                 <div>
-                  <span className="font-semibold">Requirements:</span> {job.requirements}
+                  <span className="font-semibold">Required Project:</span> {job.requiredProject}
+                </div>
+                <div className="mt-2">
+                  <span className="font-semibold">Required Experience:</span> {job.requiredExperience}
+                </div>
+                <div className="mt-2">
+                  <span className="font-semibold">Required Skills:</span> {job.requiredSkills}
+                </div>
+                <div className="mt-2">
+                  <span className="font-semibold">Required Education:</span> {job.requiredEducation}
                 </div>
                 <div className="mt-2">
                   <span className="font-semibold">Status:</span> {job.status}

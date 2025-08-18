@@ -9,5 +9,6 @@ public interface InterviewService {
     String scheduleInterview(InterviewRequest request);
     List<InterviewResponse> getInterviewsByProfile(Long profileId);
     InterviewResponse getInterviewByProfileAndJob(Long profileId, Long jobId);
+    InterviewResponse getInterviewById(Long interviewId);
     String updateInterviewStatus(Long profileId, Long jobId, String status);
 }

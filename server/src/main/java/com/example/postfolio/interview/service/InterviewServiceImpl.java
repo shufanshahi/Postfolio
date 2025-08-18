@@ -22,6 +22,13 @@ public class InterviewServiceImpl implements InterviewService {
 
     @Override
     public String scheduleInterview(InterviewRequest request) {
+        Interview existingInterview = interviewRepository.findByProfileIdAndJobId(request.getProfileId(), request.getJobId());
+        if (existingInterview != null) {
+            existingInterview.setSchedule(request.getSchedule());
+            existingInterview.setNotes(request.getNotes());
+            interviewRepository.save(existingInterview);
+            return "Interview schedule updated successfully.";
+        }
         Interview interview = Interview.builder()
                 .jobId(request.getJobId())
                 .profileId(request.getProfileId())
@@ -44,6 +51,15 @@ public class InterviewServiceImpl implements InterviewService {
     @Override
     public InterviewResponse getInterviewByProfileAndJob(Long profileId, Long jobId) {
         Interview interview = interviewRepository.findByProfileIdAndJobId(profileId, jobId);
+        if (interview == null) {
+            return null;
+        }
+        return mapToResponse(interview);
+    }
+    
+    @Override
+    public InterviewResponse getInterviewById(Long interviewId) {
+        Interview interview = interviewRepository.findById(interviewId).orElse(null);
         if (interview == null) {
             return null;
         }

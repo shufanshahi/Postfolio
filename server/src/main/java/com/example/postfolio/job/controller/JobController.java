@@ -2,6 +2,7 @@ package com.example.postfolio.job.controller;
 
 import com.example.postfolio.job.dto.JobRequest;
 import com.example.postfolio.job.dto.JobResponse;
+import com.example.postfolio.job.model.JobStatus;
 import com.example.postfolio.job.service.JobService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -31,7 +32,7 @@ public class JobController {
 
     @PostMapping("/{jobId}/apply/{applicantId}")
     public ResponseEntity<JobResponse> applyForJob(
-            @PathVariable Long jobId, 
+            @PathVariable Long jobId,
             @PathVariable Long applicantId) {
         return ResponseEntity.ok(jobService.applyForJob(jobId, applicantId));
     }
@@ -41,4 +42,21 @@ public class JobController {
         return ResponseEntity.ok(jobService.getJobById(jobId));
     }
 
+    @DeleteMapping("/{jobId}/withdraw/{applicantId}")
+    public ResponseEntity<JobResponse> withdrawApplication(
+            @PathVariable Long jobId,
+            @PathVariable Long applicantId) {
+        return ResponseEntity.ok(jobService.withdrawApplication(jobId, applicantId));
+    }
+
+    @DeleteMapping("/{jobId}")
+    public ResponseEntity<Void> deleteJob(@PathVariable Long jobId) {
+        jobService.deleteJob(jobId);
+        return ResponseEntity.noContent().build();
+    }
+
+    @PatchMapping("/{jobId}/status")
+    public ResponseEntity<JobResponse> updateJobStatus(@PathVariable Long jobId, @RequestParam JobStatus status) {
+        return ResponseEntity.ok(jobService.updateJobStatus(jobId, status));
+    }
 }

@@ -2,6 +2,7 @@ package com.example.postfolio.job.service;
 
 import com.example.postfolio.job.dto.JobRequest;
 import com.example.postfolio.job.dto.JobResponse;
+import com.example.postfolio.job.model.JobStatus;
 import java.util.List;
 
 public interface JobService {
@@ -10,4 +11,7 @@ public interface JobService {
     List<JobResponse> getJobsByEmployer(Long employerId);
     JobResponse applyForJob(Long jobId, Long applicantId);
     JobResponse getJobById(Long jobId);
+    JobResponse withdrawApplication(Long jobId, Long applicantId);
+    void deleteJob(Long jobId);
+    JobResponse updateJobStatus(Long jobId, JobStatus status);
 }

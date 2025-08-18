@@ -33,6 +33,12 @@ public class InterviewController {
         return interviewService.getInterviewByProfileAndJob(profileId, jobId);
     }
 
+    // Get interview by interview ID
+    @GetMapping("/{interviewId}")
+    public InterviewResponse getInterviewById(@PathVariable Long interviewId) {
+        return interviewService.getInterviewById(interviewId);
+    }
+
     // Update interview status based on profileId and jobId
     @PutMapping("/update-status")
     public String updateInterviewStatus(@RequestParam Long profileId, @RequestParam Long jobId, @RequestParam String status) {
