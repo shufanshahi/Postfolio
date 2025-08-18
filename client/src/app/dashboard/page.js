@@ -75,7 +75,16 @@ export default function Dashboard() {
             path: "/mycv",
             color: "bg-yellow-500/10",
             iconColor: "text-yellow-400"
+        },
+        {
+            title: "PREP mcq",
+            description: "Edit and view your curriculum vitae",
+            icon: <FileText className="h-5 w-5 text-yellow-400" />,
+            path: "/myprep",
+            color: "bg-yellow-500/10",
+            iconColor: "text-yellow-400"
         }
+        
     ];
 
     // Add Job Postings menu for Employer, Find Jobs for User
