@@ -16,6 +16,8 @@ export default function VideoCallPage() {
   const [isCameraOff, setIsCameraOff] = useState(false);
   const [mounted, setMounted] = useState(false);
   const [hasRemoteStream, setHasRemoteStream] = useState(false);
+  const [interviewData, setInterviewData] = useState(null);
+  const [loadingInterview, setLoadingInterview] = useState(true);
 
   const localVideoRef = useRef(null);
   const remoteVideoRef = useRef(null);
@@ -36,6 +38,41 @@ export default function VideoCallPage() {
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  // Fetch interview data when component mounts
+  useEffect(() => {
+    const fetchInterviewData = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        if (!token) {
+          setError("You are not logged in. Please login first.");
+          return;
+        }
+
+        const res = await fetch(`http://localhost:8080/api/interviews/${roomId}`, {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        if (res.ok) {
+          const data = await res.json();
+          setInterviewData(data);
+        } else {
+          setError("Failed to fetch interview information.");
+        }
+      } catch (error) {
+        console.error("Error fetching interview data:", error);
+        setError("Error fetching interview information.");
+      } finally {
+        setLoadingInterview(false);
+      }
+    };
+
+    fetchInterviewData();
+  }, [roomId]);
 
   useEffect(() => {
     let cancelled = false;
@@ -211,11 +248,44 @@ export default function VideoCallPage() {
     setIsCameraOff((c) => !c);
   };
 
-  const hangUp = () => {
-    router.push("/job-postings");
+  const hangUp = async () => {
+    try {
+      // If the user is a host, update interview status to COMPLETED and redirect to job-applicants
+      if (role === "host" && interviewData) {
+        const token = localStorage.getItem("token");
+        if (token) {
+          try {
+            await fetch(`http://localhost:8080/api/interviews/update-status?profileId=${interviewData.profileId}&jobId=${interviewData.jobId}&status=COMPLETED`, {
+              method: "PUT",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${token}`,
+              },
+            });
+          } catch (error) {
+            console.error("Error updating interview status:", error);
+          }
+        }
+        // Redirect to job-applicants page with the jobId
+        router.push(`/job-applicants/${interviewData.jobId}`);
+      } else {
+        // For participants or when interview data is not available, go to a default page
+        router.push("/dashboard");
+      }
+    } catch (error) {
+      console.error("Error during hangup:", error);
+      router.push("/dashboard");
+    }
   };
 
-  if (!mounted) return null;
+  if (!mounted || loadingInterview) return (
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-gray-900 to-slate-800 flex items-center justify-center">
+      <div className="text-center">
+        <div className="w-16 h-16 border-4 border-white/20 border-t-white/60 rounded-full animate-spin mx-auto mb-4"></div>
+        <p className="text-white/60 text-lg">Loading interview...</p>
+      </div>
+    </div>
+  );
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-gray-900 to-slate-800">
@@ -273,6 +343,12 @@ export default function VideoCallPage() {
               <span className="text-white font-medium">Room: {roomId}</span>
               <span className="text-white/60">•</span>
               <span className="text-white/60">{role === 'host' ? 'Host' : 'Participant'}</span>
+              {interviewData && (
+                <>
+                  <span className="text-white/60">•</span>
+                  <span className="text-white/60">Job ID: {interviewData.jobId}</span>
+                </>
+              )}
               {connected && (
                 <>
                   <span className="text-white/60">•</span>
@@ -327,6 +403,7 @@ export default function VideoCallPage() {
               <button
                 onClick={hangUp}
                 className="w-12 h-12 bg-red-500/80 hover:bg-red-600 rounded-full flex items-center justify-center transition-all duration-200 border border-red-400/50 hover:border-red-300"
+                title={role === 'host' ? 'End Interview' : 'Leave Interview'}
               >
                 <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
