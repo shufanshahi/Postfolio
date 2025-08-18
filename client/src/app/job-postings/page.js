@@ -425,6 +425,9 @@ export default function JobPostings() {
               </CardHeader>
               <CardContent className="text-gray-300">
                 <div>
+                  <span className="font-semibold">Salary Range:</span> {job.minSalary && job.maxSalary ? `${job.minSalary} - ${job.maxSalary}` : 'Not specified'}
+                </div>
+                <div className="mt-2">
                   <span className="font-semibold">Required Project:</span> {job.requiredProject}
                 </div>
                 <div className="mt-2">

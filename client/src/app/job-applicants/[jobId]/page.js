@@ -327,6 +327,9 @@ export default function JobApplicants() {
                 <div>
                   <span className="font-semibold">Selected:</span> {job.selectedApplicantIds?.length || 0}
                 </div>
+                <div>
+                  <span className="font-semibold">Salary Range:</span> {job.minSalary && job.maxSalary ? `${job.minSalary} - ${job.maxSalary}` : 'Not specified'}
+                </div>
               </div>
               {job.description && (
                 <div className="mt-4">

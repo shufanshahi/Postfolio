@@ -132,6 +132,9 @@ export default function FindJobs() {
               </CardHeader>
               <CardContent className="text-gray-300">
                 <div>
+                  <span className="font-semibold">Salary Range:</span> {job.minSalary && job.maxSalary ? `${job.minSalary} - ${job.maxSalary}` : 'Not specified'}
+                </div>
+                <div className="mt-2">
                   <span className="font-semibold">Description:</span> {job.description || 'N/A'}
                 </div>
                 <div className="mt-2">
