@@ -20,7 +20,6 @@ public class GeminiService {
 
     private String apiKey = "AIzaSyDyu3V1zVQxZYZb-MMnP0UJMIT2WXRI-KY";
 
-
     private static final String GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent";
 
     public GeminiResponse analyzePost(String content) {
@@ -38,24 +37,57 @@ public class GeminiService {
 
     private String buildPrompt(String content) {
         return """
-            Analyze this post and return STRICT JSON format with:
-            1. "summary" (a concise 5-7 word summary suitable for a CV heading)
-            2. "type" (ONLY choose one: EXPERIENCE, EDUCATION, SKILL, PROJECT, ACHIEVEMENT)
-            3. "tags" (comma-separated any relevant skills/topics)
+            Analyze this post and determine if it's relevant for a professional CV/resume or just a general social media post.
             
-            Guidelines:
+            Return STRICT JSON format with:
+            1. "summary" (a concise 5-7 word summary suitable for a CV heading - ONLY if CV-relevant, otherwise "General Post")
+            2. "type" (choose one: EXPERIENCE, EDUCATION, SKILL, PROJECT, ACHIEVEMENT, or GENERAL)
+            3. "tags" (comma-separated relevant professional skills/topics - empty string if GENERAL post)
+            
+            CV-RELEVANT posts include:
+            - Work experience, internships, jobs
+            - Educational achievements, courses, certifications
+            - Technical skills learned or demonstrated
+            - Projects built, developed, or contributed to
+            - Awards, recognitions, competitions won
+            - Professional conferences, workshops attended
+            - Open source contributions
+            - Research work, publications
+            
+            GENERAL posts include:
+            - Weather updates, daily activities
+            - Food, entertainment, personal opinions
+            - Casual social interactions
+            - Holiday wishes, personal celebrations
+            - Random thoughts not related to professional growth
+            - Memes, jokes, casual observations
+            
+            Guidelines for CV-relevant posts:
             - Summary should be professional and highlight key achievements
             - For experience: focus on role and impact
             - For projects: highlight technology and purpose
             - For education: include qualification and institution if mentioned
             - Keep summary under 10 words
             
+            For GENERAL posts:
+            - Use "General Post" as summary
+            - Use "GENERAL" as type
+            - Leave tags as empty string
+            
             Return ONLY the JSON object, without any markdown formatting or additional text.
-            Example response:
+            
+            Example CV-relevant response:
             {
               "summary": "Led React migration project",
               "type": "PROJECT",
               "tags": "React,Node.js,Team Leadership"
+            }
+            
+            Example GENERAL post response:
+            {
+              "summary": "General Post",
+              "type": "GENERAL",
+              "tags": ""
             }
             
             Post Content: "%s"
@@ -78,7 +110,7 @@ public class GeminiService {
 
             // Add generation config to encourage clean JSON output
             JsonObject generationConfig = new JsonObject();
-            generationConfig.addProperty("temperature", 0.3); // Lower temperature for more predictable results
+            generationConfig.addProperty("temperature", 0.2); // Even lower temperature for consistent classification
             generationConfig.addProperty("maxOutputTokens", 200);
             requestBody.add("generationConfig", generationConfig);
 
@@ -142,18 +174,24 @@ public class GeminiService {
             try {
                 type = PostType.valueOf(result.get("type").getAsString());
             } catch (IllegalArgumentException e) {
-                log.warn("Invalid post type received, defaulting to SKILL");
-                type = PostType.SKILL;
+                log.warn("Invalid post type received, defaulting to GENERAL");
+                type = PostType.GENERAL;
             }
 
             // Parse tags
             String tagsString = result.get("tags").getAsString();
-            List<String> tags = Arrays.stream(tagsString.split(",\\s*"))
-                    .filter(tag -> !tag.isBlank())
-                    .map(String::trim)
-                    .toList();
+            List<String> tags = new ArrayList<>();
 
-            if (tags.isEmpty()) {
+            // Only process tags if it's not a GENERAL post
+            if (type != PostType.GENERAL && !tagsString.isBlank()) {
+                tags = Arrays.stream(tagsString.split(",\\s*"))
+                        .filter(tag -> !tag.isBlank())
+                        .map(String::trim)
+                        .collect(ArrayList::new, (list, item) -> list.add(item), ArrayList::addAll);
+            }
+
+            // For non-general posts, ensure we have at least one tag
+            if (type != PostType.GENERAL && tags.isEmpty()) {
                 tags = List.of("General");
             }
 
@@ -188,5 +226,10 @@ public class GeminiService {
         private final String summary;
         private final PostType postType;
         private final List<String> tags;
+
+        // Helper method to check if post should be added to CV
+        public boolean isCvRelevant() {
+            return postType != PostType.GENERAL;
+        }
     }
 }
