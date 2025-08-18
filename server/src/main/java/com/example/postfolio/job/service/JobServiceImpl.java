@@ -44,6 +44,8 @@ public class JobServiceImpl implements JobService {
         .requiredExperience(request.getRequiredExperience())
         .status(JobStatus.OPEN)
         .employer(employer)
+        .maxSalary(request.getMaxSalary())
+        .minSalary(request.getMinSalary())
         .build();
         jobRepository.save(job);
         return toResponse(job);
@@ -127,6 +129,8 @@ public class JobServiceImpl implements JobService {
         res.setRequiredExperience(job.getRequiredExperience());
         res.setStatus(job.getStatus());
         res.setEmployerId(job.getEmployer() != null ? job.getEmployer().getId() : null);
+        res.setMinSalary(job.getMinSalary());
+        res.setMaxSalary(job.getMaxSalary());
         res.setApplicantIds(job.getApplicants().stream().map(Profile::getId).collect(Collectors.toList()));
         res.setRejectedApplicantIds(job.getRejectedApplicants().stream().map(Profile::getId).collect(Collectors.toList()));
         res.setSelectedApplicantIds(job.getSelectedApplicants().stream().map(Profile::getId).collect(Collectors.toList()));
