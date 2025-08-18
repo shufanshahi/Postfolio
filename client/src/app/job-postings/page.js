@@ -16,15 +16,17 @@ export default function JobPostings() {
   const [searchTitle, setSearchTitle] = useState("");
   const [statusFilter, setStatusFilter] = useState("ALL");
   const [form, setForm] = useState({
-      title: "",
-      position: "",
-      description: "",
-      requiredProject: "",
-      requiredExperience: "",
-      requiredSkills: "",
-      requiredEducation: "",
-      endDate: "",
-    });
+    title: "",
+    position: "",
+    description: "",
+    minSalary: "",
+    maxSalary: "",
+    requiredProject: "",
+    requiredExperience: "",
+    requiredSkills: "",
+    requiredEducation: "",
+    endDate: "",
+  });
   const [loading, setLoading] = useState(false);
   const [profileInfo, setProfileInfo] = useState(null);
 
@@ -138,7 +140,7 @@ export default function JobPostings() {
     });
     if (res.ok) {
       setShowNewJob(false);
-  setForm({ title: "", position: "", description: "", requiredProject: "", requiredExperience: "", requiredSkills: "", requiredEducation: "", endDate: "" });
+  setForm({ title: "", position: "", description: "", minSalary: "", maxSalary: "", requiredProject: "", requiredExperience: "", requiredSkills: "", requiredEducation: "", endDate: "" });
       fetchJobs();
     }
     setLoading(false);
@@ -253,87 +255,113 @@ export default function JobPostings() {
             </CardHeader>
             <CardContent>
               <form onSubmit={handleNewJob} className="space-y-4">
-                  <div>
-                    <label className="block text-gray-300 mb-1">Title</label>
+                <div>
+                  <label className="block text-gray-300 mb-1">Title</label>
+                  <Input
+                    name="title"
+                    value={form.title}
+                    onChange={handleInputChange}
+                    required
+                    className="bg-gray-700 text-white"
+                  />
+                </div>
+                <div>
+                  <label className="block text-gray-300 mb-1">Position</label>
+                  <Input
+                    name="position"
+                    value={form.position}
+                    onChange={handleInputChange}
+                    required
+                    className="bg-gray-700 text-white"
+                  />
+                </div>
+                <div>
+                  <label className="block text-gray-300 mb-1">Description</label>
+                  <Textarea
+                    name="description"
+                    value={form.description}
+                    onChange={handleInputChange}
+                    required
+                    className="bg-gray-700 text-white"
+                  />
+                </div>
+                <div className="flex gap-4">
+                  <div className="flex-1">
+                    <label className="block text-gray-300 mb-1">Min Salary</label>
                     <Input
-                      name="title"
-                      value={form.title}
+                      name="minSalary"
+                      type="number"
+                      value={form.minSalary}
                       onChange={handleInputChange}
                       required
                       className="bg-gray-700 text-white"
+                      min="0"
                     />
                   </div>
-                  <div>
-                    <label className="block text-gray-300 mb-1">Position</label>
+                  <div className="flex-1">
+                    <label className="block text-gray-300 mb-1">Max Salary</label>
                     <Input
-                      name="position"
-                      value={form.position}
+                      name="maxSalary"
+                      type="number"
+                      value={form.maxSalary}
                       onChange={handleInputChange}
                       required
                       className="bg-gray-700 text-white"
+                      min="0"
                     />
                   </div>
-                  <div>
-                    <label className="block text-gray-300 mb-1">Description</label>
-                    <Textarea
-                      name="description"
-                      value={form.description}
-                      onChange={handleInputChange}
-                      required
-                      className="bg-gray-700 text-white"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-gray-300 mb-1">Required Project</label>
-                    <Textarea
-                      name="requiredProject"
-                      value={form.requiredProject}
-                      onChange={handleInputChange}
-                      required
-                      className="bg-gray-700 text-white"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-gray-300 mb-1">Required Experience</label>
-                    <Textarea
-                      name="requiredExperience"
-                      value={form.requiredExperience}
-                      onChange={handleInputChange}
-                      required
-                      className="bg-gray-700 text-white"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-gray-300 mb-1">Required Skills</label>
-                    <Textarea
-                      name="requiredSkills"
-                      value={form.requiredSkills}
-                      onChange={handleInputChange}
-                      required
-                      className="bg-gray-700 text-white"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-gray-300 mb-1">Required Education</label>
-                    <Textarea
-                      name="requiredEducation"
-                      value={form.requiredEducation}
-                      onChange={handleInputChange}
-                      required
-                      className="bg-gray-700 text-white"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-gray-300 mb-1">End Date</label>
-                    <Input
-                      type="date"
-                      name="endDate"
-                      value={form.endDate}
-                      onChange={handleInputChange}
-                      required
-                      className="bg-gray-700 text-white"
-                    />
-                  </div>
+                </div>
+                <div>
+                  <label className="block text-gray-300 mb-1">Required Project</label>
+                  <Textarea
+                    name="requiredProject"
+                    value={form.requiredProject}
+                    onChange={handleInputChange}
+                    required
+                    className="bg-gray-700 text-white"
+                  />
+                </div>
+                <div>
+                  <label className="block text-gray-300 mb-1">Required Experience</label>
+                  <Textarea
+                    name="requiredExperience"
+                    value={form.requiredExperience}
+                    onChange={handleInputChange}
+                    required
+                    className="bg-gray-700 text-white"
+                  />
+                </div>
+                <div>
+                  <label className="block text-gray-300 mb-1">Required Skills</label>
+                  <Textarea
+                    name="requiredSkills"
+                    value={form.requiredSkills}
+                    onChange={handleInputChange}
+                    required
+                    className="bg-gray-700 text-white"
+                  />
+                </div>
+                <div>
+                  <label className="block text-gray-300 mb-1">Required Education</label>
+                  <Textarea
+                    name="requiredEducation"
+                    value={form.requiredEducation}
+                    onChange={handleInputChange}
+                    required
+                    className="bg-gray-700 text-white"
+                  />
+                </div>
+                <div>
+                  <label className="block text-gray-300 mb-1">End Date</label>
+                  <Input
+                    type="date"
+                    name="endDate"
+                    value={form.endDate}
+                    onChange={handleInputChange}
+                    required
+                    className="bg-gray-700 text-white"
+                  />
+                </div>
                 <Button type="submit" disabled={loading}>
                   {loading ? "Posting..." : "Post Job"}
                 </Button>
