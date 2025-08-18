@@ -53,6 +53,35 @@ export default function FindJobs() {
     setLoading(false);
   };
 
+  const handleWithdraw = async (jobId) => {
+    setLoading(true);
+    const profileRes = await fetch('http://localhost:8080/api/profile/me', {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${localStorage.getItem('token')}`,
+      },
+    });
+    if (!profileRes.ok) {
+      setLoading(false);
+      alert("Failed to get user profile. Please try again.");
+      return;
+    }
+    const profile = await profileRes.json();
+
+    const withdrawRes = await fetch(`http://localhost:8080/api/jobs/${jobId}/withdraw/${profile.id}`, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${localStorage.getItem('token')}`,
+      },
+    });
+    if (withdrawRes.ok) {
+      alert("Withdrawal successful!");
+    } else {
+      alert("Failed to withdraw from the job. Please try again.");
+    }
+    setLoading(false);
+  };
+
   return (
     <div className="min-h-screen bg-gray-900 p-6">
       <div className="max-w-4xl mx-auto space-y-8">
@@ -89,6 +118,12 @@ export default function FindJobs() {
                   className="mt-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
                 >
                   Apply
+                </button>
+                <button
+                  onClick={() => handleWithdraw(job.jobId)}
+                  className="mt-4 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 ml-2"
+                >
+                  Withdraw
                 </button>
               </CardContent>
             </Card>
