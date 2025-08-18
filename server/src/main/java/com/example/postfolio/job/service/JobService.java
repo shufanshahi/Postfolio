@@ -11,4 +11,5 @@ public interface JobService {
     JobResponse applyForJob(Long jobId, Long applicantId);
     JobResponse getJobById(Long jobId);
     JobResponse withdrawApplication(Long jobId, Long applicantId);
+    void deleteJob(Long jobId);
 }

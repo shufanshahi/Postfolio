@@ -97,6 +97,13 @@ public class JobServiceImpl implements JobService {
         return toResponse(job);
     }
 
+    @Override
+    public void deleteJob(Long jobId) {
+        Job job = jobRepository.findById(jobId).orElseThrow(() ->
+                new RuntimeException("Job not found with id: " + jobId));
+        jobRepository.delete(job);
+    }
+
     private JobResponse toResponse(Job job) {
         JobResponse res = new JobResponse();
         res.setJobId(job.getJobId());
