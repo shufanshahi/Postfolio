@@ -20,6 +20,7 @@ export default function JobApplicants() {
   const [scheduleInput, setScheduleInput] = useState("");
   const [notesInput, setNotesInput] = useState("");
   const [scheduleError, setScheduleError] = useState("");
+  const [applicantsWithDetails, setApplicantsWithDetails] = useState([]);
   const handleScheduleClick = (applicantId) => {
     setSelectedApplicant(applicantId);
     setShowSchedule(true);
@@ -111,6 +112,46 @@ export default function JobApplicants() {
     }
     fetchJobApplicants();
   }, [jobId, router, fetchJobApplicants]);
+
+  const fetchInterviewDetails = useCallback(async (applicantId) => {
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch(`http://localhost:8080/api/interviews/profile/${applicantId}/job/${jobId}`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (res.ok) {
+        return await res.json();
+      }
+      return null;
+    } catch (error) {
+      console.error("Error fetching interview details:", error);
+      return null;
+    }
+  }, [jobId]);
+
+  useEffect(() => {
+    const fetchApplicantsWithInterviewDetails = async () => {
+      if (job?.applicantIds) {
+        const applicantsWithDetails = await Promise.all(
+          job.applicantIds.map(async (applicantId) => {
+            const interview = await fetchInterviewDetails(applicantId);
+            return {
+              applicantId,
+              interview,
+            };
+          })
+        );
+        setApplicantsWithDetails(applicantsWithDetails);
+      }
+    };
+
+    fetchApplicantsWithInterviewDetails();
+  }, [job, fetchInterviewDetails]);
 
   const handleStartInterview = async (applicantId) => {
     try {
@@ -220,13 +261,6 @@ export default function JobApplicants() {
                 <div>
                   <span className="font-semibold">Selected:</span> {job.selectedApplicantIds?.length || 0}
                 </div>
-                <div>
-                  <span className="font-semibold">Job ID:</span> {job.jobId}
-                </div>
-              </div>
-              <div className="mt-4">
-                <span className="font-semibold">Requirements:</span>
-                <p className="mt-1 text-gray-400">{job.requirements}</p>
               </div>
               {job.description && (
                 <div className="mt-4">
@@ -234,6 +268,22 @@ export default function JobApplicants() {
                   <p className="mt-1 text-gray-400">{job.description}</p>
                 </div>
               )}
+              <div className="mt-4">
+                <span className="font-semibold">Required Project:</span>
+                <p className="mt-1 text-gray-400">{job.requiredProject}</p>
+              </div>
+              <div className="mt-4">
+                <span className="font-semibold">Required Experience:</span>
+                <p className="mt-1 text-gray-400">{job.requiredExperience}</p>
+              </div>
+              <div className="mt-4">
+                <span className="font-semibold">Required Skills:</span>
+                <p className="mt-1 text-gray-400">{job.requiredSkills}</p>
+              </div>
+              <div className="mt-4">
+                <span className="font-semibold">Required Education:</span>
+                <p className="mt-1 text-gray-400">{job.requiredEducation}</p>
+              </div>
             </CardContent>
           </Card>
         )}
@@ -256,7 +306,7 @@ export default function JobApplicants() {
               </div>
             ) : (
               <div className="space-y-3">
-                {job.applicantIds.map((applicantId, index) => (
+                {applicantsWithDetails.map(({ applicantId, interview }, index) => (
                   <div 
                     key={applicantId} 
                     className="flex items-center justify-between p-4 bg-gray-700 rounded-lg border border-gray-600"
@@ -267,7 +317,9 @@ export default function JobApplicants() {
                       </div>
                       <div>
                         <p className="text-white font-medium">Applicant ID: {applicantId}</p>
-                        <p className="text-gray-400 text-sm">Applied for {job.position}</p>
+                        {interview && (
+                          <p className="text-gray-400 text-sm">Interview Status: {interview.status}</p>
+                        )}
                       </div>
                     </div>
                     <div className="flex space-x-2">
@@ -285,7 +337,7 @@ export default function JobApplicants() {
                         className="bg-blue-700 border-blue-600 text-white hover:bg-blue-600"
                         onClick={() => handleScheduleClick(applicantId)}
                       >
-                        Schedule
+                        {interview ? "Reschedule" : "Schedule"}
                       </Button>
                       <Button 
                         variant="outline" 
