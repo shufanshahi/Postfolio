@@ -38,6 +38,12 @@ export default function JobApplicants() {
     try {
       const token = localStorage.getItem("token");
       console.log("Scheduling interview for applicant:", jobId, selectedApplicant, scheduleInput, notesInput);
+      
+      // Check if this is a reschedule by checking if interview already exists
+      const existingInterview = applicantsWithDetails.find(
+        applicant => applicant.applicantId === selectedApplicant
+      )?.interview;
+      
       const res = await fetch("http://localhost:8080/api/interviews/schedule", {
         method: "POST",
         headers: {
@@ -53,9 +59,46 @@ export default function JobApplicants() {
         }),
         
       });
+      
       if (res.ok) {
+        // If this was a reschedule (existing interview), update status to PENDING
+        if (existingInterview) {
+          try {
+            const statusUpdateRes = await fetch(`http://localhost:8080/api/interviews/update-status?profileId=${selectedApplicant}&jobId=${jobId}&status=PENDING`, {
+              method: "PUT",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${token}`,
+              },
+            });
+            
+            if (!statusUpdateRes.ok) {
+              console.error("Failed to update interview status after reschedule");
+            }
+          } catch (error) {
+            console.error("Error updating interview status after reschedule:", error);
+          }
+        }
+        
         setShowSchedule(false);
-        alert("Interview scheduled!");
+        alert(existingInterview ? "Interview rescheduled!" : "Interview scheduled!");
+        
+        // Refresh the applicants with details to show updated status
+        const fetchApplicantsWithInterviewDetails = async () => {
+          if (job?.applicantIds) {
+            const applicantsWithDetails = await Promise.all(
+              job.applicantIds.map(async (applicantId) => {
+                const interview = await fetchInterviewDetails(applicantId);
+                return {
+                  applicantId,
+                  interview,
+                };
+              })
+            );
+            setApplicantsWithDetails(applicantsWithDetails);
+          }
+        };
+        await fetchApplicantsWithInterviewDetails();
       } else {
         setScheduleError("Failed to schedule interview.");
       }
