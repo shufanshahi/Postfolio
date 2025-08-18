@@ -2,6 +2,7 @@ package com.example.postfolio.job.controller;
 
 import com.example.postfolio.job.dto.JobRequest;
 import com.example.postfolio.job.dto.JobResponse;
+import com.example.postfolio.job.model.JobStatus;
 import com.example.postfolio.job.service.JobService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -52,5 +53,10 @@ public class JobController {
     public ResponseEntity<Void> deleteJob(@PathVariable Long jobId) {
         jobService.deleteJob(jobId);
         return ResponseEntity.noContent().build();
+    }
+
+    @PatchMapping("/{jobId}/status")
+    public ResponseEntity<JobResponse> updateJobStatus(@PathVariable Long jobId, @RequestParam JobStatus status) {
+        return ResponseEntity.ok(jobService.updateJobStatus(jobId, status));
     }
 }
