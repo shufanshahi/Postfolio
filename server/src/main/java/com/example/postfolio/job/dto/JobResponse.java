@@ -13,9 +13,13 @@ public class JobResponse {
     private String description;
     private LocalDate datePosted;
     private LocalDate endDate;
-    private String requirements;
+    private String requiredProject;
+    private String requiredAchievements;
+    private String requiredEducation;
+    private String requiredSkills;
     private JobStatus status;
     private Long employerId;
     private List<Long> applicantIds;
     private List<Long> selectedApplicantIds;
+    private List<Long> rejectedApplicantIds;
 }

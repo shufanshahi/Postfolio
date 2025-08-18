@@ -11,8 +11,12 @@ public class JobRequest {
     private String description;
     private LocalDate datePosted;
     private LocalDate endDate;
-    private String requirements;
     private Long employerId;
     private List<Long> applicantIds;
     private List<Long> selectedApplicantIds;
+    private List<Long> rejectedApplicantIds;
+    private String requiredProject;
+    private String requiredAchievements;
+    private String requiredEducation;
+    private String requiredSkills;
 }

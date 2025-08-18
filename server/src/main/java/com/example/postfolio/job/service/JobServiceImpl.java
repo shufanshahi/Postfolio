@@ -38,10 +38,17 @@ public class JobServiceImpl implements JobService {
         .description(request.getDescription())
         .datePosted(request.getDatePosted())
         .endDate(request.getEndDate())
-        .requirements(request.getRequirements())
         .status(JobStatus.OPEN)
         .employer(employer)
         .build();
+
+        // Set the new fields
+        job.setRequiredProject(request.getRequiredProject());
+job.setRequiredAchievements(request.getRequiredAchievements());
+job.setRequiredEducation(request.getRequiredEducation());
+job.setRequiredSkills(request.getRequiredSkills());
+job.setRejectedApplicants(request.getRejectedApplicantIds().stream().map(id -> profileRepository.findById(id).orElseThrow(() -> new RuntimeException("Profile not found with id: " + id))).collect(Collectors.toList()));
+
         jobRepository.save(job);
         return toResponse(job);
     }
@@ -102,11 +109,15 @@ public class JobServiceImpl implements JobService {
     res.setDescription(job.getDescription());
     res.setDatePosted(job.getDatePosted());
     res.setEndDate(job.getEndDate());
-    res.setRequirements(job.getRequirements());
     res.setStatus(job.getStatus());
     res.setEmployerId(job.getEmployer() != null ? job.getEmployer().getId() : null);
     res.setApplicantIds(job.getApplicants().stream().map(Profile::getId).collect(Collectors.toList()));
     res.setSelectedApplicantIds(job.getSelectedApplicants().stream().map(Profile::getId).collect(Collectors.toList()));
+    res.setRejectedApplicantIds(job.getRejectedApplicants().stream().map(Profile::getId).collect(Collectors.toList()));
+    res.setRequiredProject(job.getRequiredProject());
+    res.setRequiredAchievements(job.getRequiredAchievements());
+    res.setRequiredEducation(job.getRequiredEducation());
+    res.setRequiredSkills(job.getRequiredSkills());
         return res;
     }
 }
