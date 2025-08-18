@@ -31,7 +31,7 @@ public class JobController {
 
     @PostMapping("/{jobId}/apply/{applicantId}")
     public ResponseEntity<JobResponse> applyForJob(
-            @PathVariable Long jobId, 
+            @PathVariable Long jobId,
             @PathVariable Long applicantId) {
         return ResponseEntity.ok(jobService.applyForJob(jobId, applicantId));
     }
@@ -39,6 +39,13 @@ public class JobController {
     @GetMapping("/employer/ajob/{jobId}")
     public ResponseEntity<JobResponse> getJobById(@PathVariable Long jobId) {
         return ResponseEntity.ok(jobService.getJobById(jobId));
+    }
+
+    @DeleteMapping("/{jobId}/withdraw/{applicantId}")
+    public ResponseEntity<JobResponse> withdrawApplication(
+            @PathVariable Long jobId,
+            @PathVariable Long applicantId) {
+        return ResponseEntity.ok(jobService.withdrawApplication(jobId, applicantId));
     }
 
 }

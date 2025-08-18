@@ -1,4 +1,3 @@
- 
 package com.example.postfolio.job.service;
 
 import com.example.postfolio.job.dto.JobRequest;
@@ -67,6 +66,23 @@ public class JobServiceImpl implements JobService {
             jobRepository.save(job);
         }
         
+        return toResponse(job);
+    }
+
+    @Override
+    public JobResponse withdrawApplication(Long jobId, Long applicantId) {
+        Job job = jobRepository.findById(jobId).orElseThrow(() -> 
+            new RuntimeException("Job not found with id: " + jobId));
+
+        Profile applicant = profileRepository.findById(applicantId).orElseThrow(() -> 
+            new RuntimeException("Profile not found with id: " + applicantId));
+
+        // Remove the applicant from the job's applicants list
+        if (job.getApplicants().contains(applicant)) {
+            job.getApplicants().remove(applicant);
+            jobRepository.save(job);
+        }
+
         return toResponse(job);
     }
 
