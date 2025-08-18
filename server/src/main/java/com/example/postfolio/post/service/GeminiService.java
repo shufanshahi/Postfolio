@@ -37,61 +37,104 @@ public class GeminiService {
 
     private String buildPrompt(String content) {
         return """
-            Analyze this post and determine if it's relevant for a professional CV/resume or just a general social media post.
-            
-            Return STRICT JSON format with:
-            1. "summary" (a concise 5-7 word summary suitable for a CV heading - ONLY if CV-relevant, otherwise "General Post")
-            2. "type" (choose one: EXPERIENCE, EDUCATION, SKILL, PROJECT, ACHIEVEMENT, or GENERAL)
-            3. "tags" (comma-separated relevant professional skills/topics - empty string if GENERAL post)
-            
-            CV-RELEVANT posts include:
-            - Work experience, internships, jobs
-            - Educational achievements, courses, certifications
-            - Technical skills learned or demonstrated
-            - Projects built, developed, or contributed to
-            - Awards, recognitions, competitions won
-            - Professional conferences, workshops attended
-            - Open source contributions
-            - Research work, publications
-            
-            GENERAL posts include:
-            - Weather updates, daily activities
-            - Food, entertainment, personal opinions
-            - Casual social interactions
-            - Holiday wishes, personal celebrations
-            - Random thoughts not related to professional growth
-            - Memes, jokes, casual observations
-            
-            Guidelines for CV-relevant posts:
-            - Summary should be professional and highlight key achievements
-            - For experience: focus on role and impact
-            - For projects: highlight technology and purpose
-            - For education: include qualification and institution if mentioned
-            - Keep summary under 10 words
-            
-            For GENERAL posts:
-            - Use "General Post" as summary
-            - Use "GENERAL" as type
-            - Leave tags as empty string
-            
-            Return ONLY the JSON object, without any markdown formatting or additional text.
-            
-            Example CV-relevant response:
-            {
-              "summary": "Led React migration project",
-              "type": "PROJECT",
-              "tags": "React,Node.js,Team Leadership"
-            }
-            
-            Example GENERAL post response:
-            {
-              "summary": "General Post",
-              "type": "GENERAL",
-              "tags": ""
-            }
-            
-            Post Content: "%s"
-            """.formatted(content);
+        Analyze this post and determine if it's relevant for a professional CV/resume or just a general social media post.
+        
+        Return STRICT JSON format with:
+        1. "summary" (a concise 5-7 word summary suitable for a CV heading - ONLY if CV-relevant, otherwise "General Post")
+        2. "type" (choose one: EXPERIENCE, SKILL, PROJECT, ACHIEVEMENT, or GENERAL)
+        3. "tags" (comma-separated PROFESSIONAL SKILLS only - empty string if GENERAL post or no clear skills mentioned)
+        
+        CV-RELEVANT posts include:
+        - Work experience, internships, jobs
+        - Technical skills learned or demonstrated
+        - Projects built, developed, or contributed to
+        - Awards, recognitions, competitions won (regardless of technical details mentioned)
+        - Professional conferences, workshops attended
+        - Open source contributions
+        - Research work, publications
+        
+        TYPE CLASSIFICATION PRIORITY:
+        - ACHIEVEMENT: If post mentions winning, placing, or achieving recognition in competitions, contests, hackathons, awards, certifications - PRIORITIZE this even if technical project details are mentioned
+        - PROJECT: Only if post is primarily about building/developing something WITHOUT mentioning competitive wins or achievements
+        - EXPERIENCE: Work roles, internships, jobs
+        - SKILL: Learning new skills, attending workshops/courses without competitive element
+        
+        GENERAL posts include:
+        - Academic results, grades, exam scores
+        - Weather updates, daily activities
+        - Food, entertainment, personal opinions
+        - Casual social interactions
+        - Holiday wishes, personal celebrations
+        - Random thoughts not related to professional growth
+        - Memes, jokes, casual observations
+        
+        KEY RECOGNITION PATTERNS:
+        - Words indicating ACHIEVEMENT: "won", "first place", "secured", "achieved", "awarded", "recognized", "champion", "winner", "placed", "ranked"
+        - Competition contexts: "hackathon", "competition", "contest", "championship", "tournament" + achievement words = ACHIEVEMENT type
+        - Even if technical project details are mentioned, winning/placing takes PRIORITY for classification
+        
+        IMPORTANT GUIDELINES FOR TAGS:
+        - Extract ONLY transferable professional skills, technical competencies, and soft skills
+        - DO NOT include: event names, competition names, company names, project names, locations, dates
+        - DO NOT include: generic terms like "competition", "hackathon", "datathon", "contest"
+        - Focus on WHAT SKILLS were demonstrated or used, not WHERE or WHEN
+        
+        Examples of GOOD tags:
+        - Technical skills: "Machine Learning", "Data Analysis", "Python", "React", "Cloud Computing"
+        - Soft skills: "Team Leadership", "Problem Solving", "Public Speaking", "Project Management"
+        - Domain expertise: "Financial Modeling", "UI/UX Design", "Digital Marketing", "Research"
+        
+        Examples of BAD tags (DO NOT use):
+        - Event names: "Google Summer of Code", "NASA Space Apps", "Datathon"
+        - Generic terms: "Competition", "Hackathon", "Conference", "Workshop"
+        - Companies: "Google", "Microsoft", "Facebook"
+        - Locations: "Silicon Valley", "Dhaka University"
+        
+        Guidelines for CV-relevant posts:
+        - Summary should be professional and highlight key achievements
+        - For ACHIEVEMENT: Lead with the accomplishment ("Won first place in...", "Secured championship in...", "Achieved recognition for...")
+        - For PROJECT: Focus on what was built/developed ("Built mobile app", "Developed web platform")
+        - For EXPERIENCE: Focus on role and impact ("Completed internship", "Led development team")
+        - Keep summary under 10 words
+        
+        For GENERAL posts:
+        - Use "General Post" as summary
+        - Use "GENERAL" as type
+        - Leave tags as empty string
+        
+        Return ONLY the JSON object, without any markdown formatting or additional text.
+        
+        Example CV-relevant responses:
+        
+        ACHIEVEMENT examples:
+        {
+          "summary": "Won first place in AI hackathon",
+          "type": "ACHIEVEMENT", 
+          "tags": "Artificial Intelligence,Problem Solving,Team Collaboration"
+        }
+        
+        {
+          "summary": "Secured championship in data competition",
+          "type": "ACHIEVEMENT",
+          "tags": "Data Analysis,Machine Learning,Problem Solving"
+        }
+        
+        PROJECT examples:
+        {
+          "summary": "Built e-commerce web application",
+          "type": "PROJECT",
+          "tags": "Web Development,React,Node.js,Full Stack Development"
+        }
+        
+        Example GENERAL post response:
+        {
+          "summary": "General Post",
+          "type": "GENERAL",
+          "tags": ""
+        }
+        
+        Post Content: "%s"
+        """.formatted(content);
     }
 
     private String callGeminiAPI(String prompt) {
