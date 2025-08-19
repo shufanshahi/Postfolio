@@ -31,7 +31,8 @@ public class PostController {
             @RequestBody @Valid CreatePostDTO createPostDTO) {
         Post post = postService.createPost(
                 createPostDTO.getProfileId(),
-                createPostDTO.getContent()
+                createPostDTO.getContent(),
+                createPostDTO.getImages()
         );
         return ResponseEntity.ok(convertToDto(post));
     }
@@ -66,7 +67,6 @@ public class PostController {
         List<Post> posts = postService.getAllPostsByProfile(profileId);
         return ResponseEntity.ok(convertToDtoList(posts));
     }
-
 
     @GetMapping("/profile/{profileId}/type/{type}")
     public ResponseEntity<List<PostResponseDTO>> getPostsByType(
@@ -105,7 +105,8 @@ public class PostController {
         Post post = postService.updatePost(
                 postId,
                 updatePostDTO.getProfileId(),
-                updatePostDTO.getContent()
+                updatePostDTO.getContent(),
+                updatePostDTO.getImages()
         );
         return ResponseEntity.ok(convertToDto(post));
     }
@@ -143,7 +144,7 @@ public class PostController {
     }
 
     @DeleteMapping("/{postId}")
-    public ResponseEntity<ResponseEntity<Void>> deletePost(
+    public ResponseEntity<Void> deletePost(
             @PathVariable Long postId,
             @RequestParam Long profileId) {
         postService.deletePost(postId, profileId);
@@ -159,7 +160,7 @@ public class PostController {
     private PostResponseDTO convertToDto(Post post) {
         List<Reaction> reactions = reactionRepository.findByPostWithUser(post);
         List<ReactionResponseDTO> reactionDtos = postService.convertReactionsToDto(reactions);
-        
+
         return PostResponseDTO.builder()
                 .id(post.getId())
                 .content(post.getContent())
@@ -172,6 +173,10 @@ public class PostController {
                 .profilePictureBase64(post.getProfile().getPictureBase64())
                 .createdAt(post.getCreatedAt())
                 .reactions(reactionDtos)
+                // New image fields
+                .images(post.getImages())
+                .imageCount(post.getImageCount())
+                .hasImages(post.hasImages())
                 .build();
     }
 
