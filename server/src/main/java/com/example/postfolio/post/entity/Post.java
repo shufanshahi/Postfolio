@@ -2,6 +2,7 @@ package com.example.postfolio.post.entity;
 
 import com.example.postfolio.post.models.PostType;
 import com.example.postfolio.profile.entity.Profile;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -50,6 +51,7 @@ public class Post {
     private Boolean autoTagged = false;
 
     @ManyToOne(fetch = FetchType.LAZY)
+    @JsonIgnore
     @JoinColumn(name = "profile_id", nullable = false)
     private Profile profile;
 

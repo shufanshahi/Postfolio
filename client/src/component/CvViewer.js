@@ -29,14 +29,18 @@ import {
     Star,
     Clock,
     Building,
-    School
+    School,
+    ExternalLink
 } from 'lucide-react';
+import PostModal from '@/components/PostModal';
 
 export default function CvViewer({ profileId }) {
     const [cvEntries, setCvEntries] = useState([]);
     const [profile, setProfile] = useState(null);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
+    const [modalOpen, setModalOpen] = useState(false);
+    const [selectedPost, setSelectedPost] = useState(null);
 
     useEffect(() => {
         if (!profileId) return;
@@ -75,6 +79,16 @@ export default function CvViewer({ profileId }) {
         acc[type].push(entry);
         return acc;
     }, {});
+
+    const handleCvHeadingClick = (entry) => {
+        if (entry.postId) {
+            setSelectedPost({
+                postId: entry.postId,
+                cvHeading: entry.content
+            });
+            setModalOpen(true);
+        }
+    };
 
     if (loading) {
         return (
@@ -293,12 +307,29 @@ export default function CvViewer({ profileId }) {
                             {entries.map((entry, entryIndex) => (
                                 <div
                                     key={entry.id}
-                                    className="p-4 bg-gradient-to-r from-gray-700/50 to-gray-800/50 rounded-lg border border-gray-700 hover:shadow-md transition-all duration-300 hover:border-green-500/30"
+                                    className={`p-4 bg-gradient-to-r from-gray-700/50 to-gray-800/50 rounded-lg border border-gray-700 hover:shadow-md transition-all duration-300 hover:border-green-500/30 ${
+                                        entry.postId ? 'cursor-pointer group/item' : ''
+                                    }`}
                                     style={{
                                         animationDelay: `${entryIndex * 100}ms`
                                     }}
+                                    onClick={() => entry.postId && handleCvHeadingClick(entry)}
                                 >
-                                    <p className="text-gray-200 leading-relaxed text-sm">{entry.content}</p>
+                                    <div className="flex items-start justify-between">
+                                        <p className="text-gray-200 leading-relaxed text-sm flex-1">
+                                            {entry.content}
+                                        </p>
+                                        {entry.postId && (
+                                            <div className="ml-3 flex-shrink-0 opacity-0 group-hover/item:opacity-100 transition-opacity duration-200">
+                                                <ExternalLink className="h-4 w-4 text-green-400" />
+                                            </div>
+                                        )}
+                                    </div>
+                                    {entry.postId && (
+                                        <p className="text-xs text-gray-500 mt-2">
+                                            Click to view original post
+                                        </p>
+                                    )}
                                 </div>
                             ))}
                         </div>
@@ -350,6 +381,19 @@ export default function CvViewer({ profileId }) {
                         </div>
                     </CardContent>
                 </Card>
+            )}
+
+            {/* Post Modal */}
+            {selectedPost && (
+                <PostModal
+                    isOpen={modalOpen}
+                    onClose={() => {
+                        setModalOpen(false);
+                        setSelectedPost(null);
+                    }}
+                    postId={selectedPost.postId}
+                    cvHeading={selectedPost.cvHeading}
+                />
             )}
         </div>
     );
