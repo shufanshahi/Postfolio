@@ -22,6 +22,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 import com.example.postfolio.post.entity.Reaction;
@@ -42,13 +43,26 @@ public class PostService {
     private final ReactionRepository reactionRepository;
 
     @Transactional
-    public Post createPost(Long profileId, String content) {
+    public Post createPost(Long profileId, String content, List<String> images) {
         Profile profile = profileService.getProfileById(profileId);
+
+        // Validate image count
+        if (images != null && images.size() > 4) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Maximum 4 images allowed per post"
+            );
+        }
+
+        // Validate base64 images
+        if (images != null) {
+            images = validateAndCleanImages(images);
+        }
 
         try {
             GeminiService.GeminiResponse analysis = geminiService.analyzePost(content);
             Post savedPost = savePost(content, profile, analysis.getPostType(),
-                    analysis.getTags(), analysis.getSummary(), true);
+                    analysis.getTags(), analysis.getSummary(), true, images);
 
             // Only update CV if the post is CV-relevant (not GENERAL)
             if (analysis.isCvRelevant()) {
@@ -59,10 +73,7 @@ public class PostService {
         } catch (Exception e) {
             log.error("Failed to generate CV heading for post, using fallback", e);
             Post savedPost = savePost(content, profile, PostType.GENERAL,
-                    List.of(), generateFallbackCvHeading(content), false);
-
-            // Don't update CV for fallback posts (treat as general)
-            // cvUpdateService.updateCvFromPost(savedPost);
+                    List.of(), generateFallbackCvHeading(content), false, images);
 
             return savedPost;
         }
@@ -146,11 +157,27 @@ public class PostService {
         return postRepository.findPostsFromFriendsAndSelf(currentUser);
     }
 
-    public Post updatePost(Long postId, Long profileId, String newContent) {
+    @Transactional
+    public Post updatePost(Long postId, Long profileId, String newContent, List<String> images) {
         Post post = getPostById(postId);
         validatePostOwnership(post, profileId);
         PostType previousType = post.getType();
+
+        // Validate image count
+        if (images != null && images.size() > 4) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Maximum 4 images allowed per post"
+            );
+        }
+
+        // Validate and clean images
+        if (images != null) {
+            images = validateAndCleanImages(images);
+        }
+
         post.setContent(newContent);
+        post.setImages(images != null ? new ArrayList<>(images) : new ArrayList<>());
 
         try {
             GeminiService.GeminiResponse analysis = geminiService.analyzePost(newContent);
@@ -191,7 +218,6 @@ public class PostService {
             return savedPost;
         }
     }
-
 
     @Transactional
     public Post updatePostTags(Long postId, Long profileId, List<String> tags) {
@@ -258,7 +284,8 @@ public class PostService {
     }
 
     private Post savePost(String content, Profile profile, PostType type,
-                          List<String> tags, String cvHeading, boolean autoTagged) {
+                          List<String> tags, String cvHeading, boolean autoTagged,
+                          List<String> images) {
         return postRepository.save(Post.builder()
                 .content(content)
                 .type(type)
@@ -266,6 +293,7 @@ public class PostService {
                 .cvHeading(cvHeading)
                 .autoTagged(autoTagged)
                 .profile(profile)
+                .images(images != null ? new ArrayList<>(images) : new ArrayList<>())
                 .createdAt(LocalDateTime.now())
                 .updatedAt(LocalDateTime.now())
                 .build());
@@ -303,5 +331,53 @@ public class PostService {
                 .userName(reaction.getUser().getName())
                 .createdAt(reaction.getCreatedAt())
                 .build();
+    }
+
+    private List<String> validateAndCleanImages(List<String> images) {
+        if (images == null) {
+            return new ArrayList<>();
+        }
+
+        List<String> validImages = new ArrayList<>();
+        for (String image : images) {
+            if (image != null && !image.trim().isEmpty()) {
+                String cleanImage = image.trim();
+
+                // Validate base64 format (basic check)
+                if (isValidBase64Image(cleanImage)) {
+                    validImages.add(cleanImage);
+                } else {
+                    log.warn("Invalid base64 image data provided, skipping");
+                }
+            }
+        }
+
+        if (validImages.size() > 4) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Maximum 4 images allowed per post"
+            );
+        }
+
+        return validImages;
+    }
+
+    private boolean isValidBase64Image(String image) {
+        if (image == null || image.trim().isEmpty()) {
+            return false;
+        }
+
+        // Check if it's a valid data URL format for images
+        if (!image.startsWith("data:image/")) {
+            return false;
+        }
+
+        // Check if it contains base64 marker
+        if (!image.contains(";base64,")) {
+            return false;
+        }
+
+        // Basic length check (should be substantial for a real image)
+        return image.length() > 100;
     }
 }

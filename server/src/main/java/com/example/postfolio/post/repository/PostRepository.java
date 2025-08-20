@@ -56,4 +56,11 @@ public interface PostRepository extends JpaRepository<Post, Long> {
            "OR p.profile.user = :currentUser " +
            "ORDER BY p.createdAt DESC")
     List<Post> findPostsFromFriendsAndSelf(@Param("currentUser") com.example.postfolio.user.entity.User currentUser);
+
+    // NEW: Find post with profile and user data for modal
+    @Query("SELECT p FROM Post p " +
+           "JOIN FETCH p.profile pr " +
+           "JOIN FETCH pr.user u " +
+           "WHERE p.id = :postId")
+    Post findByIdWithProfileAndUser(@Param("postId") Long postId);
 }

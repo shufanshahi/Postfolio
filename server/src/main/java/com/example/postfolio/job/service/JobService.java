@@ -2,7 +2,9 @@ package com.example.postfolio.job.service;
 
 import com.example.postfolio.job.dto.JobRequest;
 import com.example.postfolio.job.dto.JobResponse;
+import com.example.postfolio.job.entity.Job;
 import com.example.postfolio.job.model.JobStatus;
+
 import java.util.List;
 
 public interface JobService {
@@ -14,4 +16,8 @@ public interface JobService {
     JobResponse withdrawApplication(Long jobId, Long applicantId);
     void deleteJob(Long jobId);
     JobResponse updateJobStatus(Long jobId, JobStatus status);
+
+    // Additional methods to support matching
+    List<Job> findAllActiveJobs();
+    Job findById(Long jobId);
 }
