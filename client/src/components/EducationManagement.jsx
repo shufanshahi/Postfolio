@@ -62,20 +62,20 @@ const EducationManagement = ({ userId }) => {
             {/* Header with Add Button */}
             <div className="flex justify-between items-center">
                 <div>
-                    <h2 className="text-2xl font-bold text-white">Education Management</h2>
-                    <p className="text-gray-300">Manage your complete educational journey from school to university</p>
+                    <h2 className="text-2xl font-bold text-slate-800">Education Management</h2>
+                    <p className="text-slate-600">Manage your complete educational journey from school to university</p>
                 </div>
 
                 <Dialog open={showForm} onOpenChange={setShowForm}>
                     <DialogTrigger asChild>
-                        <Button onClick={openAddForm} className="flex items-center gap-2">
+                        <Button onClick={openAddForm} className="flex items-center gap-2 bg-sky-600 hover:bg-sky-700 text-white">
                             <Plus className="w-4 h-4" />
                             Add Education
                         </Button>
                     </DialogTrigger>
-                    <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+                    <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto bg-white border-slate-200">
                         <DialogHeader>
-                            <DialogTitle>
+                            <DialogTitle className="text-slate-800">
                                 {editData ? 'Edit Education Entry' : 'Add New Education Entry'}
                             </DialogTitle>
                         </DialogHeader>
@@ -96,16 +96,16 @@ const EducationManagement = ({ userId }) => {
             />
 
             {/* Quick Actions Card */}
-            <Card className="bg-gray-800/50 border-gray-700/50">
+            <Card className="bg-white border-slate-200 shadow-sm">
                 <CardHeader>
-                    <CardTitle className="text-white">Quick Actions</CardTitle>
+                    <CardTitle className="text-slate-800">Quick Actions</CardTitle>
                 </CardHeader>
                 <CardContent>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div className="text-center p-4 border border-gray-600 rounded-lg bg-gray-700/30">
+                        <div className="text-center p-4 border border-slate-200 rounded-lg bg-slate-50">
                             <div className="text-2xl mb-2">🏫</div>
-                            <h3 className="font-semibold text-white">Add School</h3>
-                            <p className="text-sm text-gray-300 mb-3">Add your school education details</p>
+                            <h3 className="font-semibold text-slate-800">Add School</h3>
+                            <p className="text-sm text-slate-600 mb-3">Add your school education details</p>
                             <Button
                                 variant="outline"
                                 size="sm"
@@ -113,16 +113,16 @@ const EducationManagement = ({ userId }) => {
                                     setEditData(null);
                                     setShowForm(true);
                                 }}
-                                className="border-gray-600 text-gray-300 hover:bg-gray-600 hover:text-white"
+                                className="border-slate-300 text-slate-600 hover:bg-slate-100"
                             >
                                 Add School
                             </Button>
                         </div>
 
-                        <div className="text-center p-4 border border-gray-600 rounded-lg bg-gray-700/30">
+                        <div className="text-center p-4 border border-slate-200 rounded-lg bg-slate-50">
                             <div className="text-2xl mb-2">🎓</div>
-                            <h3 className="font-semibold text-white">Add University</h3>
-                            <p className="text-sm text-gray-300 mb-3">Add your university semester details</p>
+                            <h3 className="font-semibold text-slate-800">Add University</h3>
+                            <p className="text-sm text-slate-600 mb-3">Add your university semester details</p>
                             <Button
                                 variant="outline"
                                 size="sm"
@@ -130,21 +130,21 @@ const EducationManagement = ({ userId }) => {
                                     setEditData(null);
                                     setShowForm(true);
                                 }}
-                                className="border-gray-600 text-gray-300 hover:bg-gray-600 hover:text-white"
+                                className="border-slate-300 text-slate-600 hover:bg-slate-100"
                             >
                                 Add University
                             </Button>
                         </div>
 
-                        <div className="text-center p-4 border border-gray-600 rounded-lg bg-gray-700/30">
+                        <div className="text-center p-4 border border-slate-200 rounded-lg bg-slate-50">
                             <div className="text-2xl mb-2">📊</div>
-                            <h3 className="font-semibold text-white">View Summary</h3>
-                            <p className="text-sm text-gray-300 mb-3">See your complete education overview</p>
+                            <h3 className="font-semibold text-slate-800">View Summary</h3>
+                            <p className="text-sm text-slate-600 mb-3">See your complete education overview</p>
                             <Button
                                 variant="outline"
                                 size="sm"
                                 onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-                                className="border-gray-600 text-gray-300 hover:bg-gray-600 hover:text-white"
+                                className="border-slate-300 text-slate-600 hover:bg-slate-100"
                             >
                                 View Timeline
                             </Button>
@@ -154,30 +154,30 @@ const EducationManagement = ({ userId }) => {
             </Card>
 
             {/* Education Tips */}
-            <Card className="bg-gray-800/50 border-gray-700/50">
+            <Card className="bg-white border-slate-200 shadow-sm">
                 <CardHeader>
-                    <CardTitle className="text-white">💡 Education Tips</CardTitle>
+                    <CardTitle className="text-slate-800">💡 Education Tips</CardTitle>
                 </CardHeader>
                 <CardContent>
-                    <div className="space-y-3 text-sm text-gray-300">
+                    <div className="space-y-3 text-sm text-slate-600">
                         <div className="flex items-start gap-2">
-                            <span className="text-blue-400">•</span>
+                            <span className="text-sky-500">•</span>
                             <span>Add all your school classes (1-12) to show your complete academic journey</span>
                         </div>
                         <div className="flex items-start gap-2">
-                            <span className="text-green-400">•</span>
+                            <span className="text-emerald-500">•</span>
                             <span>SSC (Class 10) and HSC (Class 12) results are automatically detected</span>
                         </div>
                         <div className="flex items-start gap-2">
-                            <span className="text-purple-400">•</span>
+                            <span className="text-purple-500">•</span>
                             <span>Track your university progress semester by semester (1-8)</span>
                         </div>
                         <div className="flex items-start gap-2">
-                            <span className="text-orange-400">•</span>
+                            <span className="text-amber-500">•</span>
                             <span>Include certificate and transcript URLs for verification</span>
                         </div>
                         <div className="flex items-start gap-2">
-                            <span className="text-red-400">•</span>
+                            <span className="text-red-500">•</span>
                             <span>Mark semesters as completed when you finish them</span>
                         </div>
                     </div>

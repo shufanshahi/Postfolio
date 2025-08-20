@@ -241,9 +241,9 @@ const EducationTimeline = ({ userId, onEdit, onDelete }) => {
 
             {/* Institution Details Modal */}
             <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-                <DialogContent className="max-w-md bg-gray-800 border-gray-700">
+                <DialogContent className="max-w-md bg-white border-slate-200">
                     <DialogHeader>
-                        <DialogTitle className="flex items-center gap-2 text-white">
+                        <DialogTitle className="flex items-center gap-2 text-slate-800">
                             {selectedInstitution?.type === 'school' ? '🏫' : '🎓'}
                             {selectedInstitution?.institutionName}
                         </DialogTitle>
@@ -253,31 +253,31 @@ const EducationTimeline = ({ userId, onEdit, onDelete }) => {
                         <div className="space-y-4">
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
-                                    <label className="text-sm font-medium text-gray-400">Class Level</label>
-                                    <p className="text-lg font-semibold text-white">{selectedInstitution.data.displayName}</p>
+                                    <label className="text-sm font-medium text-slate-600">Class Level</label>
+                                    <p className="text-lg font-semibold text-slate-800">{selectedInstitution.data.displayName}</p>
                                 </div>
                                 <div>
-                                    <label className="text-sm font-medium text-gray-400">Result</label>
-                                    <p className="text-lg font-semibold text-green-400">{selectedInstitution.data.result}</p>
+                                    <label className="text-sm font-medium text-slate-600">Result</label>
+                                    <p className="text-lg font-semibold text-emerald-600">{selectedInstitution.data.result}</p>
                                 </div>
                                 <div>
-                                    <label className="text-sm font-medium text-gray-400">Academic Year</label>
-                                    <p className="text-lg text-white">{selectedInstitution.data.academicYear}</p>
+                                    <label className="text-sm font-medium text-slate-600">Academic Year</label>
+                                    <p className="text-lg text-slate-800">{selectedInstitution.data.academicYear}</p>
                                 </div>
                                 <div>
-                                    <label className="text-sm font-medium text-gray-400">Completion Date</label>
-                                    <p className="text-lg text-white">{selectedInstitution.data.completionDate}</p>
+                                    <label className="text-sm font-medium text-slate-600">Completion Date</label>
+                                    <p className="text-lg text-slate-800">{selectedInstitution.data.completionDate}</p>
                                 </div>
                             </div>
 
                             {selectedInstitution.data.certificateUrl && (
                                 <div>
-                                    <label className="text-sm font-medium text-gray-400">Certificate</label>
+                                    <label className="text-sm font-medium text-slate-600">Certificate</label>
                                     <a
                                         href={selectedInstitution.data.certificateUrl}
                                         target="_blank"
                                         rel="noopener noreferrer"
-                                        className="text-blue-400 hover:underline"
+                                        className="text-sky-600 hover:underline"
                                     >
                                         View Certificate
                                     </a>
@@ -290,27 +290,27 @@ const EducationTimeline = ({ userId, onEdit, onDelete }) => {
                         <div className="space-y-4">
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
-                                    <label className="text-sm font-medium text-gray-400">Semester</label>
-                                    <p className="text-lg font-semibold text-white">{selectedInstitution.data.semesterDisplayName}</p>
+                                    <label className="text-sm font-medium text-slate-600">Semester</label>
+                                    <p className="text-lg font-semibold text-slate-800">{selectedInstitution.data.semesterDisplayName}</p>
                                 </div>
                                 <div>
-                                    <label className="text-sm font-medium text-gray-400">Result</label>
-                                    <p className="text-lg font-semibold text-green-400">{selectedInstitution.data.semesterResult}</p>
+                                    <label className="text-sm font-medium text-slate-600">Result</label>
+                                    <p className="text-lg font-semibold text-emerald-600">{selectedInstitution.data.semesterResult}</p>
                                 </div>
                                 <div>
-                                    <label className="text-sm font-medium text-gray-400">Degree</label>
-                                    <p className="text-lg text-white">{selectedInstitution.data.degreeName}</p>
+                                    <label className="text-sm font-medium text-slate-600">Degree</label>
+                                    <p className="text-lg text-slate-800">{selectedInstitution.data.degreeName}</p>
                                 </div>
                                 <div>
-                                    <label className="text-sm font-medium text-gray-400">Academic Year</label>
-                                    <p className="text-lg text-white">{selectedInstitution.data.academicYear}</p>
+                                    <label className="text-sm font-medium text-slate-600">Academic Year</label>
+                                    <p className="text-lg text-slate-800">{selectedInstitution.data.academicYear}</p>
                                 </div>
                                 <div>
-                                    <label className="text-sm font-medium text-gray-400">Credits</label>
-                                    <p className="text-lg text-white">{selectedInstitution.data.totalCredits}</p>
+                                    <label className="text-sm font-medium text-slate-600">Credits</label>
+                                    <p className="text-lg text-slate-800">{selectedInstitution.data.totalCredits}</p>
                                 </div>
                                 <div>
-                                    <label className="text-sm font-medium text-gray-400">Status</label>
+                                    <label className="text-sm font-medium text-slate-600">Status</label>
                                     <Badge variant={selectedInstitution.data.isCompleted ? "default" : "secondary"}>
                                         {selectedInstitution.data.isCompleted ? "Completed" : "In Progress"}
                                     </Badge>
@@ -319,12 +319,12 @@ const EducationTimeline = ({ userId, onEdit, onDelete }) => {
 
                             {selectedInstitution.data.transcriptUrl && (
                                 <div>
-                                    <label className="text-sm font-medium text-gray-400">Transcript</label>
+                                    <label className="text-sm font-medium text-slate-600">Transcript</label>
                                     <a
                                         href={selectedInstitution.data.transcriptUrl}
                                         target="_blank"
                                         rel="noopener noreferrer"
-                                        className="text-blue-400 hover:underline"
+                                        className="text-sky-600 hover:underline"
                                     >
                                         View Transcript
                                     </a>
