@@ -10,6 +10,7 @@ import com.corundumstudio.socketio.listener.DisconnectListener;
 import com.example.postfolio.videoCall.socket.dto.IceCandidateMessage;
 import com.example.postfolio.videoCall.socket.dto.JoinPayload;
 import com.example.postfolio.videoCall.socket.dto.SDPMessage;
+import com.example.postfolio.videoCall.socket.dto.WhiteboardEvent;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
 import org.slf4j.Logger;
@@ -121,6 +122,14 @@ public class VideoCallSocketServer {
             @Override
             public void onData(SocketIOClient client, IceCandidateMessage data, AckRequest ackSender) {
                 relay(client, data.getRoomId(), "candidate", data);
+            }
+        });
+
+        // Whiteboard relay events (shared within a room)
+        server.addEventListener("whiteboard-event", WhiteboardEvent.class, new DataListener<WhiteboardEvent>() {
+            @Override
+            public void onData(SocketIOClient client, WhiteboardEvent data, AckRequest ackSender) {
+                relay(client, data.getRoomId(), "whiteboard-event", data);
             }
         });
 

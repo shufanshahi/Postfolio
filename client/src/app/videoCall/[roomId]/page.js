@@ -19,8 +19,18 @@ export default function VideoCallPage() {
   const [interviewData, setInterviewData] = useState(null);
   const [loadingInterview, setLoadingInterview] = useState(true);
 
+  // Whiteboard state
+  const [whiteboardVisible, setWhiteboardVisible] = useState(false);
+  const [brushColor, setBrushColor] = useState("#ff3b3b");
+  const [brushSize, setBrushSize] = useState(4);
+  const [drawMode, setDrawMode] = useState("draw"); // draw | erase
+
   const localVideoRef = useRef(null);
   const remoteVideoRef = useRef(null);
+  const canvasRef = useRef(null);
+  const canvasCtxRef = useRef(null);
+  const isDrawingRef = useRef(false);
+  const lastPointRef = useRef({ x: 0, y: 0 }); // normalized 0..1
   const pcRef = useRef(null);
   const localStreamRef = useRef(null);
   const socketRef = useRef(null);
@@ -192,6 +202,11 @@ export default function VideoCallPage() {
           }
         });
 
+        // Whiteboard sync
+        socket.on("whiteboard-event", (evt) => {
+          handleRemoteWhiteboardEvent(evt);
+        });
+
         socket.on("peer-left", () => {
           // Reset remote media when peer leaves
           setHasRemoteStream(false);
@@ -278,6 +293,141 @@ export default function VideoCallPage() {
     }
   };
 
+  // Whiteboard helpers
+  const getCanvasRect = () => {
+    const canvas = canvasRef.current;
+    if (!canvas) return { width: 0, height: 0 };
+    const rect = canvas.getBoundingClientRect();
+    return { width: rect.width, height: rect.height };
+  };
+
+  const ensureCanvasSize = () => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const dpr = window.devicePixelRatio || 1;
+    const { width, height } = getCanvasRect();
+    // Set backing store size
+    canvas.width = Math.max(1, Math.floor(width * dpr));
+    canvas.height = Math.max(1, Math.floor(height * dpr));
+    const ctx = canvas.getContext("2d");
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    canvasCtxRef.current = ctx;
+  };
+
+  useEffect(() => {
+    if (!whiteboardVisible) return;
+    ensureCanvasSize();
+    const onResize = () => ensureCanvasSize();
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, [whiteboardVisible]);
+
+  const drawLineLocal = (fromNorm, toNorm, options) => {
+    const ctx = canvasCtxRef.current;
+    const canvas = canvasRef.current;
+    if (!ctx || !canvas) return;
+    const { width, height } = getCanvasRect();
+    const fromX = fromNorm.x * width;
+    const fromY = fromNorm.y * height;
+    const toX = toNorm.x * width;
+    const toY = toNorm.y * height;
+
+    const mode = options?.mode || drawMode;
+    const color = options?.color || brushColor;
+    const size = options?.size || brushSize;
+
+    ctx.save();
+    if (mode === "erase") {
+      ctx.globalCompositeOperation = "destination-out";
+      ctx.strokeStyle = "rgba(0,0,0,1)";
+    } else {
+      ctx.globalCompositeOperation = "source-over";
+      ctx.strokeStyle = color;
+    }
+    ctx.lineWidth = size;
+    ctx.lineCap = "round";
+    ctx.lineJoin = "round";
+    ctx.beginPath();
+    ctx.moveTo(fromX, fromY);
+    ctx.lineTo(toX, toY);
+    ctx.stroke();
+    ctx.restore();
+  };
+
+  const emitWhiteboard = (evt) => {
+    if (!socketRef.current) return;
+    socketRef.current.emit("whiteboard-event", { roomId, ...evt });
+  };
+
+  const pointerToNorm = (e) => {
+    const canvas = canvasRef.current;
+    if (!canvas) return { x: 0, y: 0 };
+    const rect = canvas.getBoundingClientRect();
+    const x = (e.clientX - rect.left) / rect.width;
+    const y = (e.clientY - rect.top) / rect.height;
+    return { x: Math.max(0, Math.min(1, x)), y: Math.max(0, Math.min(1, y)) };
+  };
+
+  const onPointerDown = (e) => {
+    if (!whiteboardVisible) return;
+    e.preventDefault();
+    isDrawingRef.current = true;
+    const p = pointerToNorm(e);
+    lastPointRef.current = p;
+    emitWhiteboard({ type: "begin", mode: drawMode, color: brushColor, size: brushSize, fromX: p.x, fromY: p.y, toX: p.x, toY: p.y });
+  };
+
+  const onPointerMove = (e) => {
+    if (!whiteboardVisible || !isDrawingRef.current) return;
+    e.preventDefault();
+    const p = pointerToNorm(e);
+    const from = lastPointRef.current;
+    drawLineLocal(from, p);
+    emitWhiteboard({ type: "draw", mode: drawMode, color: brushColor, size: brushSize, fromX: from.x, fromY: from.y, toX: p.x, toY: p.y });
+    lastPointRef.current = p;
+  };
+
+  const onPointerUp = (e) => {
+    if (!whiteboardVisible) return;
+    e.preventDefault();
+    if (isDrawingRef.current) {
+      const p = pointerToNorm(e);
+      emitWhiteboard({ type: "end", mode: drawMode, color: brushColor, size: brushSize, fromX: p.x, fromY: p.y, toX: p.x, toY: p.y });
+    }
+    isDrawingRef.current = false;
+  };
+
+  const applyRemoteWhiteboardEvent = (evt) => {
+    ensureCanvasSize();
+    const type = evt?.type;
+    if (type === "clear") {
+      const ctx = canvasCtxRef.current;
+      const canvas = canvasRef.current;
+      if (ctx && canvas) ctx.clearRect(0, 0, canvas.width, canvas.height);
+      return;
+    }
+    const from = { x: evt.fromX, y: evt.fromY };
+    const to = { x: evt.toX, y: evt.toY };
+    drawLineLocal(from, to, { mode: evt.mode, color: evt.color, size: evt.size });
+  };
+
+  const handleRemoteWhiteboardEvent = (evt) => {
+    if (!whiteboardVisible) {
+      setWhiteboardVisible(true);
+      // Defer to allow canvas to mount
+      setTimeout(() => applyRemoteWhiteboardEvent(evt), 0);
+      return;
+    }
+    applyRemoteWhiteboardEvent(evt);
+  };
+
+  const clearWhiteboard = () => {
+    const ctx = canvasCtxRef.current;
+    const canvas = canvasRef.current;
+    if (ctx && canvas) ctx.clearRect(0, 0, canvas.width, canvas.height);
+    emitWhiteboard({ type: "clear" });
+  };
+
   if (!mounted || loadingInterview) return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-gray-900 to-slate-800 flex items-center justify-center">
       <div className="text-center">
@@ -305,6 +455,19 @@ export default function VideoCallPage() {
             playsInline
             className="w-full h-full object-cover"
           />
+          {whiteboardVisible && (
+            <>
+              <div className="absolute inset-0 bg-white"></div>
+              <canvas
+                ref={canvasRef}
+                onPointerDown={onPointerDown}
+                onPointerMove={onPointerMove}
+                onPointerUp={onPointerUp}
+                onPointerCancel={onPointerUp}
+                className="absolute inset-0 w-full h-full cursor-crosshair touch-none"
+              />
+            </>
+          )}
           {/* Overlay when no remote video */}
           {!hasRemoteStream && (
             <div className="absolute inset-0 bg-gradient-to-br from-slate-800 to-gray-900 flex items-center justify-center">
@@ -400,6 +563,30 @@ export default function VideoCallPage() {
                 )}
               </button>
 
+              {/* Whiteboard toggle */}
+              <button
+                onClick={() => setWhiteboardVisible(v => !v)}
+                className={`w-12 h-12 ${whiteboardVisible ? 'bg-emerald-600/80 hover:bg-emerald-600' : 'bg-white/10 hover:bg-white/20'} rounded-full flex items-center justify-center transition-all duration-200 border ${whiteboardVisible ? 'border-emerald-300' : 'border-white/20 hover:border-white/40'}`}
+                title="Toggle whiteboard"
+              >
+                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 10h16M4 14h10M4 18h6" />
+                </svg>
+              </button>
+
+              {/* Clear whiteboard */}
+              {whiteboardVisible && (
+                <button
+                  onClick={clearWhiteboard}
+                  className="w-12 h-12 bg-white/10 hover:bg-white/20 rounded-full flex items-center justify-center transition-all duration-200 border border-white/20"
+                  title="Clear whiteboard"
+                >
+                  <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 6h18M8 6v12m8-12v12M5 6l1 14a2 2 0 002 2h8a2 2 0 002-2l1-14" />
+                  </svg>
+                </button>
+              )}
+
               <button
                 onClick={hangUp}
                 className="w-12 h-12 bg-red-500/80 hover:bg-red-600 rounded-full flex items-center justify-center transition-all duration-200 border border-red-400/50 hover:border-red-300"
@@ -412,6 +599,42 @@ export default function VideoCallPage() {
             </div>
           </div>
         </div>
+
+        {/* Whiteboard toolbar */}
+        {whiteboardVisible && (
+          <div className="absolute top-20 right-4 bg-black/40 backdrop-blur-md rounded-xl p-3 border border-white/20 space-y-3">
+            <div className="flex items-center space-x-2">
+              <span className="text-white/70 text-xs">Color</span>
+              <input
+                type="color"
+                value={brushColor}
+                onChange={(e) => setBrushColor(e.target.value)}
+                className="w-8 h-8 p-0 border-0 bg-transparent"
+              />
+            </div>
+            <div className="flex items-center space-x-2">
+              <span className="text-white/70 text-xs">Size</span>
+              <input
+                type="range"
+                min="2"
+                max="20"
+                value={brushSize}
+                onChange={(e) => setBrushSize(parseInt(e.target.value, 10))}
+              />
+            </div>
+            <div className="flex items-center space-x-2">
+              <button
+                onClick={() => setDrawMode('draw')}
+                className={`px-2 py-1 rounded text-xs ${drawMode === 'draw' ? 'bg-emerald-600/80 text-white' : 'bg-white/10 text-white/80'}`}
+              >Draw</button>
+              <button
+                onClick={() => setDrawMode('erase')}
+                className={`px-2 py-1 rounded text-xs ${drawMode === 'erase' ? 'bg-emerald-600/80 text-white' : 'bg-white/10 text-white/80'}`}
+              >Erase</button>
+            </div>
+            <div className="text-[10px] text-white/60">Draws sync to everyone in this room.</div>
+          </div>
+        )}
       </div>
     </div>
   );
