@@ -21,4 +21,9 @@ public class PostResponseDTO {
     private String profilePictureBase64;
     private LocalDateTime createdAt;
     private List<ReactionResponseDTO> reactions;
+
+    // New image support fields
+    private List<String> images;
+    private int imageCount;
+    private boolean hasImages;
 }

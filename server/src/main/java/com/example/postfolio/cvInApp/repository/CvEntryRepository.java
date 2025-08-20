@@ -13,6 +13,7 @@ public interface CvEntryRepository extends JpaRepository<CvEntry, Long> {
     List<CvEntry> findByProfile(Profile profile);
 
     List<CvEntry> findByProfileAndType(Profile profile, CvType type);
+    List<CvEntry> findByProfileId(Long profileId);
 
     void deleteByPostId(Long postId);
 
