@@ -275,65 +275,8 @@ export default function FunctionalDashboard() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-stone-100">
       {/* Top Navigation */}
-      <div className="sticky top-0 z-50 border-b bg-white/90 backdrop-blur-md shadow-sm">
-        <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 bg-gradient-to-r from-slate-400 to-slate-500 rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-sm">P</span>
-              </div>
-              <h1 className="text-2xl font-bold bg-gradient-to-r from-slate-700 to-slate-500 bg-clip-text text-transparent">
-                Postfolio
-              </h1>
-            </div>
-          </div>
-          
-          <div className="flex items-center gap-4">   
-            <div className="relative">
-              <Button variant="ghost" size="icon" className="relative">
-                <Bell className="h-5 w-5" />
-                {dashboardData.notifications > 0 && (
-                  <Badge className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs bg-rose-300 text-rose-800">
-                    {dashboardData.notifications}
-                  </Badge>
-                )}
-              </Button>
-            </div>
-            
-            <DropdownMenu>
-              <DropdownMenuTrigger>
-                <div className="flex items-center gap-3 hover:bg-stone-50 rounded-lg p-2 transition-colors">
-                  <Avatar className="h-8 w-8 ring-2 ring-stone-200">
-                    <AvatarImage src={userData?.avatar || "/avatar-placeholder.jpg"} />
-                    <AvatarFallback className="bg-gradient-to-r from-slate-400 to-slate-500 text-white">
-                      {userData?.name ? userData.name.split(' ').map(n => n[0]).join('') : 'U'}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="text-left">
-                    <p className="text-sm font-medium">{userData?.name || 'User'}</p>
-                    <p className="text-xs text-stone-500">{userData?.role || 'Member'}</p>
-                  </div>
-                </div>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56">
-                <DropdownMenuItem onClick={() => handleNavigation('/profile')}>
-                  <User className="mr-2 h-4 w-4" />
-                  Profile
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => handleNavigation('/settings')}>
-                  <Settings className="mr-2 h-4 w-4" />
-                  Settings
-                </DropdownMenuItem>
-                <Separator />
-                <DropdownMenuItem onClick={handleLogout}>
-                  <LogOut className="mr-2 h-4 w-4" />
-                  Logout
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
-        </div>
-      </div>
+     
+         
 
       {/* Main Content */}
       <div className="max-w-7xl mx-auto py-8 px-6 space-y-8">
