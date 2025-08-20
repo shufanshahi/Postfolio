@@ -36,24 +36,25 @@ public class JobServiceImpl implements JobService {
     @Transactional
     public JobResponse createJob(JobRequest request) {
         User employer = userRepository.findById(request.getEmployerId()).orElseThrow();
-        Job job = Job.builder()
-            .title(request.getTitle())
-            .position(request.getPosition())
-            .description(request.getDescription())
-            .datePosted(request.getDatePosted())
-            .endDate(request.getEndDate())
-            .requiredProject(request.getRequiredProject())
-            .requiredSkills(request.getRequiredSkills())
-            .requiredEducation(request.getRequiredEducation())
-            .requiredExperience(request.getRequiredExperience())
-            .status(JobStatus.OPEN)
-            .employer(employer)
-            .build();
+    Job job = Job.builder()
+        .title(request.getTitle())
+        .position(request.getPosition())
+        .description(request.getDescription())
+        .datePosted(request.getDatePosted())
+        .endDate(request.getEndDate())
+        .requiredProject(request.getRequiredProject())
+        .requiredSkills(request.getRequiredSkills())
+        .requiredEducation(request.getRequiredEducation())
+        .requiredExperience(request.getRequiredExperience())
+        .status(JobStatus.OPEN)
+        .employer(employer)
+        .maxSalary(request.getMaxSalary())
+        .minSalary(request.getMinSalary())
+        .build();
         Job savedJob = jobRepository.save(job);
         
         // Invalidate job matching cache for this new job
         jobMatchingService.invalidateJobCache(savedJob);
-        
         return toResponse(savedJob);
     }
 
@@ -156,6 +157,8 @@ public class JobServiceImpl implements JobService {
         res.setRequiredExperience(job.getRequiredExperience());
         res.setStatus(job.getStatus());
         res.setEmployerId(job.getEmployer() != null ? job.getEmployer().getId() : null);
+        res.setMinSalary(job.getMinSalary());
+        res.setMaxSalary(job.getMaxSalary());
         res.setApplicantIds(job.getApplicants().stream().map(Profile::getId).collect(Collectors.toList()));
         res.setRejectedApplicantIds(job.getRejectedApplicants().stream().map(Profile::getId).collect(Collectors.toList()));
         res.setSelectedApplicantIds(job.getSelectedApplicants().stream().map(Profile::getId).collect(Collectors.toList()));

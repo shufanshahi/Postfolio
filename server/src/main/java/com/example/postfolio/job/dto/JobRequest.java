@@ -16,6 +16,8 @@ public class JobRequest {
     private String requiredEducation;
     private LocalDate endDate;
     private Long employerId;
+    private Long minSalary;
+    private Long maxSalary;
     private List<Long> applicantIds;
     private List<Long> selectedApplicantIds;
     private  List<Long> rejectedApplicantIds;

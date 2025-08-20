@@ -177,15 +177,38 @@ export default function JobApplicants() {
     }
   }, [jobId]);
 
+  const fetchProfileDetails = useCallback(async (profileId) => {
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch(`http://localhost:8080/api/profile/${profileId}`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (res.ok) {
+        return await res.json();
+      }
+      return null;
+    } catch (error) {
+      console.error("Error fetching profile details:", error);
+      return null;
+    }
+  }, []);
+
   useEffect(() => {
     const fetchApplicantsWithInterviewDetails = async () => {
       if (job?.applicantIds) {
         const applicantsWithDetails = await Promise.all(
           job.applicantIds.map(async (applicantId) => {
             const interview = await fetchInterviewDetails(applicantId);
+            const profile = await fetchProfileDetails(applicantId);
             return {
               applicantId,
               interview,
+              profile,
             };
           })
         );
@@ -194,7 +217,7 @@ export default function JobApplicants() {
     };
 
     fetchApplicantsWithInterviewDetails();
-  }, [job, fetchInterviewDetails]);
+  }, [job, fetchInterviewDetails, fetchProfileDetails]);
 
   const handleStartInterview = async (applicantId) => {
     try {
@@ -304,6 +327,9 @@ export default function JobApplicants() {
                 <div>
                   <span className="font-semibold">Selected:</span> {job.selectedApplicantIds?.length || 0}
                 </div>
+                <div>
+                  <span className="font-semibold">Salary Range:</span> {job.minSalary && job.maxSalary ? `${job.minSalary} - ${job.maxSalary}` : 'Not specified'}
+                </div>
               </div>
               {job.description && (
                 <div className="mt-4">
@@ -349,7 +375,7 @@ export default function JobApplicants() {
               </div>
             ) : (
               <div className="space-y-3">
-                {applicantsWithDetails.map(({ applicantId, interview }, index) => (
+                {applicantsWithDetails.map(({ applicantId, interview, profile }, index) => (
                   <div 
                     key={applicantId} 
                     className="flex items-center justify-between p-4 bg-gray-700 rounded-lg border border-gray-600"
@@ -359,7 +385,12 @@ export default function JobApplicants() {
                         {index + 1}
                       </div>
                       <div>
-                        <p className="text-white font-medium">Applicant ID: {applicantId}</p>
+                        <p className="text-white font-medium">
+                          {profile ? `${profile.name} ` : ``}
+                        </p>
+                        {profile?.email && (
+                          <p className="text-gray-400 text-sm">{profile.email}</p>
+                        )}
                         {interview && (
                           <p className="text-gray-400 text-sm">Interview Status: {interview.status}</p>
                         )}

@@ -2,10 +2,17 @@
 import { useEffect, useState } from "react";
 import { jobServiceFetch } from '@/lib/api';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 
 export default function FindJobs() {
   const [jobs, setJobs] = useState([]);
+  const [filteredJobs, setFilteredJobs] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [searchTitle, setSearchTitle] = useState("");
+  const [statusFilter, setStatusFilter] = useState("ALL");
+  const [minSalaryFilter, setMinSalaryFilter] = useState("");
+  const [maxSalaryFilter, setMaxSalaryFilter] = useState("");
 
   useEffect(() => {
     async function fetchJobs() {
@@ -55,6 +62,38 @@ export default function FindJobs() {
     fetchJobs();
   }, []);
 
+  // Filter jobs based on search criteria
+  useEffect(() => {
+    let filtered = jobs;
+
+    // Filter by status
+    if (statusFilter !== "ALL") {
+      filtered = filtered.filter(job => job.status === statusFilter);
+    }
+
+    // Filter by title search
+    if (searchTitle.trim()) {
+      filtered = filtered.filter(job => 
+        job.title.toLowerCase().includes(searchTitle.toLowerCase())
+      );
+    }
+
+    // Filter by salary range
+    if (minSalaryFilter) {
+      filtered = filtered.filter(job => 
+        job.maxSalary >= parseInt(minSalaryFilter)
+      );
+    }
+
+    if (maxSalaryFilter) {
+      filtered = filtered.filter(job => 
+        job.minSalary <= parseInt(maxSalaryFilter)
+      );
+    }
+
+    setFilteredJobs(filtered);
+  }, [jobs, searchTitle, statusFilter, minSalaryFilter, maxSalaryFilter]);
+
   const handleApply = async (jobId) => {
     setLoading(true);
     const profileRes = await fetch('http://localhost:8080/api/profile/me', {
@@ -78,6 +117,21 @@ export default function FindJobs() {
     });
     if (applyRes.ok) {
       alert("Application successful!");
+      // Refresh jobs to update isApplied status
+      const profileRes = await fetch('http://localhost:8080/api/profile/me', {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+        },
+      });
+      if (profileRes.ok) {
+        const profile = await profileRes.json();
+        setJobs(jobs.map(job => 
+          job.jobId === jobId 
+            ? { ...job, isApplied: true, applicantIds: [...(job.applicantIds || []), profile.id] }
+            : job
+        ));
+      }
     } else {
       alert("Failed to apply for the job. Please try again.");
     }
@@ -107,6 +161,21 @@ export default function FindJobs() {
     });
     if (withdrawRes.ok) {
       alert("Withdrawal successful!");
+      // Refresh jobs to update isApplied status
+      const profileRes = await fetch('http://localhost:8080/api/profile/me', {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+        },
+      });
+      if (profileRes.ok) {
+        const profile = await profileRes.json();
+        setJobs(jobs.map(job => 
+          job.jobId === jobId 
+            ? { ...job, isApplied: false, applicantIds: (job.applicantIds || []).filter(id => id !== profile.id) }
+            : job
+        ));
+      }
     } else {
       alert("Failed to withdraw from the job. Please try again.");
     }
@@ -117,12 +186,97 @@ export default function FindJobs() {
     <div className="min-h-screen bg-gray-900 p-6">
       <div className="max-w-4xl mx-auto space-y-8">
         <h1 className="text-3xl font-bold text-white mb-6">Find Jobs</h1>
+        
+        {/* Filter Section */}
+        <Card className="bg-gray-800 border-gray-700">
+          <CardContent className="pt-6">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              {/* Search by Title */}
+              <div>
+                <label className="block text-gray-300 mb-2 text-sm font-medium">Search by Title</label>
+                <Input
+                  type="text"
+                  placeholder="Enter job title..."
+                  value={searchTitle}
+                  onChange={(e) => setSearchTitle(e.target.value)}
+                  className="bg-gray-700 text-white border-gray-600 focus:border-blue-500"
+                />
+              </div>
+
+              {/* Status Filter */}
+              <div>
+                <label className="block text-gray-300 mb-2 text-sm font-medium">Filter by Status</label>
+                <select
+                  value={statusFilter}
+                  onChange={(e) => setStatusFilter(e.target.value)}
+                  className="w-full p-2 bg-gray-700 text-white border border-gray-600 rounded-md focus:border-blue-500 focus:outline-none"
+                >
+                  <option value="ALL">All Jobs</option>
+                  <option value="OPEN">Open Jobs</option>
+                  <option value="CLOSED">Closed Jobs</option>
+                </select>
+              </div>
+
+              {/* Min Salary Filter */}
+              <div>
+                <label className="block text-gray-300 mb-2 text-sm font-medium">Min Salary</label>
+                <Input
+                  type="number"
+                  placeholder="Minimum salary..."
+                  value={minSalaryFilter}
+                  onChange={(e) => setMinSalaryFilter(e.target.value)}
+                  className="bg-gray-700 text-white border-gray-600 focus:border-blue-500"
+                  min="0"
+                />
+              </div>
+
+              {/* Max Salary Filter */}
+              <div>
+                <label className="block text-gray-300 mb-2 text-sm font-medium">Max Salary</label>
+                <Input
+                  type="number"
+                  placeholder="Maximum salary..."
+                  value={maxSalaryFilter}
+                  onChange={(e) => setMaxSalaryFilter(e.target.value)}
+                  className="bg-gray-700 text-white border-gray-600 focus:border-blue-500"
+                  min="0"
+                />
+              </div>
+            </div>
+
+            {/* Results Count and Clear Filters */}
+            <div className="flex items-center justify-between mt-4">
+              <div className="text-gray-400 text-sm">
+                Showing {filteredJobs.length} of {jobs.length} jobs
+              </div>
+              {(searchTitle || statusFilter !== "ALL" || minSalaryFilter || maxSalaryFilter) && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    setSearchTitle("");
+                    setStatusFilter("ALL");
+                    setMinSalaryFilter("");
+                    setMaxSalaryFilter("");
+                  }}
+                  className="bg-gray-700 border-gray-600 text-gray-300 hover:bg-gray-600 hover:text-white"
+                >
+                  Clear Filters
+                </Button>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+
         <div className="space-y-4">
           {loading && <div className="text-gray-400">Loading...</div>}
-          {!loading && jobs.length === 0 && (
+          {!loading && filteredJobs.length === 0 && jobs.length === 0 && (
             <div className="text-gray-400">No jobs available.</div>
           )}
-          {jobs.map((job) => (
+          {!loading && filteredJobs.length === 0 && jobs.length > 0 && (
+            <div className="text-gray-400">No jobs match your current filters.</div>
+          )}
+          {filteredJobs.map((job) => (
             <Card key={job.jobId} className="bg-gray-800 border-gray-700">
               <CardHeader>
                 <CardTitle className="text-white">
@@ -140,6 +294,9 @@ export default function FindJobs() {
               </CardHeader>
               <CardContent className="text-gray-300">
                 <div>
+                  <span className="font-semibold">Salary Range:</span> {job.minSalary && job.maxSalary ? `${job.minSalary} - ${job.maxSalary}` : 'Not specified'}
+                </div>
+                <div className="mt-2">
                   <span className="font-semibold">Description:</span> {job.description || 'N/A'}
                 </div>
                 <div className="mt-2">
