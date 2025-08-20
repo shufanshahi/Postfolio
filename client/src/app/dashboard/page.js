@@ -35,6 +35,7 @@ import {
 import {
   Alert, AlertDescription
 } from '@/components/ui/alert';
+import Navbar from '@/components/Navbar';
 
 export default function FunctionalDashboard() {
   const router = useRouter();
@@ -275,6 +276,7 @@ export default function FunctionalDashboard() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-stone-100">
       {/* Top Navigation */}
+      <Navbar/>
      
          
 

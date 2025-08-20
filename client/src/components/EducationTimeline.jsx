@@ -41,20 +41,20 @@ const EducationTimeline = ({ userId, onEdit, onDelete }) => {
     const getInstitutionColor = (institutionName) => {
         // Generate consistent colors for institutions
         const colors = [
-            'bg-blue-500', 'bg-green-500', 'bg-purple-500', 'bg-orange-500',
-            'bg-pink-500', 'bg-indigo-500', 'bg-teal-500', 'bg-red-500'
+            'bg-sky-500', 'bg-emerald-500', 'bg-purple-500', 'bg-amber-500',
+            'bg-rose-500', 'bg-indigo-500', 'bg-teal-500', 'bg-red-500'
         ];
         const index = institutionName.length % colors.length;
         return colors[index];
     };
 
     const getLevelColor = (level, isCompleted = true) => {
-        if (!isCompleted) return 'bg-gray-300';
+        if (!isCompleted) return 'bg-slate-300';
 
-        if (level <= 5) return 'bg-green-400';
-        if (level <= 10) return 'bg-blue-400';
+        if (level <= 5) return 'bg-emerald-400';
+        if (level <= 10) return 'bg-sky-400';
         if (level <= 12) return 'bg-purple-400';
-        if (level <= 16) return 'bg-orange-400';
+        if (level <= 16) return 'bg-amber-400';
         return 'bg-red-400';
     };
 
@@ -65,13 +65,13 @@ const EducationTimeline = ({ userId, onEdit, onDelete }) => {
 
     if (loading) {
         return (
-            <Card className="w-full bg-gray-800/50 border-gray-700/50">
+            <Card className="w-full bg-white border-slate-200 shadow-sm">
                 <CardHeader>
-                    <CardTitle className="text-white">Education Timeline</CardTitle>
+                    <CardTitle className="text-slate-800">Education Timeline</CardTitle>
                 </CardHeader>
                 <CardContent>
                     <div className="flex justify-center">
-                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-400"></div>
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-sky-500"></div>
                     </div>
                 </CardContent>
             </Card>
@@ -80,12 +80,12 @@ const EducationTimeline = ({ userId, onEdit, onDelete }) => {
 
     if (!educationData) {
         return (
-            <Card className="w-full bg-gray-800/50 border-gray-700/50">
+            <Card className="w-full bg-white border-slate-200 shadow-sm">
                 <CardHeader>
-                    <CardTitle className="text-white">Education Timeline</CardTitle>
+                    <CardTitle className="text-slate-800">Education Timeline</CardTitle>
                 </CardHeader>
                 <CardContent>
-                    <p className="text-gray-300">No education data available</p>
+                    <p className="text-slate-600">No education data available</p>
                 </CardContent>
             </Card>
         );
@@ -111,11 +111,11 @@ const EducationTimeline = ({ userId, onEdit, onDelete }) => {
 
     return (
         <div className="space-y-6">
-            <Card className="w-full bg-gray-800/50 border-gray-700/50">
+            <Card className="w-full bg-white border-slate-200 shadow-sm">
                 <CardHeader>
-                    <CardTitle className="flex items-center gap-2 text-white">
+                    <CardTitle className="flex items-center gap-2 text-slate-800">
                         🎓 Education Journey
-                        <Badge variant="secondary" className="bg-gray-600 text-gray-200">
+                        <Badge variant="secondary" className="bg-slate-100 text-slate-700 border-slate-200">
                             {educationData.schools?.length || 0} Schools • {educationData.universities?.length || 0} Semesters
                         </Badge>
                     </CardTitle>
@@ -127,8 +127,8 @@ const EducationTimeline = ({ userId, onEdit, onDelete }) => {
                             <div key={institutionName} className="space-y-4">
                                 <div className="flex items-center gap-3">
                                     <div className={`w-4 h-4 rounded-full ${getInstitutionColor(institutionName)}`}></div>
-                                    <h3 className="text-lg font-semibold text-white">{institutionName}</h3>
-                                    <Badge variant="outline" className="ml-auto border-gray-600 text-gray-300">
+                                    <h3 className="text-lg font-semibold text-slate-800">{institutionName}</h3>
+                                    <Badge variant="outline" className="ml-auto border-slate-300 text-slate-600">
                                         School
                                     </Badge>
                                 </div>
@@ -157,7 +157,7 @@ const EducationTimeline = ({ userId, onEdit, onDelete }) => {
                                                                 e.stopPropagation();
                                                                 onEdit({ type: 'school', data: school, institutionName });
                                                             }}
-                                                            className="w-4 h-4 bg-blue-500 hover:bg-blue-600 rounded-full flex items-center justify-center text-white text-xs"
+                                                            className="w-4 h-4 bg-sky-500 hover:bg-sky-600 rounded-full flex items-center justify-center text-white text-xs"
                                                         >
                                                             ✏️
                                                         </button>
@@ -184,8 +184,8 @@ const EducationTimeline = ({ userId, onEdit, onDelete }) => {
                             <div key={institutionName} className="space-y-4">
                                 <div className="flex items-center gap-3">
                                     <div className={`w-4 h-4 rounded-full ${getInstitutionColor(institutionName)}`}></div>
-                                    <h3 className="text-lg font-semibold text-white">{institutionName}</h3>
-                                    <Badge variant="outline" className="ml-auto border-gray-600 text-gray-300">
+                                    <h3 className="text-lg font-semibold text-slate-800">{institutionName}</h3>
+                                    <Badge variant="outline" className="ml-auto border-slate-300 text-slate-600">
                                         University
                                     </Badge>
                                 </div>
@@ -214,7 +214,7 @@ const EducationTimeline = ({ userId, onEdit, onDelete }) => {
                                                                 e.stopPropagation();
                                                                 onEdit({ type: 'university', data: university, institutionName });
                                                             }}
-                                                            className="w-4 h-4 bg-blue-500 hover:bg-blue-600 rounded-full flex items-center justify-center text-white text-xs"
+                                                            className="w-4 h-4 bg-sky-500 hover:bg-sky-600 rounded-full flex items-center justify-center text-white text-xs"
                                                         >
                                                             ✏️
                                                         </button>

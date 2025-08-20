@@ -5,12 +5,15 @@ package com.example.postfolio.profile.service;
 import com.example.postfolio.profile.dto.EducationSummaryDto;
 import com.example.postfolio.profile.dto.SchoolDto;
 import com.example.postfolio.profile.dto.UniversityDto;
+import com.example.postfolio.profile.dto.WorkDto;
 import com.example.postfolio.profile.entity.Profile;
 import com.example.postfolio.profile.entity.School;
 import com.example.postfolio.profile.entity.University;
+import com.example.postfolio.profile.entity.Work;
 import com.example.postfolio.profile.repository.ProfileRepository;
 import com.example.postfolio.profile.repository.SchoolRepository;
 import com.example.postfolio.profile.repository.UniversityRepository;
+import com.example.postfolio.profile.repository.WorkRepository;
 import com.example.postfolio.user.entity.User;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -24,6 +27,7 @@ public class EducationService {
 
     private final SchoolRepository schoolRepository;
     private final UniversityRepository universityRepository;
+    private final WorkRepository workRepository;
     private final ProfileRepository profileRepository;
 
     // School operations
@@ -162,14 +166,26 @@ public class EducationService {
         universityRepository.delete(university);
     }
 
+    // Work operations
+    public List<WorkDto> getUserWorks(User user) {
+        Profile profile = profileRepository.findByUser(user)
+                .orElseThrow(() -> new RuntimeException("Profile not found for user"));
+        List<Work> works = workRepository.findByProfileOrderByStartDateDesc(profile);
+        return works.stream()
+                .map(this::convertToWorkDto)
+                .collect(Collectors.toList());
+    }
+
     // Get complete education summary
     public EducationSummaryDto getEducationSummary(User user) {
         List<SchoolDto> schools = getUserSchools(user);
         List<UniversityDto> universities = getUserUniversities(user);
+        List<WorkDto> works = getUserWorks(user);
 
         return EducationSummaryDto.builder()
                 .schools(schools)
                 .universities(universities)
+                .works(works)
                 .build();
     }
 
@@ -202,6 +218,23 @@ public class EducationService {
                 .isCompleted(university.getIsCompleted())
                 .semesterDisplayName(university.getSemesterDisplayName())
                 .academicLevel(university.getAcademicLevel())
+                .build();
+    }
+
+    private WorkDto convertToWorkDto(Work work) {
+        return WorkDto.builder()
+                .id(work.getId())
+                .companyName(work.getCompanyName())
+                .position(work.getPosition())
+                .location(work.getLocation())
+                .startDate(work.getStartDate())
+                .endDate(work.getEndDate())
+                .isCurrent(work.getIsCurrent())
+                .description(work.getDescription())
+                .achievements(work.getAchievements())
+                .technologiesUsed(work.getTechnologiesUsed())
+                .duration(work.getDuration())
+                .displayDateRange(work.getDisplayDateRange())
                 .build();
     }
 }
