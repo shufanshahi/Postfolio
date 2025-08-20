@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import io from "socket.io-client";
 import { Button } from "@/components/ui/button";
@@ -301,18 +301,39 @@ export default function VideoCallPage() {
     return { width: rect.width, height: rect.height };
   };
 
-  const ensureCanvasSize = () => {
+  const ensureCanvasSize = useCallback(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
     const dpr = window.devicePixelRatio || 1;
     const { width, height } = getCanvasRect();
-    // Set backing store size
-    canvas.width = Math.max(1, Math.floor(width * dpr));
-    canvas.height = Math.max(1, Math.floor(height * dpr));
-    const ctx = canvas.getContext("2d");
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    canvasCtxRef.current = ctx;
-  };
+    const newWidth = Math.max(1, Math.floor(width * dpr));
+    const newHeight = Math.max(1, Math.floor(height * dpr));
+    
+    // Only resize if dimensions have actually changed to preserve content
+    if (canvas.width !== newWidth || canvas.height !== newHeight) {
+      // Save the current canvas content
+      const imageData = canvas.width > 0 && canvas.height > 0 ? 
+        canvas.getContext("2d").getImageData(0, 0, canvas.width, canvas.height) : null;
+      
+      // Set new backing store size
+      canvas.width = newWidth;
+      canvas.height = newHeight;
+      
+      const ctx = canvas.getContext("2d");
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      canvasCtxRef.current = ctx;
+      
+      // Restore the previous content if it existed
+      if (imageData) {
+        ctx.putImageData(imageData, 0, 0);
+      }
+    } else {
+      // Just update the context reference
+      const ctx = canvas.getContext("2d");
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      canvasCtxRef.current = ctx;
+    }
+  }, []);
 
   useEffect(() => {
     if (!whiteboardVisible) return;
@@ -320,7 +341,7 @@ export default function VideoCallPage() {
     const onResize = () => ensureCanvasSize();
     window.addEventListener("resize", onResize);
     return () => window.removeEventListener("resize", onResize);
-  }, [whiteboardVisible]);
+  }, [whiteboardVisible, ensureCanvasSize]);
 
   const drawLineLocal = (fromNorm, toNorm, options) => {
     const ctx = canvasCtxRef.current;
@@ -398,7 +419,9 @@ export default function VideoCallPage() {
   };
 
   const applyRemoteWhiteboardEvent = (evt) => {
-    ensureCanvasSize();
+    if (!canvasCtxRef.current) {
+      ensureCanvasSize();
+    }
     const type = evt?.type;
     if (type === "clear") {
       const ctx = canvasCtxRef.current;
@@ -406,9 +429,12 @@ export default function VideoCallPage() {
       if (ctx && canvas) ctx.clearRect(0, 0, canvas.width, canvas.height);
       return;
     }
-    const from = { x: evt.fromX, y: evt.fromY };
-    const to = { x: evt.toX, y: evt.toY };
-    drawLineLocal(from, to, { mode: evt.mode, color: evt.color, size: evt.size });
+    // Only draw lines for draw events, not for begin/end events
+    if (type === "draw") {
+      const from = { x: evt.fromX, y: evt.fromY };
+      const to = { x: evt.toX, y: evt.toY };
+      drawLineLocal(from, to, { mode: evt.mode, color: evt.color, size: evt.size });
+    }
   };
 
   const handleRemoteWhiteboardEvent = (evt) => {
