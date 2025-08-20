@@ -289,7 +289,7 @@ export default function CvViewer({ profileId }) {
                     </CardContent>
                 </Card>
             )}
-
+n
             {/* CV Sections */}
             {Object.entries(groupedEntries).map(([type, entries], index) => (
                 <Card key={type} className="rounded-2xl border shadow-lg hover:shadow-xl transition-all duration-300 bg-gray-800 border-gray-700 group">
