@@ -14,11 +14,13 @@ import java.util.Optional;
 @Repository
 public interface ReactionRepository extends JpaRepository<Reaction, Long> {
     List<Reaction> findByPost(Post post);
-    
+
     Optional<Reaction> findByPostAndUser(Post post, User user);
-    
+
     @Query("SELECT r FROM Reaction r JOIN FETCH r.user WHERE r.post = :post")
     List<Reaction> findByPostWithUser(@Param("post") Post post);
-    
+
     boolean existsByPostAndUser(Post post, User user);
-} 
+
+    void deleteByPostAndUser(Post post, User user);
+}

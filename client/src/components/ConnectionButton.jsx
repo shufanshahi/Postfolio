@@ -1,14 +1,16 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { apiFetch } from '@/lib/api';
+import { useNotifications } from '@/hooks/useNotifications';
 import { Button } from '@/components/ui/button';
 import { UserPlus, UserCheck, UserX, Clock, Loader2 } from 'lucide-react';
 
-const ConnectionButton = ({ targetUserId, className }) => {
+const ConnectionButton = ({ targetUserId, targetUserName, className }) => {
     const [status, setStatus] = useState(null);
     const [loading, setLoading] = useState(true);
     const [actionLoading, setActionLoading] = useState(false);
     const [error, setError] = useState(null);
+    const { connectionRequestSent, connectionAccepted, showError, showSuccess } = useNotifications();
 
     useEffect(() => {
         if (targetUserId) {
@@ -42,8 +44,10 @@ const ConnectionButton = ({ targetUserId, className }) => {
             if (!response.ok) throw new Error('Failed to send friend request');
 
             setStatus('PENDING');
+            connectionRequestSent(targetUserName || 'User');
         } catch (err) {
             setError(err.message);
+            showError('Failed to Send Request', err.message);
         } finally {
             setActionLoading(false);
         }
@@ -67,8 +71,10 @@ const ConnectionButton = ({ targetUserId, className }) => {
             if (!response.ok) throw new Error('Failed to accept friend request');
 
             setStatus('ACCEPTED');
+            connectionAccepted(targetUserName || 'User');
         } catch (err) {
             setError(err.message);
+            showError('Failed to Accept Request', err.message);
         } finally {
             setActionLoading(false);
         }
@@ -92,8 +98,10 @@ const ConnectionButton = ({ targetUserId, className }) => {
             if (!response.ok) throw new Error('Failed to reject friend request');
 
             setStatus('REJECTED');
+            showSuccess('Request Declined', `Connection request from ${targetUserName || 'User'} has been declined`);
         } catch (err) {
             setError(err.message);
+            showError('Failed to Decline Request', err.message);
         } finally {
             setActionLoading(false);
         }
@@ -117,8 +125,10 @@ const ConnectionButton = ({ targetUserId, className }) => {
             if (!response.ok) throw new Error('Failed to remove connection');
 
             setStatus(null);
+            showSuccess('Connection Removed', `You are no longer connected with ${targetUserName || 'User'}`);
         } catch (err) {
             setError(err.message);
+            showError('Failed to Remove Connection', err.message);
         } finally {
             setActionLoading(false);
         }
@@ -153,8 +163,8 @@ const ConnectionButton = ({ targetUserId, className }) => {
 
         case 'ACCEPTED':
             return (
-                <Button 
-                    variant="outline" 
+                <Button
+                    variant="outline"
                     onClick={removeConnection}
                     disabled={actionLoading}
                     className={`bg-sky-100 text-sky-800 border-sky-200 hover:bg-sky-200 hover:text-sky-900 ${className}`}
@@ -170,8 +180,8 @@ const ConnectionButton = ({ targetUserId, className }) => {
 
         case 'REJECTED':
             return (
-                <Button 
-                    variant="default" 
+                <Button
+                    variant="default"
                     onClick={sendFriendRequest}
                     disabled={actionLoading}
                     className={`bg-gradient-to-r from-sky-300 to-sky-400 text-white hover:from-sky-400 hover:to-sky-500 ${className}`}
@@ -196,8 +206,8 @@ const ConnectionButton = ({ targetUserId, className }) => {
         default:
             // No connection exists - check if there's a pending request from this user
             return (
-                <Button 
-                    variant="default" 
+                <Button
+                    variant="default"
                     onClick={sendFriendRequest}
                     disabled={actionLoading}
                     className={`bg-gradient-to-r from-sky-300 to-sky-400 text-white hover:from-sky-400 hover:to-sky-500 ${className}`}
