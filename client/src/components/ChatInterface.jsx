@@ -113,9 +113,9 @@ const ChatInterface = ({
   const otherUser = getOtherUser();
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full max-h-[600px]">
       {/* Chat Header */}
-      <div className="p-4 border-b bg-card">
+      <div className="p-4 border-b bg-card flex-shrink-0">
         <div className="flex items-center space-x-3">
           <Avatar>
             <AvatarImage src={otherUser?.profilePicture} />
@@ -131,60 +131,62 @@ const ChatInterface = ({
       </div>
 
       {/* Messages Area */}
-      <ScrollArea className="flex-1 p-4" ref={scrollRef}>
-        <div className="space-y-4">
-          {conversation.messages?.map((msg) => (
-            <div
-              key={msg.id}
-              className={`flex ${msg.senderId === conversation.otherUserId ? 'justify-start' : 'justify-end'}`}
-            >
-              <div className={`max-w-xs lg:max-w-md ${msg.senderId === conversation.otherUserId ? 'order-1' : 'order-2'}`}>
-                {msg.senderId === conversation.otherUserId && (
-                  <Avatar className="w-6 h-6 mb-1">
-                    <AvatarImage src={msg.senderAvatar} />
-                    <AvatarFallback className="text-xs">
-                      {msg.senderName?.charAt(0)?.toUpperCase()}
-                    </AvatarFallback>
-                  </Avatar>
-                )}
-
-                <div className={`rounded-lg p-3 ${msg.senderId === conversation.otherUserId
-                    ? 'bg-muted'
-                    : 'bg-primary text-primary-foreground'
-                  }`}>
-                  {msg.type === 'IMAGE' && msg.imageData ? (
-                    <div className="space-y-2">
-                      <img
-                        src={msg.imageData}
-                        alt="Shared image"
-                        className="max-w-full rounded"
-                      />
-                      {msg.content && (
-                        <p className="text-sm">{msg.content}</p>
-                      )}
-                    </div>
-                  ) : (
-                    <p className="text-sm">{msg.content}</p>
+      <div className="flex-1 overflow-hidden">
+        <ScrollArea className="h-full p-4" ref={scrollRef}>
+          <div className="space-y-4">
+            {conversation.messages?.map((msg) => (
+              <div
+                key={msg.id}
+                className={`flex ${msg.senderId === conversation.otherUserId ? 'justify-start' : 'justify-end'}`}
+              >
+                <div className={`max-w-xs lg:max-w-md ${msg.senderId === conversation.otherUserId ? 'order-1' : 'order-2'}`}>
+                  {msg.senderId === conversation.otherUserId && (
+                    <Avatar className="w-6 h-6 mb-1">
+                      <AvatarImage src={msg.senderAvatar} />
+                      <AvatarFallback className="text-xs">
+                        {msg.senderName?.charAt(0)?.toUpperCase()}
+                      </AvatarFallback>
+                    </Avatar>
                   )}
 
-                  <div className={`text-xs mt-2 ${msg.senderId === conversation.otherUserId
+                  <div className={`rounded-lg p-3 ${msg.senderId === conversation.otherUserId
+                    ? 'bg-muted'
+                    : 'bg-primary text-primary-foreground'
+                    }`}>
+                    {msg.type === 'IMAGE' && msg.imageData ? (
+                      <div className="space-y-2">
+                        <img
+                          src={msg.imageData}
+                          alt="Shared image"
+                          className="max-w-full rounded"
+                        />
+                        {msg.content && (
+                          <p className="text-sm">{msg.content}</p>
+                        )}
+                      </div>
+                    ) : (
+                      <p className="text-sm">{msg.content}</p>
+                    )}
+
+                    <div className={`text-xs mt-2 ${msg.senderId === conversation.otherUserId
                       ? 'text-muted-foreground'
                       : 'text-primary-foreground/70'
-                    }`}>
-                    {formatTimestamp(msg.timestamp)}
-                    {msg.isRead && (
-                      <span className="ml-2">✓✓</span>
-                    )}
+                      }`}>
+                      {formatTimestamp(msg.timestamp)}
+                      {msg.isRead && (
+                        <span className="ml-2">✓✓</span>
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
-          ))}
-        </div>
-      </ScrollArea>
+            ))}
+          </div>
+        </ScrollArea>
+      </div>
 
       {/* Message Input */}
-      <div className="p-4 border-t bg-card">
+      <div className="p-4 border-t bg-card flex-shrink-0">
         {/* Image Preview */}
         {imagePreview && (
           <div className="mb-3 p-3 border rounded-lg bg-muted/50">
