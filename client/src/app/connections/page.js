@@ -24,6 +24,15 @@ export default function ConnectionsPage() {
     const router = useRouter();
     const [activeTab, setActiveTab] = useState('connections');
 
+    // Check for tab query parameter on mount
+    useEffect(() => {
+        const urlParams = new URLSearchParams(window.location.search);
+        const tabParam = urlParams.get('tab');
+        if (tabParam && ['connections', 'pending', 'sent', 'search', 'messages'].includes(tabParam)) {
+            setActiveTab(tabParam);
+        }
+    }, []);
+
     // Messages related state
     const [user, setUser] = useState(null);
     const [connections, setConnections] = useState([]);
@@ -34,6 +43,7 @@ export default function ConnectionsPage() {
     const [selectedConversation, setSelectedConversation] = useState(null);
     const [messagingLoading, setMessagingLoading] = useState(false);
     const [pollingTrigger, setPollingTrigger] = useState(0);
+    const [previousMessagesCount, setPreviousMessagesCount] = useState({});
 
     // Polling hook for checking new messages
     const {
@@ -97,7 +107,20 @@ export default function ConnectionsPage() {
             try {
                 const token = localStorage.getItem('token');
                 if (token) {
+                    const previousConversations = conversations;
                     await fetchConversations(token);
+
+                    // Check for new messages in conversations
+                    if (previousConversations.length > 0) {
+                        conversations.forEach(conv => {
+                            const prevConv = previousConversations.find(p => p.id === conv.id);
+                            if (prevConv && conv.lastMessageAt !== prevConv.lastMessageAt) {
+                                // New message detected - notifications are now handled by the backend
+                                // when messages are sent, so we don't need to show toast notifications here
+                                console.log('New message detected in conversation:', conv.id);
+                            }
+                        });
+                    }
                 }
             } catch (error) {
                 console.error('Error polling conversations:', error);
@@ -106,7 +129,7 @@ export default function ConnectionsPage() {
 
         const interval = setInterval(pollConversations, 3000);
         return () => clearInterval(interval);
-    }, [user?.email]);
+    }, [user?.email, conversations, selectedConversation?.id, activeTab]);
 
     // Poll for new messages in selected conversation every 2 seconds
     useEffect(() => {
@@ -129,6 +152,19 @@ export default function ConnectionsPage() {
 
                 if (response.ok) {
                     const messages = await response.json();
+
+                    // Check for new messages in the selected conversation
+                    const previousMessages = selectedConversation.messages || [];
+                    const newMessages = messages.filter(msg =>
+                        !previousMessages.some(prevMsg => prevMsg.id === msg.id) &&
+                        msg.senderId !== user.id
+                    );
+
+                    // Log new messages (notifications are handled by backend)
+                    if (newMessages.length > 0) {
+                        console.log('New messages in selected conversation:', newMessages.length);
+                    }
+
                     setSelectedConversation(prev => ({
                         ...prev,
                         messages: messages
@@ -141,7 +177,7 @@ export default function ConnectionsPage() {
 
         const interval = setInterval(pollMessages, 2000);
         return () => clearInterval(interval);
-    }, [selectedConversation?.id, user?.email]);
+    }, [selectedConversation?.id, user?.email, selectedConversation?.messages, activeTab]);
 
     const fetchConversations = async (token) => {
         try {

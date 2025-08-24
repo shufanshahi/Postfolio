@@ -47,6 +47,15 @@ export function useNotifications() {
         showInfo("New Connection Request", `${userName} wants to connect with you`);
     };
 
+    // Message specific notifications
+    const messageReceived = (senderName, message) => {
+        showInfo("New Message", `${senderName}: ${message.length > 50 ? message.substring(0, 50) + '...' : message}`);
+    };
+
+    const imageMessageReceived = (senderName) => {
+        showInfo("New Image", `${senderName} sent you an image`);
+    };
+
     return {
         showSuccess,
         showError,
@@ -55,6 +64,8 @@ export function useNotifications() {
         connectionRequestSent,
         connectionAccepted,
         connectionRejected,
-        connectionRequestReceived
+        connectionRequestReceived,
+        messageReceived,
+        imageMessageReceived
     };
 }

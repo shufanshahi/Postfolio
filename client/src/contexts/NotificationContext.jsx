@@ -8,7 +8,7 @@ const NotificationContext = createContext();
 export function NotificationProvider({ children, userId }) {
     const [notifications, setNotifications] = useState([]);
     const [unreadCount, setUnreadCount] = useState(0);
-    const { connectionRequestReceived, connectionAccepted, connectionRejected } = useNotifications();
+    const { connectionRequestReceived, connectionAccepted, connectionRejected, messageReceived, imageMessageReceived } = useNotifications();
 
     useEffect(() => {
         if (userId) {
@@ -84,6 +84,18 @@ export function NotificationProvider({ children, userId }) {
                 break;
             case 'CONNECTION_REJECTED':
                 connectionRejected(notification.fromUserName);
+                break;
+            case 'MESSAGE':
+            case 'MESSAGE_RECEIVED':
+                if (notification.message && notification.message.includes('sent you an image')) {
+                    imageMessageReceived(notification.fromUserName);
+                } else {
+                    // Extract message content from notification message
+                    const messageContent = notification.message ?
+                        notification.message.replace(notification.fromUserName + ': ', '') :
+                        'New message';
+                    messageReceived(notification.fromUserName, messageContent);
+                }
                 break;
             default:
                 // Generic notification

@@ -125,6 +125,41 @@ public class NotificationService {
                 postOwnerId, celebratorId, NotificationType.POST_LIKED, postId);
     }
 
+    // Create message notification
+    public void createMessageNotification(Long receiverId, Long senderId, String senderName, String messageContent,
+            String messageType, Long conversationId) {
+        // Don't send notification if user sends message to themselves
+        if (receiverId.equals(senderId)) {
+            return;
+        }
+
+        String title = "New Message";
+        String message;
+
+        if ("IMAGE".equals(messageType)) {
+            message = senderName + " sent you an image";
+        } else {
+            String content = messageContent != null ? messageContent : "New message";
+            // Truncate message if too long
+            if (content.length() > 50) {
+                content = content.substring(0, 50) + "...";
+            }
+            message = senderName + ": " + content;
+        }
+
+        Notification notification = new Notification(
+                receiverId,
+                senderId,
+                senderName,
+                title,
+                message,
+                NotificationType.MESSAGE);
+        notification.setRelatedEntityId(conversationId);
+        notification.setActionUrl("/connections"); // Navigate to messages tab in connections
+
+        notificationRepository.save(notification);
+    }
+
     // Get user notifications
     public List<Notification> getUserNotifications(Long userId, int page, int size) {
         return notificationRepository.findByUserIdOrderByCreatedAtDesc(userId, PageRequest.of(page, size));

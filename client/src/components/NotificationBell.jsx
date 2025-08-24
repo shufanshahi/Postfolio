@@ -17,6 +17,9 @@ const getNotificationIcon = (type) => {
             return <UserPlus className="h-4 w-4 text-blue-600" />;
         case 'CONNECTION_ACCEPTED':
             return <UserPlus className="h-4 w-4 text-green-600" />;
+        case 'MESSAGE':
+        case 'MESSAGE_RECEIVED':
+            return <MessageSquare className="h-4 w-4 text-blue-600" />;
         case 'POST_LIKED':
             return <Heart className="h-4 w-4 text-red-600" />;
         case 'POST_COMMENTED':
@@ -52,8 +55,12 @@ export default function NotificationBell() {
             markAsRead(notification.id);
         }
 
-        // Navigate to relevant page if actionUrl exists
-        if (notification.actionUrl) {
+        // Navigate to relevant page based on notification type
+        if (notification.type === 'MESSAGE' || notification.type === 'MESSAGE_RECEIVED') {
+            // Navigate to connections page with messages tab active
+            window.location.href = '/connections?tab=messages';
+        } else if (notification.actionUrl) {
+            // Navigate to other notification action URLs
             window.location.href = notification.actionUrl;
         }
     };
@@ -110,8 +117,8 @@ export default function NotificationBell() {
                                         key={notification.id}
                                         onClick={() => handleNotificationClick(notification)}
                                         className={`p-3 cursor-pointer hover:bg-gray-50 transition-colors border-l-4 ${notification.isRead
-                                                ? 'border-l-transparent bg-white'
-                                                : 'border-l-blue-500 bg-blue-50'
+                                            ? 'border-l-transparent bg-white'
+                                            : 'border-l-blue-500 bg-blue-50'
                                             }`}
                                     >
                                         <div className="flex items-start gap-3">
