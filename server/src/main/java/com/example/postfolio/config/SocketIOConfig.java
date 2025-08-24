@@ -27,10 +27,11 @@ public class SocketIOConfig {
     // Messaging socket server removed - using polling instead
     // @Bean("messagingSocketIOServer")
     // public SocketIOServer messagingSocketIOServer() {
-    //     com.corundumstudio.socketio.Configuration config = new com.corundumstudio.socketio.Configuration();
-    //     config.setHostname(host);
-    //     config.setPort(messagingPort);
-    //     config.setOrigin("*");
-    //     return new SocketIOServer(config);
+    // com.corundumstudio.socketio.Configuration config = new
+    // com.corundumstudio.socketio.Configuration();
+    // config.setHostname(host);
+    // config.setPort(messagingPort);
+    // config.setOrigin("*");
+    // return new SocketIOServer(config);
     // }
 }

@@ -69,7 +69,7 @@ public class MessagingSocketServer {
             @Override
             public void onData(SocketIOClient client, String userEmail, AckRequest ackSender) {
                 String sessionId = client.getSessionId().toString();
-                
+
                 // Verify user exists
                 Optional<User> userOpt = userRepository.findByEmail(userEmail);
                 if (userOpt.isEmpty()) {
@@ -80,10 +80,10 @@ public class MessagingSocketServer {
                 // Store session mappings
                 userSessions.put(userEmail, sessionId);
                 sessionUsers.put(sessionId, userEmail);
-                
+
                 // Join user to their personal room
                 client.joinRoom("user_" + userEmail);
-                
+
                 log.info("User {} authenticated for messaging, session: {}", userEmail, sessionId);
                 client.sendEvent("authenticated", "Successfully authenticated");
             }
@@ -172,7 +172,8 @@ public class MessagingSocketServer {
         private String receiverEmail;
         private boolean isTyping;
 
-        public TypingEvent() {}
+        public TypingEvent() {
+        }
 
         public TypingEvent(String senderEmail, String receiverEmail, boolean isTyping) {
             this.senderEmail = senderEmail;
@@ -180,13 +181,28 @@ public class MessagingSocketServer {
             this.isTyping = isTyping;
         }
 
-        public String getSenderEmail() { return senderEmail; }
-        public void setSenderEmail(String senderEmail) { this.senderEmail = senderEmail; }
-        
-        public String getReceiverEmail() { return receiverEmail; }
-        public void setReceiverEmail(String receiverEmail) { this.receiverEmail = receiverEmail; }
-        
-        public boolean isTyping() { return isTyping; }
-        public void setIsTyping(boolean isTyping) { this.isTyping = isTyping; }
+        public String getSenderEmail() {
+            return senderEmail;
+        }
+
+        public void setSenderEmail(String senderEmail) {
+            this.senderEmail = senderEmail;
+        }
+
+        public String getReceiverEmail() {
+            return receiverEmail;
+        }
+
+        public void setReceiverEmail(String receiverEmail) {
+            this.receiverEmail = receiverEmail;
+        }
+
+        public boolean isTyping() {
+            return isTyping;
+        }
+
+        public void setIsTyping(boolean isTyping) {
+            this.isTyping = isTyping;
+        }
     }
-} 
+}

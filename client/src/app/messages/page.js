@@ -9,11 +9,11 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
-import { 
-  MessageCircle, 
-  Send, 
-  Image as ImageIcon, 
-  Download, 
+import {
+  MessageCircle,
+  Send,
+  Image as ImageIcon,
+  Download,
   Plus,
   Users,
   Search,
@@ -39,12 +39,12 @@ const MessagesPage = () => {
   const [pollingTrigger, setPollingTrigger] = useState(0);
 
   // Polling hook for checking new messages
-  const { 
-    isPolling, 
-    startPolling, 
-    stopPolling, 
+  const {
+    isPolling,
+    startPolling,
+    stopPolling,
     checkForNewConversations,
-    checkForNewMessages 
+    checkForNewMessages
   } = useMessagePolling(user?.email, 3000);
 
   useEffect(() => {
@@ -175,9 +175,9 @@ const MessagesPage = () => {
           'Content-Type': 'application/json'
         }
       });
-      
+
       console.log('Connections response status:', response.status);
-      
+
       if (response.ok) {
         const data = await response.json();
         console.log('Connections data:', data);
@@ -219,9 +219,9 @@ const MessagesPage = () => {
     try {
       setMessagingLoading(true);
       const token = localStorage.getItem('token');
-      
+
       console.log('Sending message:', messageData);
-      
+
       const response = await fetch(`${API_BASE_URL}/api/messages/send`, {
         method: 'POST',
         headers: {
@@ -241,7 +241,7 @@ const MessagesPage = () => {
       if (response.ok) {
         const newMessage = await response.json();
         console.log('Message sent successfully:', newMessage);
-        
+
         // Update the selected conversation with the new message
         setSelectedConversation(prev => ({
           ...prev,
@@ -249,9 +249,9 @@ const MessagesPage = () => {
         }));
 
         // Update conversations list
-        setConversations(prev => 
-          prev.map(conv => 
-            conv.id === selectedConversation.id 
+        setConversations(prev =>
+          prev.map(conv =>
+            conv.id === selectedConversation.id
               ? { ...conv, lastMessageAt: newMessage.timestamp }
               : conv
           )
@@ -270,22 +270,22 @@ const MessagesPage = () => {
   const handleStartNewChat = async (connection) => {
     try {
       const token = localStorage.getItem('token');
-      
+
       // Get the other user's email from the connection
-      const otherUser = connection.requesterId === user.id 
+      const otherUser = connection.requesterId === user.id
         ? {
-            id: connection.receiverId,
-            name: connection.receiverName,
-            email: connection.receiverEmail
-          }
+          id: connection.receiverId,
+          name: connection.receiverName,
+          email: connection.receiverEmail
+        }
         : {
-            id: connection.requesterId,
-            name: connection.requesterName,
-            email: connection.requesterEmail
-          };
-      
+          id: connection.requesterId,
+          name: connection.requesterName,
+          email: connection.requesterEmail
+        };
+
       console.log('Starting new chat with:', otherUser);
-      
+
       const response = await fetch(`${API_BASE_URL}/api/messages/conversations/create?otherUserEmail=${otherUser.email}`, {
         method: 'POST',
         headers: {
@@ -297,10 +297,10 @@ const MessagesPage = () => {
       if (response.ok) {
         const newConversation = await response.json();
         console.log('New conversation created:', newConversation);
-        
+
         // Add the new conversation to the list
         setConversations(prev => [newConversation, ...prev]);
-        
+
         // Select the new conversation
         await handleSelectConversation(newConversation);
       } else {
@@ -350,7 +350,7 @@ const MessagesPage = () => {
               New Chat
             </Button>
           </div>
-          
+
           {/* Polling Status Indicator */}
           <div className="flex items-center gap-2 text-sm">
             <div className={`w-2 h-2 rounded-full ${isPolling ? 'bg-green-500' : 'bg-gray-500'}`}></div>

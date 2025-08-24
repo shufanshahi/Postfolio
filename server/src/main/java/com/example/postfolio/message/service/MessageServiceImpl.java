@@ -42,26 +42,26 @@ public class MessageServiceImpl implements MessageService {
             // Existing conversation
             conversation = conversationRepository.findById(request.getConversationId())
                     .orElseThrow(() -> new RuntimeException("Conversation not found"));
-            
+
             // Verify sender is part of this conversation
-            if (!conversation.getUser1().getId().equals(sender.getId()) && 
-                !conversation.getUser2().getId().equals(sender.getId())) {
+            if (!conversation.getUser1().getId().equals(sender.getId()) &&
+                    !conversation.getUser2().getId().equals(sender.getId())) {
                 throw new RuntimeException("You are not part of this conversation");
             }
-            
+
             // Get the other user in the conversation
-            receiver = conversation.getUser1().getId().equals(sender.getId()) 
-                ? conversation.getUser2() 
-                : conversation.getUser1();
+            receiver = conversation.getUser1().getId().equals(sender.getId())
+                    ? conversation.getUser2()
+                    : conversation.getUser1();
         } else {
             // New conversation
             receiver = userRepository.findByEmail(request.getReceiverEmail())
                     .orElseThrow(() -> new RuntimeException("Receiver not found"));
-            
+
             if (!areUsersConnected(senderEmail, request.getReceiverEmail())) {
                 throw new RuntimeException("Users must be connected to send messages");
             }
-            
+
             conversation = createOrGetConversationEntity(senderEmail, request.getReceiverEmail());
         }
 
@@ -87,7 +87,7 @@ public class MessageServiceImpl implements MessageService {
         // Convert to response
         MessageResponse messageResponse = convertToMessageResponse(savedMessage);
 
-        log.info("Message sent successfully from {} to {} in conversation: {}", 
+        log.info("Message sent successfully from {} to {} in conversation: {}",
                 sender.getEmail(), receiver.getEmail(), conversation.getId());
 
         return messageResponse;
@@ -102,8 +102,8 @@ public class MessageServiceImpl implements MessageService {
                 .orElseThrow(() -> new RuntimeException("Conversation not found"));
 
         // Verify user is part of this conversation
-        if (!conversation.getUser1().getId().equals(user.getId()) && 
-            !conversation.getUser2().getId().equals(user.getId())) {
+        if (!conversation.getUser1().getId().equals(user.getId()) &&
+                !conversation.getUser2().getId().equals(user.getId())) {
             throw new RuntimeException("You are not part of this conversation");
         }
 
@@ -136,8 +136,8 @@ public class MessageServiceImpl implements MessageService {
                 .orElseThrow(() -> new RuntimeException("Conversation not found"));
 
         // Verify user is part of this conversation
-        if (!conversation.getUser1().getId().equals(user.getId()) && 
-            !conversation.getUser2().getId().equals(user.getId())) {
+        if (!conversation.getUser1().getId().equals(user.getId()) &&
+                !conversation.getUser2().getId().equals(user.getId())) {
             throw new RuntimeException("You are not part of this conversation");
         }
 
@@ -153,8 +153,8 @@ public class MessageServiceImpl implements MessageService {
                 .orElseThrow(() -> new RuntimeException("Conversation not found"));
 
         // Verify user is part of this conversation
-        if (!conversation.getUser1().getId().equals(user.getId()) && 
-            !conversation.getUser2().getId().equals(user.getId())) {
+        if (!conversation.getUser1().getId().equals(user.getId()) &&
+                !conversation.getUser2().getId().equals(user.getId())) {
             throw new RuntimeException("You are not part of this conversation");
         }
 
@@ -200,8 +200,9 @@ public class MessageServiceImpl implements MessageService {
                 .conversationId(message.getConversation().getId())
                 .senderId(message.getSender().getId())
                 .senderName(message.getSender().getName())
-                .senderAvatar(message.getSender().getProfile() != null ? 
-                    message.getSender().getProfile().getPictureBase64() : null)
+                .senderAvatar(
+                        message.getSender().getProfile() != null ? message.getSender().getProfile().getPictureBase64()
+                                : null)
                 .type(message.getType())
                 .content(message.getContent())
                 .imageData(message.getImageData())
@@ -216,10 +217,10 @@ public class MessageServiceImpl implements MessageService {
     private ConversationResponse convertToConversationResponse(Conversation conversation, String currentUserEmail) {
         User currentUser = userRepository.findByEmail(currentUserEmail)
                 .orElseThrow(() -> new RuntimeException("Current user not found"));
-        
-        User otherUser = conversation.getUser1().getId().equals(currentUser.getId()) 
-            ? conversation.getUser2() 
-            : conversation.getUser1();
+
+        User otherUser = conversation.getUser1().getId().equals(currentUser.getId())
+                ? conversation.getUser2()
+                : conversation.getUser1();
 
         long unreadCount = messageRepository.countUnreadMessages(conversation.getId(), currentUser.getId());
 
@@ -227,8 +228,7 @@ public class MessageServiceImpl implements MessageService {
                 .id(conversation.getId())
                 .otherUserId(otherUser.getId())
                 .otherUserName(otherUser.getName())
-                .otherUserAvatar(otherUser.getProfile() != null ? 
-                    otherUser.getProfile().getPictureBase64() : null)
+                .otherUserAvatar(otherUser.getProfile() != null ? otherUser.getProfile().getPictureBase64() : null)
                 .lastMessage("") // We'll add this later if needed
                 .lastMessageType("") // We'll add this later if needed
                 .lastMessageAt(conversation.getLastMessageAt())
@@ -236,4 +236,4 @@ public class MessageServiceImpl implements MessageService {
                 .createdAt(conversation.getCreatedAt())
                 .build();
     }
-} 
+}

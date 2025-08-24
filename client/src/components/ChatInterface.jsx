@@ -5,17 +5,17 @@ import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { Badge } from './ui/badge';
 import { ScrollArea } from './ui/scroll-area';
 import { Card, CardContent } from './ui/card';
-import { 
-  Send, 
-  Image as ImageIcon, 
-  Download, 
+import {
+  Send,
+  Image as ImageIcon,
+  Download,
   Smile,
   Loader2
 } from 'lucide-react';
 
-const ChatInterface = ({ 
-  conversation, 
-  onSendMessage, 
+const ChatInterface = ({
+  conversation,
+  onSendMessage,
   loading = false
 }) => {
   const [message, setMessage] = useState('');
@@ -45,7 +45,7 @@ const ChatInterface = ({
     };
 
     onSendMessage(messageData);
-    
+
     // Clear form
     setMessage('');
     setSelectedImage(null);
@@ -90,7 +90,7 @@ const ChatInterface = ({
 
   const getOtherUser = () => {
     if (!conversation) return null;
-    
+
     // This assumes the conversation has otherUserEmail or similar field
     // You might need to adjust based on your actual data structure
     return {
@@ -147,17 +147,16 @@ const ChatInterface = ({
                     </AvatarFallback>
                   </Avatar>
                 )}
-                
-                <div className={`rounded-lg p-3 ${
-                  msg.senderId === conversation.otherUserId 
-                    ? 'bg-muted' 
+
+                <div className={`rounded-lg p-3 ${msg.senderId === conversation.otherUserId
+                    ? 'bg-muted'
                     : 'bg-primary text-primary-foreground'
-                }`}>
+                  }`}>
                   {msg.type === 'IMAGE' && msg.imageData ? (
                     <div className="space-y-2">
-                      <img 
-                        src={msg.imageData} 
-                        alt="Shared image" 
+                      <img
+                        src={msg.imageData}
+                        alt="Shared image"
                         className="max-w-full rounded"
                       />
                       {msg.content && (
@@ -167,12 +166,11 @@ const ChatInterface = ({
                   ) : (
                     <p className="text-sm">{msg.content}</p>
                   )}
-                  
-                  <div className={`text-xs mt-2 ${
-                    msg.senderId === conversation.otherUserId 
-                      ? 'text-muted-foreground' 
+
+                  <div className={`text-xs mt-2 ${msg.senderId === conversation.otherUserId
+                      ? 'text-muted-foreground'
                       : 'text-primary-foreground/70'
-                  }`}>
+                    }`}>
                     {formatTimestamp(msg.timestamp)}
                     {msg.isRead && (
                       <span className="ml-2">✓✓</span>
@@ -191,9 +189,9 @@ const ChatInterface = ({
         {imagePreview && (
           <div className="mb-3 p-3 border rounded-lg bg-muted/50">
             <div className="flex items-center justify-between">
-              <img 
-                src={imagePreview} 
-                alt="Preview" 
+              <img
+                src={imagePreview}
+                alt="Preview"
                 className="w-16 h-16 object-cover rounded"
               />
               <Button
@@ -251,7 +249,7 @@ const ChatInterface = ({
               disabled={loading}
               className="pr-20"
             />
-            
+
             {/* Emoji Picker Dropdown */}
             {showEmojiPicker && (
               <div className="absolute bottom-full left-0 mb-2 p-2 bg-background border rounded-lg shadow-lg">
