@@ -14,12 +14,23 @@ public class SocketIOConfig {
     @Value("${socket.port}")
     private int port;
 
-    @Bean
-    public SocketIOServer socketIOServer() {
+    // Only keeping video call socket server for now
+    @Bean("videoCallSocketIOServer")
+    public SocketIOServer videoCallSocketIOServer() {
         com.corundumstudio.socketio.Configuration config = new com.corundumstudio.socketio.Configuration();
         config.setHostname(host);
         config.setPort(port);
         config.setOrigin("*");
         return new SocketIOServer(config);
     }
+
+    // Messaging socket server removed - using polling instead
+    // @Bean("messagingSocketIOServer")
+    // public SocketIOServer messagingSocketIOServer() {
+    //     com.corundumstudio.socketio.Configuration config = new com.corundumstudio.socketio.Configuration();
+    //     config.setHostname(host);
+    //     config.setPort(messagingPort);
+    //     config.setOrigin("*");
+    //     return new SocketIOServer(config);
+    // }
 }

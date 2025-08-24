@@ -54,6 +54,15 @@ public class ConnectionController {
         return ResponseEntity.ok(responses);
     }
 
+    @GetMapping("/accepted")
+    public ResponseEntity<List<ConnectionResponse>> getAcceptedConnections() {
+        List<Connection> connections = connectionService.getMyConnections();
+        List<ConnectionResponse> responses = connections.stream()
+                .map(this::convertToResponse)
+                .collect(Collectors.toList());
+        return ResponseEntity.ok(responses);
+    }
+
     @GetMapping("/pending/sent")
     public ResponseEntity<List<ConnectionResponse>> getPendingRequestsSent() {
         List<Connection> connections = connectionService.getPendingRequestsSent();
@@ -85,7 +94,7 @@ public class ConnectionController {
     }
 
     private ConnectionResponse convertToResponse(Connection connection) {
-        // Get profile information for requester
+        // Get profile information for requester and receiver
         var requesterProfile = profileRepository.findByUser(connection.getRequester());
         var receiverProfile = profileRepository.findByUser(connection.getReceiver());
 
