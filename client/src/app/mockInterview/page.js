@@ -334,131 +334,145 @@ export default function MockInterviewPage() {
   return (
     <div className="min-h-screen bg-gray-900 py-4">
       <div className="max-w-6xl mx-auto px-4">
-        {/* Video Call Header */}
-        <div className="bg-gray-800 rounded-t-lg p-4 flex items-center justify-between">
-          <div className="flex items-center space-x-4">
-            <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-            <span className="text-white font-medium">AI Mock Interview Session</span>
-          </div>
-          <div className="flex items-center space-x-2">
-            <div className="text-gray-300 text-sm">
-              {interviewStarted && !interviewComplete && (
-                <span>Question {currentQuestionIndex + 1} of {questions.length}</span>
-              )}
-              {customInterviewStarted && (
-                <span>Custom Q{customQuestionIndex + 1} of {customInterviewData?.audioUrls?.length || 0}</span>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* Main Video Call Interface */}
-        <div className="bg-black rounded-b-lg overflow-hidden">
-          {/* Video Grid */}
-          <div className="grid grid-cols-2 gap-4 p-6 min-h-[600px]">
-            {/* AI Interviewer Video */}
-            <div className={`relative bg-gray-800 rounded-lg overflow-hidden transition-all duration-300 ${
-              isPlayingQuestion ? 'ring-4 ring-blue-400 shadow-lg shadow-blue-400/50' : ''
-            }`}>
-              <div className="aspect-video flex items-center justify-center relative">
-                <div className="w-32 h-32 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
-                  <svg className="w-16 h-16 text-white" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M12 2C13.1 2 14 2.9 14 4C14 5.1 13.1 6 12 6C10.9 6 10 5.1 10 4C10 2.9 10.9 2 12 2ZM21 9V7L15 13.5V10C15 8.9 14.1 8 13 8H11C9.9 8 9 8.9 9 10V14C9 15.1 9.9 16 11 16H13C14.1 16 15 15.1 15 14V10.5L21 17V15H22V9H21Z"/>
-                  </svg>
-                </div>
-                {isPlayingQuestion && (
-                  <div className="absolute inset-0 bg-blue-400/20 animate-pulse rounded-lg"></div>
-                )}
-                <div className="absolute bottom-4 left-4 bg-black/70 text-white px-3 py-1 rounded-full text-sm">
-                  AI Interviewer
-                  {isPlayingQuestion && (
-                    <span className="ml-2 inline-flex items-center">
-                      <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
-                      <span className="ml-1 text-xs">Speaking...</span>
-                    </span>
+        {/* Video Call Interface - Only show when interview is active */}
+        {(interviewStarted || customInterviewStarted) && (
+          <>
+            {/* Video Call Header */}
+            <div className="bg-gray-800 rounded-t-lg p-4 flex items-center justify-between">
+              <div className="flex items-center space-x-4">
+                <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+                <span className="text-white font-medium">AI Mock Interview Session</span>
+              </div>
+              <div className="flex items-center space-x-2">
+                <div className="text-gray-300 text-sm">
+                  {interviewStarted && !interviewComplete && (
+                    <span>Question {currentQuestionIndex + 1} of {questions.length}</span>
+                  )}
+                  {customInterviewStarted && (
+                    <span>Custom Q{customQuestionIndex + 1} of {customInterviewData?.audioUrls?.length || 0}</span>
                   )}
                 </div>
               </div>
             </div>
 
-            {/* User Video */}
-            <div className={`relative bg-gray-800 rounded-lg overflow-hidden transition-all duration-300 ${
-              isRecording ? 'ring-4 ring-red-400 shadow-lg shadow-red-400/50' : ''
-            }`}>
-              <div className="aspect-video flex items-center justify-center relative">
-                <div className="w-32 h-32 bg-gradient-to-br from-green-500 to-blue-600 rounded-full flex items-center justify-center">
-                  <svg className="w-16 h-16 text-white" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M12 12C14.21 12 16 10.21 16 8C16 5.79 14.21 4 12 4C9.79 4 8 5.79 8 8C8 10.21 9.79 12 12 12ZM12 14C9.33 14 4 15.34 4 18V20H20V18C20 15.34 14.67 14 12 14Z"/>
-                  </svg>
-                </div>
-                {isRecording && (
-                  <div className="absolute inset-0 bg-red-400/20 animate-pulse rounded-lg"></div>
-                )}
-                <div className="absolute bottom-4 left-4 bg-black/70 text-white px-3 py-1 rounded-full text-sm">
-                  You
-                  {isRecording && (
-                    <span className="ml-2 inline-flex items-center">
-                      <div className="w-2 h-2 bg-red-400 rounded-full animate-pulse"></div>
-                      <span className="ml-1 text-xs">Recording...</span>
-                    </span>
-                  )}
-                  {isTranscribing && (
-                    <span className="ml-2 inline-flex items-center">
-                      <div className="w-2 h-2 bg-yellow-400 rounded-full animate-pulse"></div>
-                      <span className="ml-1 text-xs">Processing...</span>
-                    </span>
-                  )}
+            {/* Main Video Call Interface */}
+            <div className="bg-black rounded-b-lg overflow-hidden">
+              {/* Main Interview Screen */}
+              <div className="relative p-6" style={{ height: '600px' }}>
+                {/* AI Interviewer Main Screen */}
+                <div className={`relative bg-gray-800 rounded-lg overflow-hidden w-full transition-all duration-300 ${
+                  isPlayingQuestion ? 'ring-4 ring-blue-400 shadow-lg shadow-blue-400/50' : ''
+                }`} style={{ height: '100%' }}>
+                  <div className="w-full h-full flex items-center justify-center relative">
+                    <div className="w-48 h-48 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
+                      <svg className="w-24 h-24 text-white" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M12 2C13.1 2 14 2.9 14 4C14 5.1 13.1 6 12 6C10.9 6 10 5.1 10 4C10 2.9 10.9 2 12 2ZM21 9V7L15 13.5V10C15 8.9 14.1 8 13 8H11C9.9 8 9 8.9 9 10V14C9 15.1 9.9 16 11 16H13C14.1 16 15 15.1 15 14V10.5L21 17V15H22V9H21Z"/>
+                      </svg>
+                    </div>
+                    {isPlayingQuestion && (
+                      <div className="absolute inset-0 bg-blue-400/20 animate-pulse rounded-lg"></div>
+                    )}
+                    
+                    {/* AI Interviewer Label */}
+                    <div className="absolute bottom-6 left-6 bg-black/70 text-white px-4 py-2 rounded-full text-base">
+                      AI Interviewer
+                      {isPlayingQuestion && (
+                        <span className="ml-3 inline-flex items-center">
+                          <div className="w-3 h-3 bg-green-400 rounded-full animate-pulse"></div>
+                          <span className="ml-2 text-sm">Speaking...</span>
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Control Buttons - Center Bottom */}
+                    <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 flex items-center space-x-4">
+                      {/* Microphone/Record Button */}
+                      <button
+                        onClick={isRecording ? stopRecording : startRecording}
+                        disabled={isPlayingQuestion || isTranscribing}
+                        className={`w-14 h-14 rounded-full flex items-center justify-center transition-all duration-200 ${
+                          isRecording 
+                            ? 'bg-red-500 hover:bg-red-600 pulse' 
+                            : isPlayingQuestion || isTranscribing
+                              ? 'bg-gray-600 cursor-not-allowed opacity-50'
+                              : 'bg-green-600 hover:bg-green-700'
+                        }`}
+                        title={isRecording ? "Stop Recording" : "Start Recording"}
+                      >
+                        {isRecording ? (
+                          <svg className="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 24 24">
+                            <rect x="6" y="6" width="12" height="12" rx="2"/>
+                          </svg>
+                        ) : (
+                          <svg className="w-7 h-7 text-white" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M12 2C13.1 2 14 2.9 14 4V12C14 13.1 13.1 14 12 14C10.9 14 10 13.1 10 12V4C10 2.9 10.9 2 12 2ZM19 11C19 15.2 15.8 18.6 11.5 18.95V21H13V23H11H9V21H10.5V18.95C6.2 18.6 3 15.2 3 11H5C5 14.3 7.7 17 11 17S17 14.3 17 11H19Z"/>
+                          </svg>
+                        )}
+                      </button>
+
+                      {/* Replay Question Button */}
+                      {!isPlayingQuestion && !isRecording && !isTranscribing && (interviewStarted || customInterviewStarted) && (
+                        <button
+                          onClick={customInterviewStarted ? () => playCustomQuestion(customQuestionIndex) : playCurrentQuestion}
+                          className="w-14 h-14 rounded-full bg-blue-600 hover:bg-blue-700 flex items-center justify-center transition-all duration-200"
+                          title="Replay Question"
+                        >
+                          <svg className="w-7 h-7 text-white" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M12 5V1L7 6L12 11V7C15.31 7 18 9.69 18 13S15.31 19 12 19S6 16.31 6 13H4C4 17.42 7.58 21 12 21S20 17.42 20 13S16.42 5 12 5Z"/>
+                          </svg>
+                        </button>
+                      )}
+
+                      {/* End Call Button */}
+                      <button
+                        onClick={resetInterview}
+                        className="w-14 h-14 rounded-full bg-red-600 hover:bg-red-700 flex items-center justify-center transition-all duration-200"
+                        title="End Interview"
+                      >
+                        <svg className="w-7 h-7 text-white" fill="currentColor" viewBox="0 0 24 24">
+                          <path d="M12 9C10.5 9 9.2 9.7 8.5 10.8L15.5 10.8C14.8 9.7 13.5 9 12 9ZM12 2C6.48 2 2 6.48 2 12S6.48 22 12 22S22 17.52 22 12S17.52 2 12 2ZM12 20C7.59 20 4 16.41 4 12S7.59 4 12 4S20 7.59 20 12S16.41 20 12 20ZM15.5 13H8.5C9.2 14.3 10.5 15 12 15S14.8 14.3 15.5 13Z"/>
+                        </svg>
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* User Picture-in-Picture (Upper Right) */}
+                  <div className={`absolute top-6 right-6 w-48 h-36 bg-gray-700 rounded-lg overflow-hidden transition-all duration-300 ${
+                    isRecording ? 'ring-3 ring-red-400 shadow-lg shadow-red-400/50' : 'ring-2 ring-gray-600'
+                  }`}>
+                    <div className="w-full h-full flex items-center justify-center relative">
+                      <div className="w-20 h-20 bg-gradient-to-br from-green-500 to-blue-600 rounded-full flex items-center justify-center">
+                        <svg className="w-10 h-10 text-white" fill="currentColor" viewBox="0 0 24 24">
+                          <path d="M12 12C14.21 12 16 10.21 16 8C16 5.79 14.21 4 12 4C9.79 4 8 5.79 8 8C8 10.21 9.79 12 12 12ZM12 14C9.33 14 4 15.34 4 18V20H20V18C20 15.34 14.67 14 12 14Z"/>
+                        </svg>
+                      </div>
+                      {isRecording && (
+                        <div className="absolute inset-0 bg-red-400/20 animate-pulse rounded-lg"></div>
+                      )}
+                      
+                      {/* User Label */}
+                      <div className="absolute bottom-2 left-2 bg-black/70 text-white px-2 py-1 rounded text-xs">
+                        You
+                        {isRecording && (
+                          <span className="ml-1 inline-flex items-center">
+                            <div className="w-1.5 h-1.5 bg-red-400 rounded-full animate-pulse"></div>
+                            <span className="ml-1 text-xs">Rec</span>
+                          </span>
+                        )}
+                        {isTranscribing && (
+                          <span className="ml-1 inline-flex items-center">
+                            <div className="w-1.5 h-1.5 bg-yellow-400 rounded-full animate-pulse"></div>
+                            <span className="ml-1 text-xs">Processing</span>
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
-
-          {/* Controls Bar */}
-          <div className="bg-gray-800 p-4 flex items-center justify-center space-x-6">
-            {/* Microphone Control */}
-            <button
-              onClick={isRecording ? stopRecording : startRecording}
-              disabled={isPlayingQuestion || isTranscribing}
-              className={`w-12 h-12 rounded-full flex items-center justify-center transition-all duration-200 ${
-                isRecording 
-                  ? 'bg-red-500 hover:bg-red-600' 
-                  : isPlayingQuestion || isTranscribing
-                    ? 'bg-gray-600 cursor-not-allowed'
-                    : 'bg-gray-600 hover:bg-gray-500'
-              }`}
-            >
-              {isRecording ? (
-                <div className="w-4 h-4 bg-white rounded-sm"></div>
-              ) : (
-                <svg className="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M7 4a3 3 0 016 0v4a3 3 0 11-6 0V4zm4 10.93A7.001 7.001 0 0017 8a1 1 0 10-2 0A5 5 0 715 8a1 1 0 00-2 0 7.001 7.001 0 006 6.93V17H6a1 1 0 100 2h8a1 1 0 100-2h-3v-2.07z" clipRule="evenodd" />
-                </svg>
-              )}
-            </button>
-
-            {/* Replay Question Button */}
-            {!isPlayingQuestion && !isRecording && !isTranscribing && (interviewStarted || customInterviewStarted) && (
-              <button
-                onClick={customInterviewStarted ? () => playCustomQuestion(customQuestionIndex) : playCurrentQuestion}
-                className="w-12 h-12 rounded-full bg-blue-600 hover:bg-blue-700 flex items-center justify-center transition-all duration-200"
-              >
-                <svg className="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M3 9V15H7L12 20V4L7 9H3ZM16.5 12C16.5 10.23 15.48 8.71 14 7.97V16.02C15.48 15.29 16.5 13.77 16.5 12ZM14 3.23V5.29C16.89 6.15 19 8.83 19 12S16.89 17.85 14 18.71V20.77C18.01 19.86 21 16.28 21 12S18.01 4.14 14 3.23Z"/>
-                </svg>
-              </button>
-            )}
-
-            {/* End Call / Reset Button */}
-            <button
-              onClick={resetInterview}
-              className="w-12 h-12 rounded-full bg-red-600 hover:bg-red-700 flex items-center justify-center transition-all duration-200"
-            >
-              <svg className="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M12 9C10.9 9 10 9.9 10 11V13C10 14.1 10.9 15 12 15S14 14.1 14 13V11C14 9.9 13.1 9 12 9ZM19 11C19 15.2 15.8 18.6 11.5 18.95V21H13V23H11V23H9V21H10.5V18.95C6.2 18.6 3 15.2 3 11H5C5 14.3 7.7 17 11 17S17 14.3 17 11H19Z"/>
-              </svg>
-            </button>
-          </div>
-        </div>
+          </>
+        )}
 
         {/* Hidden audio element for playing questions */}
         <audio
@@ -488,24 +502,6 @@ export default function MockInterviewPage() {
                 Join Interview Room
               </button>
 
-              <div className="mt-4">
-                <button
-                  onClick={async () => {
-                    try {
-                      const response = await fetch('http://localhost:8080/api/interviews/test-custom');
-                      const text = await response.text();
-                      console.log('Backend test:', text);
-                      alert(response.ok ? text : 'Backend connection failed');
-                    } catch (err) {
-                      console.error('Backend test error:', err);
-                      alert('Backend is not running or unreachable');
-                    }
-                  }}
-                  className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded text-sm transition-colors duration-200"
-                >
-                  Test Backend Connection
-                </button>
-              </div>
             </div>
           )}
 
