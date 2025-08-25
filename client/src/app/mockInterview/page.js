@@ -106,6 +106,14 @@ export default function MockInterviewPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [customQuestionIndex, customInterviewStarted]);
 
+  // Generate custom interview when interview is complete
+  useEffect(() => {
+    if (interviewComplete && responses.length > 0 && !customInterviewData && !isGeneratingCustomInterview) {
+      generateCustomInterview();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [interviewComplete, responses.length]);
+
   const handleQuestionEnded = () => {
     setIsPlayingQuestion(false);
   };
@@ -209,8 +217,7 @@ export default function MockInterviewPage() {
             }, 1000); // Small delay before next question
           } else {
             setInterviewComplete(true);
-            // Auto-generate custom interview
-            generateCustomInterview();
+            // Custom interview generation will be handled by useEffect
           }
         }
       } else {
@@ -245,7 +252,12 @@ export default function MockInterviewPage() {
     setError('');
 
     try {
-      console.log('Sending responses to backend:', responses);
+      // Filter out the startInterview response before sending to backend
+      const filteredResponses = responses.filter(response => response.questionId !== 'startInterview');
+      console.log('Total responses collected:', responses.length);
+      console.log('All responses:', responses.map(r => ({ id: r.questionId, title: r.questionTitle })));
+      console.log('Filtered responses being sent to backend:', filteredResponses.length);
+      console.log('Filtered responses:', filteredResponses.map(r => ({ id: r.questionId, title: r.questionTitle })));
       
       const response = await fetch('http://localhost:8080/api/interviews/generate-custom', {
         method: 'POST',
@@ -253,7 +265,7 @@ export default function MockInterviewPage() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          responses: responses
+          responses: filteredResponses
         }),
       });
 
@@ -344,7 +356,7 @@ export default function MockInterviewPage() {
                   Welcome to the AI Mock Interview
                 </h2>
                 <p className="text-gray-600 mb-6">
-                  This interview will ask you {questions.length} questions. Listen to each question 
+                  This interview will ask you {questions.length - 1} questions. Listen to each question 
                   and provide your response when prompted. Click &quot;End Recording&quot; after answering each question.
                 </p>
               </div>
