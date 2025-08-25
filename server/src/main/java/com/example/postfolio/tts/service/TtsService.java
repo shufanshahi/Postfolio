@@ -22,7 +22,7 @@ public class TtsService {
 
     public Resource generateSpeech(String text) throws IOException, InterruptedException {
         // Generate unique filename
-        String fileName = "speech_" + UUID.randomUUID().toString() + ".wav";
+        String fileName = "speech_" + UUID.randomUUID().toString() + ".mp3";
         Path audioPath = Paths.get(TEMP_DIR, fileName);
 
         // Get the Python script from resources
@@ -40,9 +40,7 @@ public class TtsService {
                 "python", 
                 tempScriptPath.toString(),
                 "--text", text,
-                "--output", audioPath.toString(),
-                "--rate", "150",
-                "--volume", "1.0"
+                "--output", audioPath.toString()
             );
             
             pb.redirectErrorStream(true);
@@ -74,12 +72,7 @@ public class TtsService {
             // Return the audio file as Resource
             File audioFile = audioPath.toFile();
             if (audioFile.exists() && audioFile.length() > 0) {
-                return new FileSystemResource(audioFile) {
-                    @Override
-                    public String getFilename() {
-                        return "speech.wav";
-                    }
-                };
+                return new FileSystemResource(audioFile);
             } else {
                 throw new RuntimeException("Audio file was not created or is empty. Output: " + output.toString());
             }

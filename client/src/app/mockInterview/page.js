@@ -13,6 +13,10 @@ export default function MockInterviewPage() {
   const [interviewStarted, setInterviewStarted] = useState(false);
   const [interviewComplete, setInterviewComplete] = useState(false);
   const [responses, setResponses] = useState([]);
+  const [customInterviewData, setCustomInterviewData] = useState(null);
+  const [isGeneratingCustomInterview, setIsGeneratingCustomInterview] = useState(false);
+  const [customInterviewStarted, setCustomInterviewStarted] = useState(false);
+  const [customQuestionIndex, setCustomQuestionIndex] = useState(0);
   
   const mediaRecorderRef = useRef(null);
   const audioChunksRef = useRef([]);
@@ -94,6 +98,14 @@ export default function MockInterviewPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentQuestionIndex, interviewStarted, interviewComplete]);
 
+  // Play custom question audio when custom interview progresses
+  useEffect(() => {
+    if (customInterviewStarted && customInterviewData) {
+      playCustomQuestion(customQuestionIndex);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [customQuestionIndex, customInterviewStarted]);
+
   const handleQuestionEnded = () => {
     setIsPlayingQuestion(false);
   };
@@ -155,24 +167,51 @@ export default function MockInterviewPage() {
       const transcript = await client.transcripts.transcribe(params);
       
       if (transcript.text) {
-        // Save the response
-        const newResponse = {
-          questionId: currentQuestion.id,
-          questionTitle: currentQuestion.title,
-          responseKey: currentQuestion.responseKey,
-          transcript: transcript.text,
-          timestamp: new Date().toISOString()
-        };
+        if (customInterviewStarted) {
+          // Handle custom interview responses
+          const customQuestion = getCurrentCustomQuestion();
+          const newResponse = {
+            questionId: `custom_${customQuestionIndex}`,
+            questionTitle: customQuestion?.title || `Custom Question ${customQuestionIndex + 1}`,
+            responseKey: `custom_response_${customQuestionIndex}`,
+            transcript: transcript.text,
+            timestamp: new Date().toISOString()
+          };
 
-        setResponses(prev => [...prev, newResponse]);
-        
-        // Move to next question or complete interview
-        if (currentQuestionIndex < questions.length - 1) {
-          setTimeout(() => {
-            setCurrentQuestionIndex(prev => prev + 1);
-          }, 1000); // Small delay before next question
+          setResponses(prev => [...prev, newResponse]);
+          
+          // Move to next custom question
+          if (customQuestionIndex < (customInterviewData?.audioUrls?.length || 0) - 1) {
+            setTimeout(() => {
+              setCustomQuestionIndex(prev => prev + 1);
+            }, 1000);
+          } else {
+            // Custom interview complete
+            setCustomInterviewStarted(false);
+            alert('🎉 Custom interview complete! All responses have been recorded.');
+          }
         } else {
-          setInterviewComplete(true);
+          // Handle regular interview responses
+          const newResponse = {
+            questionId: currentQuestion.id,
+            questionTitle: currentQuestion.title,
+            responseKey: currentQuestion.responseKey,
+            transcript: transcript.text,
+            timestamp: new Date().toISOString()
+          };
+
+          setResponses(prev => [...prev, newResponse]);
+          
+          // Move to next question or complete interview
+          if (currentQuestionIndex < questions.length - 1) {
+            setTimeout(() => {
+              setCurrentQuestionIndex(prev => prev + 1);
+            }, 1000); // Small delay before next question
+          } else {
+            setInterviewComplete(true);
+            // Auto-generate custom interview
+            generateCustomInterview();
+          }
         }
       } else {
         setError('No speech detected in the audio recording. Please try again.');
@@ -195,6 +234,92 @@ export default function MockInterviewPage() {
     setIsPlayingQuestion(false);
     setAudioBlob(null);
     setError('');
+    setCustomInterviewData(null);
+    setCustomInterviewStarted(false);
+    setCustomQuestionIndex(0);
+    setIsGeneratingCustomInterview(false);
+  };
+
+  const generateCustomInterview = async () => {
+    setIsGeneratingCustomInterview(true);
+    setError('');
+
+    try {
+      console.log('Sending responses to backend:', responses);
+      
+      const response = await fetch('http://localhost:8080/api/interviews/generate-custom', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          responses: responses
+        }),
+      });
+
+      console.log('Response status:', response.status);
+      console.log('Response headers:', response.headers);
+
+      if (response.ok) {
+        const data = await response.json();
+        console.log('Custom interview data:', data);
+        setCustomInterviewData(data);
+      } else {
+        const errorText = await response.text();
+        console.error('Server error:', errorText);
+        setError(`Failed to generate custom interview. Server returned: ${response.status} - ${errorText}`);
+      }
+    } catch (err) {
+      console.error('Network error:', err);
+      setError('Error connecting to server. Please ensure the backend is running on port 8080.');
+    } finally {
+      setIsGeneratingCustomInterview(false);
+    }
+  };
+
+  const startCustomInterview = () => {
+    setCustomInterviewStarted(true);
+    setCustomQuestionIndex(0);
+    playCustomQuestion(0);
+  };
+
+  const playCustomQuestion = (questionIndex) => {
+    if (customInterviewData && questionIndex < customInterviewData.audioUrls.length) {
+      setIsPlayingQuestion(true);
+      setError('');
+      
+      if (questionAudioRef.current) {
+        const audioUrl = `http://localhost:8080${customInterviewData.audioUrls[questionIndex]}`;
+        questionAudioRef.current.src = audioUrl;
+        questionAudioRef.current.play()
+          .then(() => {
+            console.log('Playing custom question:', questionIndex);
+          })
+          .catch((err) => {
+            setError('Failed to play custom question audio');
+            console.error('Custom audio play error:', err);
+            setIsPlayingQuestion(false);
+          });
+      }
+    }
+  };
+
+  const getCurrentCustomQuestion = () => {
+    if (!customInterviewData || !customInterviewData.questions) return null;
+    
+    // Introduction is at index 0, questions start at index 1
+    if (customQuestionIndex === 0) {
+      return {
+        title: 'Introduction',
+        question: customInterviewData.introduction
+      };
+    }
+    
+    const questionData = customInterviewData.questions[customQuestionIndex - 1];
+    return questionData ? {
+      title: `Question ${questionData.id}`,
+      question: questionData.question
+    } : null;
   };
 
   return (
@@ -230,6 +355,25 @@ export default function MockInterviewPage() {
               >
                 Start Interview
               </button>
+
+              <div className="mt-4">
+                <button
+                  onClick={async () => {
+                    try {
+                      const response = await fetch('http://localhost:8080/api/interviews/test-custom');
+                      const text = await response.text();
+                      console.log('Backend test:', text);
+                      alert(response.ok ? text : 'Backend connection failed');
+                    } catch (err) {
+                      console.error('Backend test error:', err);
+                      alert('Backend is not running or unreachable');
+                    }
+                  }}
+                  className="bg-gray-400 hover:bg-gray-500 text-white px-4 py-2 rounded text-sm"
+                >
+                  Test Backend Connection
+                </button>
+              </div>
             </div>
           )}
 
@@ -318,14 +462,14 @@ export default function MockInterviewPage() {
             </div>
           )}
 
-          {interviewComplete && (
+          {interviewComplete && !customInterviewStarted && (
             <div>
               <div className="text-center mb-8">
                 <h2 className="text-2xl font-bold text-green-600 mb-4">
-                  🎉 Interview Complete!
+                  🎉 Initial Interview Complete!
                 </h2>
                 <p className="text-gray-600 mb-6">
-                  Thank you for completing the mock interview. Here are your responses:
+                  Thank you for completing the initial interview. Here are your responses:
                 </p>
               </div>
 
@@ -343,14 +487,130 @@ export default function MockInterviewPage() {
                 ))}
               </div>
 
+              {/* Custom Interview Generation */}
+              {isGeneratingCustomInterview && (
+                <div className="text-center mb-8">
+                  <div className="flex items-center justify-center space-x-2 text-blue-500">
+                    <div className="w-5 h-5 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+                    <span className="font-medium">Generating your personalized interview questions...</span>
+                  </div>
+                </div>
+              )}
+
+              {customInterviewData && !isGeneratingCustomInterview && (
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 mb-8">
+                  <h3 className="text-lg font-semibold text-blue-800 mb-4">
+                    🚀 Your Personalized Interview is Ready!
+                  </h3>
+                  <p className="text-blue-700 mb-4">
+                    Based on your responses, we&apos;ve generated {customInterviewData.questions?.length || 0} personalized questions 
+                    for the role of <strong>{customInterviewData.role}</strong> with your experience level.
+                  </p>
+                  <button
+                    onClick={startCustomInterview}
+                    className="bg-blue-500 hover:bg-blue-600 text-white px-8 py-3 rounded-lg font-semibold transition-colors duration-200"
+                  >
+                    Start Personalized Interview
+                  </button>
+                </div>
+              )}
+
               <div className="text-center">
                 <button
                   onClick={resetInterview}
-                  className="bg-blue-500 hover:bg-blue-600 text-white px-8 py-3 rounded-lg font-semibold transition-colors duration-200"
+                  className="bg-gray-500 hover:bg-gray-600 text-white px-8 py-3 rounded-lg font-semibold transition-colors duration-200"
                 >
                   Start New Interview
                 </button>
               </div>
+            </div>
+          )}
+
+          {customInterviewStarted && (
+            <div>
+              {/* Custom Interview Progress */}
+              <div className="mb-8">
+                <div className="flex justify-between items-center mb-2">
+                  <span className="text-sm font-medium text-gray-700">
+                    Custom Question {customQuestionIndex + 1} of {(customInterviewData?.audioUrls?.length || 0)}
+                  </span>
+                  <span className="text-sm text-gray-500">
+                    Personalized Interview
+                  </span>
+                </div>
+                <div className="w-full bg-gray-200 rounded-full h-2">
+                  <div 
+                    className="bg-purple-500 h-2 rounded-full transition-all duration-300"
+                    style={{ width: `${((customQuestionIndex + 1) / (customInterviewData?.audioUrls?.length || 1)) * 100}%` }}
+                  ></div>
+                </div>
+              </div>
+
+              {/* Current Custom Question */}
+              <div className="bg-purple-50 border border-purple-200 rounded-lg p-6 mb-6">
+                <h3 className="text-lg font-semibold text-purple-800 mb-2">
+                  {getCurrentCustomQuestion()?.title || 'Loading...'}
+                </h3>
+                <p className="text-purple-700 mb-4">
+                  {getCurrentCustomQuestion()?.question || 'Loading question...'}
+                </p>
+                
+                {isPlayingQuestion && (
+                  <div className="flex items-center space-x-2 text-purple-500 mb-4">
+                    <div className="w-3 h-3 bg-purple-500 rounded-full animate-pulse"></div>
+                    <span className="font-medium">Playing question...</span>
+                  </div>
+                )}
+
+                {!isPlayingQuestion && !isRecording && !isTranscribing && (
+                  <button
+                    onClick={() => playCustomQuestion(customQuestionIndex)}
+                    className="bg-purple-500 hover:bg-purple-600 text-white px-4 py-2 rounded-lg font-medium transition-colors duration-200 mb-4"
+                  >
+                    🔊 Replay Question
+                  </button>
+                )}
+              </div>
+
+              {/* Recording Controls for Custom Interview */}
+              {!isPlayingQuestion && (
+                <div className="text-center mb-6">
+                  {!isRecording && !isTranscribing && (
+                    <button
+                      onClick={startRecording}
+                      className="bg-red-500 hover:bg-red-600 text-white px-6 py-3 rounded-lg font-semibold transition-colors duration-200 flex items-center space-x-2 mx-auto"
+                    >
+                      <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M7 4a3 3 0 016 0v4a3 3 0 11-6 0V4zm4 10.93A7.001 7.001 0 0017 8a1 1 0 10-2 0A5 5 0 015 8a1 1 0 00-2 0 7.001 7.001 0 006 6.93V17H6a1 1 0 100 2h8a1 1 0 100-2h-3v-2.07z" clipRule="evenodd" />
+                      </svg>
+                      <span>Start Recording Answer</span>
+                    </button>
+                  )}
+
+                  {isRecording && (
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-center space-x-2 text-red-500">
+                        <div className="w-3 h-3 bg-red-500 rounded-full animate-pulse"></div>
+                        <span className="font-medium">Recording your response...</span>
+                      </div>
+                      <button
+                        onClick={stopRecording}
+                        className="bg-gray-500 hover:bg-gray-600 text-white px-6 py-3 rounded-lg font-semibold transition-colors duration-200 flex items-center space-x-2 mx-auto"
+                      >
+                        <div className="w-4 h-4 bg-white rounded-sm"></div>
+                        <span>End Recording</span>
+                      </button>
+                    </div>
+                  )}
+
+                  {isTranscribing && (
+                    <div className="flex items-center justify-center space-x-2 text-blue-500">
+                      <div className="w-5 h-5 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+                      <span className="font-medium">Processing your response...</span>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           )}
 

@@ -33,9 +33,9 @@ public class TtsController {
             Resource audioResource = ttsService.generateSpeech(text);
             
             return ResponseEntity.ok()
-                    .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"speech.wav\"")
+                    .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"speech.mp3\"")
                     .header(HttpHeaders.CACHE_CONTROL, "no-cache")
-                    .contentType(MediaType.parseMediaType("audio/wav"))
+                    .contentType(MediaType.parseMediaType("audio/mpeg"))
                     .body(audioResource);
                     
         } catch (Exception e) {

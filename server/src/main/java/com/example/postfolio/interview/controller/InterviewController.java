@@ -2,7 +2,10 @@ package com.example.postfolio.interview.controller;
 
 import com.example.postfolio.interview.dto.InterviewRequest;
 import com.example.postfolio.interview.dto.InterviewResponse;
+import com.example.postfolio.interview.dto.MockInterviewRequest;
+import com.example.postfolio.interview.dto.MockInterviewResponse;
 import com.example.postfolio.interview.service.InterviewService;
+import com.example.postfolio.interview.service.MockInterviewService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
@@ -14,6 +17,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class InterviewController {
     private final InterviewService interviewService;
+    private final MockInterviewService mockInterviewService;
 
     // Schedule interview with all details
     @PostMapping("/schedule")
@@ -43,5 +47,17 @@ public class InterviewController {
     @PutMapping("/update-status")
     public String updateInterviewStatus(@RequestParam Long profileId, @RequestParam Long jobId, @RequestParam String status) {
         return interviewService.updateInterviewStatus(profileId, jobId, status);
+    }
+
+    // Generate custom interview questions based on mock interview responses
+    @PostMapping("/generate-custom")
+    public MockInterviewResponse generateCustomInterview(@RequestBody MockInterviewRequest request) {
+        return mockInterviewService.generateCustomInterview(request);
+    }
+
+    // Test endpoint for custom interview generation
+    @GetMapping("/test-custom")
+    public String testCustomInterview() {
+        return "Custom interview service is running!";
     }
 }
