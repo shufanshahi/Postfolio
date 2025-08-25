@@ -41,7 +41,7 @@ public class MockInterviewService {
             String role = extractRoleFromResponses(request.getResponses());
             String experience = extractExperienceFromResponses(request.getResponses());
             String interviewType = extractInterviewTypeFromResponses(request.getResponses());
-            int numQuestions = extractNumQuestionsFromResponses(request.getResponses());
+            String numQuestions = extractNumQuestionsFromResponses(request.getResponses());
             
             // 2. Generate questions using Gemini
             MockInterviewResponse geminiResponse = generateQuestionsWithGemini(role, experience, interviewType, numQuestions);
@@ -82,31 +82,15 @@ public class MockInterviewService {
                 .orElse("Technical");
     }
 
-    private int extractNumQuestionsFromResponses(List<MockInterviewRequest.InterviewResponse> responses) {
-        String numStr = responses.stream()
+    private String extractNumQuestionsFromResponses(List<MockInterviewRequest.InterviewResponse> responses) {
+        return responses.stream()
                 .filter(r -> "resquestionNumber".equals(r.getResponseKey()))
                 .map(MockInterviewRequest.InterviewResponse::getTranscript)
                 .findFirst()
                 .orElse("5");
-        
-        try {
-            // Extract number from text (handles cases like "five", "5 questions", etc.)
-            String cleaned = numStr.toLowerCase().replaceAll("[^0-9]", "");
-            if (cleaned.isEmpty()) {
-                // Handle word numbers
-                if (numStr.toLowerCase().contains("five") || numStr.toLowerCase().contains("5")) return 5;
-                if (numStr.toLowerCase().contains("three") || numStr.toLowerCase().contains("3")) return 3;
-                if (numStr.toLowerCase().contains("ten") || numStr.toLowerCase().contains("10")) return 10;
-                return 5; // default
-            }
-            int num = Integer.parseInt(cleaned);
-            return Math.min(Math.max(num, 3), 10); // Between 3 and 10
-        } catch (NumberFormatException e) {
-            return 5; // default
-        }
     }
 
-    private MockInterviewResponse generateQuestionsWithGemini(String role, String experience, String interviewType, int numQuestions) {
+    private MockInterviewResponse generateQuestionsWithGemini(String role, String experience, String interviewType, String numQuestions) {
         try {
             String prompt = buildGeminiPrompt(role, experience, interviewType, numQuestions);
             
@@ -161,7 +145,7 @@ public class MockInterviewService {
         }
     }
 
-    private String buildGeminiPrompt(String role, String experience, String interviewType, int numQuestions) {
+    private String buildGeminiPrompt(String role, String experience, String interviewType, String numQuestions) {
         return String.format("""
             You are a professional mock interview assistant. 
             Your goal is to simulate a realistic interview experience tailored to the candidate. 
@@ -171,15 +155,17 @@ public class MockInterviewService {
             - Candidate job experience: %s years
             - Interview type: %s 
               (e.g., Technical, HR, Behavioral, Case Study, Mixed)
-            - Number of questions: %d
+            - Number of questions: %s
 
             Instructions:
-            1. Based on the candidate's role, experience, and interview type, prepare a set of %d interview questions.
-            2. Questions should be relevant, realistic, and at the appropriate difficulty level for someone with %s years of experience.
-            3. Vary the style of questions to make it engaging (e.g., open-ended, situational, problem-solving).
-            4. Do not give answers — only questions.
-            5. At the start, include a short friendly introduction (as the interviewer).
-            6. Return the entire response strictly as a JSON object with the following structure:
+            1. Based on the candidate's role, experience, and interview type, prepare interview questions based on the requested number (%s).
+            2. Parse the number of questions from the text (e.g., "5", "five", "5 questions", etc.) and generate that many questions.
+            3. If the number is unclear, generate 5 questions as default.
+            4. Questions should be relevant, realistic, and at the appropriate difficulty level for someone with %s years of experience.
+            5. Vary the style of questions to make it engaging (e.g., open-ended, situational, problem-solving).
+            6. Do not give answers — only questions.
+            7. At the start, include a short friendly introduction (as the interviewer).
+            8. Return the entire response strictly as a JSON object with the following structure:
 
             {
               "introduction": "string",

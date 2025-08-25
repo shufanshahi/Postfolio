@@ -6,9 +6,9 @@ import java.util.List;
 @Data
 public class MockInterviewRequest {
     private String role;
-    private int experience;
+    private String experience;
     private String interviewType;
-    private int numQuestions;
+    private String numQuestions;
     private List<InterviewResponse> responses;
     
     @Data
