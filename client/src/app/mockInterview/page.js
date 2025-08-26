@@ -74,16 +74,36 @@ export default function MockInterviewPage() {
       setIsPlayingQuestion(true);
       setError('');
       if (questionAudioRef.current) {
-        questionAudioRef.current.src = questions[currentQuestionIndex].audioFile;
-        questionAudioRef.current.play()
-          .then(() => {
-            console.log('Playing question:', questions[currentQuestionIndex].title);
-          })
-          .catch((err) => {
-            setError('Failed to play question audio');
-            console.error('Audio play error:', err);
-            setIsPlayingQuestion(false);
-          });
+        const audio = questionAudioRef.current;
+        
+        // Reset the audio element first
+        audio.pause();
+        audio.currentTime = 0;
+        
+        const handleCanPlay = () => {
+          audio.removeEventListener('canplay', handleCanPlay);
+          audio.play()
+            .then(() => {
+              console.log('Playing question:', questions[currentQuestionIndex].title);
+            })
+            .catch((err) => {
+              setError('Failed to play question audio');
+              console.error('Audio play error:', err);
+              setIsPlayingQuestion(false);
+            });
+        };
+        
+        const handleError = () => {
+          audio.removeEventListener('error', handleError);
+          setError('Failed to load question audio');
+          setIsPlayingQuestion(false);
+        };
+        
+        audio.addEventListener('canplay', handleCanPlay);
+        audio.addEventListener('error', handleError);
+        
+        audio.src = questions[currentQuestionIndex].audioFile;
+        audio.load(); // Explicitly load the audio
       }
     }
   };
@@ -303,6 +323,11 @@ export default function MockInterviewPage() {
       if (questionAudioRef.current) {
         const audioUrl = `http://localhost:8080${customInterviewData.audioUrls[questionIndex]}`;
         const token = localStorage.getItem("token");
+        
+        // Reset the audio element first
+        questionAudioRef.current.pause();
+        questionAudioRef.current.currentTime = 0;
+        
         fetch(audioUrl, {
           headers: {
             'Authorization': `Bearer ${token}`
@@ -311,15 +336,37 @@ export default function MockInterviewPage() {
           .then(response => response.blob())
           .then(blob => {
             const audioUrlObject = URL.createObjectURL(blob);
-            questionAudioRef.current.src = audioUrlObject;
-            return questionAudioRef.current.play();
-          })
-          .then(() => {
-            console.log('Playing custom question:', questionIndex);
+            
+            // Set up event listeners before setting source
+            const audio = questionAudioRef.current;
+            
+            const handleCanPlay = () => {
+              audio.removeEventListener('canplay', handleCanPlay);
+              audio.play()
+                .then(() => {
+                  console.log('Playing custom question:', questionIndex);
+                })
+                .catch((err) => {
+                  console.error('Custom audio play error:', err);
+                  setIsPlayingQuestion(false);
+                });
+            };
+            
+            const handleError = () => {
+              audio.removeEventListener('error', handleError);
+              console.error('Audio loading error');
+              setIsPlayingQuestion(false);
+            };
+            
+            audio.addEventListener('canplay', handleCanPlay);
+            audio.addEventListener('error', handleError);
+            
+            // Set the source to trigger loading
+            audio.src = audioUrlObject;
+            audio.load(); // Explicitly load the audio
           })
           .catch((err) => {
-            setError('Failed to play custom question audio');
-            console.error('Custom audio play error:', err);
+            console.error('Fetch error:', err);
             setIsPlayingQuestion(false);
           });
       }
