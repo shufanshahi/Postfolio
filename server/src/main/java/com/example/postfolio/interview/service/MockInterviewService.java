@@ -20,6 +20,27 @@ import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.List;
+import java.util.Map;
+import com.example.postfolio.interview.dto.MockInterviewResponse;
+import com.example.postfolio.interview.dto.MockInterviewStoreRequest;
+import com.example.postfolio.interview.entity.MockInterview;
+import com.example.postfolio.interview.repository.MockInterviewRepository;
+import com.example.postfolio.tts.service.TtsService;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.Resource;
+import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
+import org.springframework.http.*;
+
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.*;
 
 @Service
@@ -48,6 +69,10 @@ public class MockInterviewService {
         mockInterview.setNumQuestions(request.getNumQuestions());
         
         return mockInterviewRepository.save(mockInterview);
+    }
+
+    public List<MockInterview> getMockInterviewsByProfileId(Long profileId) {
+        return mockInterviewRepository.findByProfileId(profileId);
     }
 
     public MockInterviewResponse generateCustomInterview(MockInterviewRequest request) {

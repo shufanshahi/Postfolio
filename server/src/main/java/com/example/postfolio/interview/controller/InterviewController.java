@@ -64,6 +64,12 @@ public class InterviewController {
         return mockInterviewService.storeMockInterview(request);
     }
 
+    // Get mock interviews by profile ID
+    @GetMapping("/mock-interviews/{profileId}")
+    public List<MockInterview> getMockInterviewsByProfileId(@PathVariable Long profileId) {
+        return mockInterviewService.getMockInterviewsByProfileId(profileId);
+    }
+
     // Test endpoint to check authentication
     @GetMapping("/test-auth")
     public ResponseEntity<String> testAuth() {
