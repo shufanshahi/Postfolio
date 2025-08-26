@@ -11,6 +11,7 @@ public class MockInterview {
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;
 
+	private Long profileId;
 	private String role;
 	private String experience;
 	private String interviewType;

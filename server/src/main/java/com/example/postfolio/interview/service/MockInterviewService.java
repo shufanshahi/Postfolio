@@ -2,6 +2,9 @@ package com.example.postfolio.interview.service;
 
 import com.example.postfolio.interview.dto.MockInterviewRequest;
 import com.example.postfolio.interview.dto.MockInterviewResponse;
+import com.example.postfolio.interview.dto.MockInterviewStoreRequest;
+import com.example.postfolio.interview.entity.MockInterview;
+import com.example.postfolio.interview.repository.MockInterviewRepository;
 import com.example.postfolio.tts.service.TtsService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
@@ -24,6 +27,7 @@ import java.util.*;
 public class MockInterviewService {
 
     private final TtsService ttsService;
+    private final MockInterviewRepository mockInterviewRepository;
     private final RestTemplate restTemplate = new RestTemplate();
     private final ObjectMapper objectMapper = new ObjectMapper();
     
@@ -34,6 +38,17 @@ public class MockInterviewService {
     private String geminiApiUrl;
     
     private static final String AUDIO_DIR = "src/main/resources/static/interview-audio/";
+
+    public MockInterview storeMockInterview(MockInterviewStoreRequest request) {
+        MockInterview mockInterview = new MockInterview();
+        mockInterview.setProfileId(request.getProfileId());
+        mockInterview.setRole(request.getRole());
+        mockInterview.setExperience(request.getExperience());
+        mockInterview.setInterviewType(request.getInterviewType());
+        mockInterview.setNumQuestions(request.getNumQuestions());
+        
+        return mockInterviewRepository.save(mockInterview);
+    }
 
     public MockInterviewResponse generateCustomInterview(MockInterviewRequest request) {
         try {

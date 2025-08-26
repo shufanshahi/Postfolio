@@ -4,9 +4,12 @@ import com.example.postfolio.interview.dto.InterviewRequest;
 import com.example.postfolio.interview.dto.InterviewResponse;
 import com.example.postfolio.interview.dto.MockInterviewRequest;
 import com.example.postfolio.interview.dto.MockInterviewResponse;
+import com.example.postfolio.interview.dto.MockInterviewStoreRequest;
+import com.example.postfolio.interview.entity.MockInterview;
 import com.example.postfolio.interview.service.InterviewService;
 import com.example.postfolio.interview.service.MockInterviewService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -53,6 +56,18 @@ public class InterviewController {
     @PostMapping("/generate-custom")
     public MockInterviewResponse generateCustomInterview(@RequestBody MockInterviewRequest request) {
         return mockInterviewService.generateCustomInterview(request);
+    }
+
+    // Store mock interview information
+    @PostMapping("/store-mock-interview")
+    public MockInterview storeMockInterview(@RequestBody MockInterviewStoreRequest request) {
+        return mockInterviewService.storeMockInterview(request);
+    }
+
+    // Test endpoint to check authentication
+    @GetMapping("/test-auth")
+    public ResponseEntity<String> testAuth() {
+        return ResponseEntity.ok("Authentication successful!");
     }
 
     // Test endpoint for custom interview generation
