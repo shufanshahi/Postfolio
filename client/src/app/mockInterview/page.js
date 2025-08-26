@@ -18,6 +18,66 @@ export default function MockInterviewPage() {
   const [isGeneratingCustomInterview, setIsGeneratingCustomInterview] = useState(false);
   const [customInterviewStarted, setCustomInterviewStarted] = useState(false);
   const [customQuestionIndex, setCustomQuestionIndex] = useState(0);
+
+  // For previous mock interviews
+  const [profileId, setProfileId] = useState(null);
+  const [previousMockInterviews, setPreviousMockInterviews] = useState([]);
+  const [loadingPrevious, setLoadingPrevious] = useState(false);
+  const [errorPrevious, setErrorPrevious] = useState('');
+  // Fetch profileId and previous mock interviews
+  useEffect(() => {
+    const fetchProfileAndInterviews = async () => {
+      setLoadingPrevious(true);
+      setErrorPrevious('');
+      try {
+        const token = localStorage.getItem("token");
+        // Get profile info
+        const profileRes = await fetch('http://localhost:8080/api/profile/me', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (!profileRes.ok) throw new Error('Failed to fetch profile');
+        const profileData = await profileRes.json();
+        setProfileId(profileData.id);
+        // Get previous mock interviews
+        const mockRes = await fetch(`http://localhost:8080/api/interviews/mock-interviews/${profileData.id}`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (!mockRes.ok) throw new Error('Failed to fetch previous mock interviews');
+        const mockData = await mockRes.json();
+        console.log('Previous Mock Interviews:', mockData);
+        setPreviousMockInterviews(mockData);
+      } catch (err) {
+        setErrorPrevious(err.message || 'Error fetching previous mock interviews');
+      } finally {
+        setLoadingPrevious(false);
+      }
+    };
+    fetchProfileAndInterviews();
+  }, []);
+
+  // Refetch previous interviews after a new one is completed
+  useEffect(() => {
+    if (interviewComplete && profileId) {
+      const fetchPrevious = async () => {
+        setLoadingPrevious(true);
+        setErrorPrevious('');
+        try {
+          const token = localStorage.getItem("token");
+          const mockRes = await fetch(`http://localhost:8080/api/interviews/mock-interviews/${profileId}`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+          });
+          if (!mockRes.ok) throw new Error('Failed to fetch previous mock interviews');
+          const mockData = await mockRes.json();
+          setPreviousMockInterviews(mockData);
+        } catch (err) {
+          setErrorPrevious(err.message || 'Error fetching previous mock interviews');
+        } finally {
+          setLoadingPrevious(false);
+        }
+      };
+      fetchPrevious();
+    }
+  }, [interviewComplete, profileId]);
   
   const mediaRecorderRef = useRef(null);
   const audioChunksRef = useRef([]);
@@ -776,6 +836,30 @@ export default function MockInterviewPage() {
               </div>
             </div>
           )}
+          {/* Previous Mock Interviews Section - always visible at the bottom */}
+          <div className="mt-12 mb-8">
+            <h3 className="text-xl font-semibold text-white mb-4 text-center">Previous Mock Interviews</h3>
+            {loadingPrevious && (
+              <div className="text-center text-blue-300">Loading previous mock interviews...</div>
+            )}
+            {errorPrevious && (
+              <div className="text-center text-red-400">{errorPrevious}</div>
+            )}
+            {!loadingPrevious && !errorPrevious && previousMockInterviews && previousMockInterviews.length === 0 && (
+              <div className="text-center text-gray-400">No previous mock interviews found.</div>
+            )}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {previousMockInterviews && previousMockInterviews.map((mock) => (
+                <div key={mock.id} className="bg-gray-700 border border-gray-600 rounded-lg p-6 shadow-lg">
+                  <div className="mb-2 text-blue-300 font-semibold">Role: {mock.role}</div>
+                  <div className="mb-1 text-gray-200">Experience: {mock.experience}</div>
+                  <div className="mb-1 text-gray-200">Interview Type: {mock.interviewType}</div>
+                  <div className="mb-1 text-gray-200">Number of Questions: {mock.numQuestions}</div>
+                  <div className="text-xs text-gray-400 mt-2">Mock ID: {mock.id}</div>
+                </div>
+              ))}
+            </div>
+          </div>
 
           {customInterviewStarted && (
             <div>
