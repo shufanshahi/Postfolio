@@ -13,6 +13,7 @@ export default function MockInterviewPage() {
   const [interviewStarted, setInterviewStarted] = useState(false);
   const [interviewComplete, setInterviewComplete] = useState(false);
   const [responses, setResponses] = useState([]);
+  const [audioRecordings, setAudioRecordings] = useState([]); // Store audio recordings
   const [customInterviewData, setCustomInterviewData] = useState(null);
   const [isGeneratingCustomInterview, setIsGeneratingCustomInterview] = useState(false);
   const [customInterviewStarted, setCustomInterviewStarted] = useState(false);
@@ -157,8 +158,8 @@ export default function MockInterviewPage() {
         // Stop all tracks to release the microphone
         stream.getTracks().forEach(track => track.stop());
         
-        // Automatically transcribe the response
-        transcribeResponse(audioBlob);
+        // Store audio recording instead of transcribing immediately
+        storeAudioRecording(audioBlob);
       };
 
       mediaRecorderRef.current.start();
@@ -173,6 +174,108 @@ export default function MockInterviewPage() {
     if (mediaRecorderRef.current && isRecording) {
       mediaRecorderRef.current.stop();
       setIsRecording(false);
+    }
+  };
+
+  const storeAudioRecording = (audioBlob) => {
+    if (customInterviewStarted) {
+      // Handle custom interview responses
+      const customQuestion = getCurrentCustomQuestion();
+      const newRecording = {
+        questionId: `custom_${customQuestionIndex}`,
+        questionTitle: customQuestion?.title || `Custom Question ${customQuestionIndex + 1}`,
+        responseKey: `custom_response_${customQuestionIndex}`,
+        audioBlob: audioBlob,
+        timestamp: new Date().toISOString()
+      };
+
+      setAudioRecordings(prev => [...prev, newRecording]);
+      
+      // Move to next custom question
+      if (customQuestionIndex < (customInterviewData?.audioUrls?.length || 0) - 1) {
+        setTimeout(() => {
+          setCustomQuestionIndex(prev => prev + 1);
+        }, 1000);
+      } else {
+        // Custom interview complete - transcribe all recordings
+        setCustomInterviewStarted(false);
+        transcribeAllRecordings([...audioRecordings, newRecording]);
+      }
+    } else {
+      // Handle regular interview responses
+      const newRecording = {
+        questionId: currentQuestion.id,
+        questionTitle: currentQuestion.title,
+        responseKey: currentQuestion.responseKey,
+        audioBlob: audioBlob,
+        timestamp: new Date().toISOString()
+      };
+
+      setAudioRecordings(prev => [...prev, newRecording]);
+      
+      // Move to next question or complete interview
+      if (currentQuestionIndex < questions.length - 1) {
+        setTimeout(() => {
+          setCurrentQuestionIndex(prev => prev + 1);
+        }, 1000);
+      } else {
+        // All questions answered - transcribe all recordings
+        setInterviewComplete(true);
+        transcribeAllRecordings([...audioRecordings, newRecording]);
+      }
+    }
+    
+    setAudioBlob(null);
+  };
+
+  const transcribeAllRecordings = async (recordings) => {
+    setIsTranscribing(true);
+    setError('');
+    
+    try {
+      const transcribedResponses = [];
+      
+      for (let i = 0; i < recordings.length; i++) {
+        const recording = recordings[i];
+        
+        // Convert blob to array buffer
+        const arrayBuffer = await recording.audioBlob.arrayBuffer();
+        const uint8Array = new Uint8Array(arrayBuffer);
+
+        const params = {
+          audio: uint8Array,
+          speech_model: "universal",
+        };
+
+        const transcript = await client.transcripts.transcribe(params);
+        
+        if (transcript.text) {
+          transcribedResponses.push({
+            questionId: recording.questionId,
+            questionTitle: recording.questionTitle,
+            responseKey: recording.responseKey,
+            transcript: transcript.text,
+            timestamp: recording.timestamp
+          });
+        } else {
+          // If no speech detected, add a placeholder
+          transcribedResponses.push({
+            questionId: recording.questionId,
+            questionTitle: recording.questionTitle,
+            responseKey: recording.responseKey,
+            transcript: "[No speech detected]",
+            timestamp: recording.timestamp
+          });
+        }
+      }
+      
+      setResponses(transcribedResponses);
+      
+    } catch (err) {
+      setError('Failed to transcribe audio recordings. Please try again.');
+      console.error('Transcription error:', err);
+    } finally {
+      setIsTranscribing(false);
     }
   };
 
@@ -254,6 +357,7 @@ export default function MockInterviewPage() {
     setInterviewComplete(false);
     setCurrentQuestionIndex(0);
     setResponses([]);
+    setAudioRecordings([]); // Clear audio recordings
     setIsRecording(false);
     setIsPlayingQuestion(false);
     setAudioBlob(null);
@@ -600,8 +704,9 @@ export default function MockInterviewPage() {
                   <div className="text-center">
                     <div className="flex items-center justify-center space-x-2 text-yellow-400 mb-4">
                       <div className="w-5 h-5 border-2 border-yellow-400 border-t-transparent rounded-full animate-spin"></div>
-                      <span className="font-medium">Processing your response...</span>
+                      <span className="font-medium">Processing all your responses...</span>
                     </div>
+                    <p className="text-gray-300 text-sm">This may take a few moments</p>
                   </div>
                 )}
               </div>
