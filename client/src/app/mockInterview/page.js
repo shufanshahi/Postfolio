@@ -441,7 +441,52 @@ export default function MockInterviewPage() {
       console.log('Filtered responses:', filteredResponses.map(r => ({ id: r.questionId, title: r.questionTitle })));
 
       const token = localStorage.getItem("token");
+
+      // Extract information from responses for storing mock interview
+      const roleResponse = filteredResponses.find(r => r.questionId === 'getRole');
+      const experienceResponse = filteredResponses.find(r => r.questionId === 'experience');
+      const interviewTypeResponse = filteredResponses.find(r => r.questionId === 'interviewType');
+      const numQuestionsResponse = filteredResponses.find(r => r.questionId === 'questionNumber');
+
+      // Store mock interview data first
+      if (profileId && roleResponse && experienceResponse && interviewTypeResponse && numQuestionsResponse) {
+        const storeMockInterviewData = {
+          profileId: profileId,
+          role: roleResponse.transcript,
+          experience: experienceResponse.transcript,
+          interviewType: interviewTypeResponse.transcript,
+          numQuestions: numQuestionsResponse.transcript
+        };
+
+        console.log('Storing mock interview data:', storeMockInterviewData);
+
+        const storeResponse = await fetch('http://localhost:8080/api/interviews/store-mock-interview', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(storeMockInterviewData),
+        });
+
+        if (storeResponse.ok) {
+          const storedData = await storeResponse.json();
+          console.log('Mock interview stored successfully:', storedData);
+          
+          // Refresh previous mock interviews list
+          const mockRes = await fetch(`http://localhost:8080/api/interviews/mock-interviews/${profileId}`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+          });
+          if (mockRes.ok) {
+            const mockData = await mockRes.json();
+            setPreviousMockInterviews(mockData);
+          }
+        } else {
+          console.error('Failed to store mock interview:', await storeResponse.text());
+        }
+      }
       
+      // Then generate custom interview
       const response = await fetch('http://localhost:8080/api/interviews/generate-custom', {
         method: 'POST',
         headers: {
