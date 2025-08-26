@@ -255,11 +255,14 @@ export default function MockInterviewPage() {
       console.log('All responses:', responses.map(r => ({ id: r.questionId, title: r.questionTitle })));
       console.log('Filtered responses being sent to backend:', filteredResponses.length);
       console.log('Filtered responses:', filteredResponses.map(r => ({ id: r.questionId, title: r.questionTitle })));
+
+      const token = localStorage.getItem("token");
       
       const response = await fetch('http://localhost:8080/api/interviews/generate-custom', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
         },
         body: JSON.stringify({
           responses: filteredResponses
@@ -299,8 +302,18 @@ export default function MockInterviewPage() {
       
       if (questionAudioRef.current) {
         const audioUrl = `http://localhost:8080${customInterviewData.audioUrls[questionIndex]}`;
-        questionAudioRef.current.src = audioUrl;
-        questionAudioRef.current.play()
+        const token = localStorage.getItem("token");
+        fetch(audioUrl, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        })
+          .then(response => response.blob())
+          .then(blob => {
+            const audioUrlObject = URL.createObjectURL(blob);
+            questionAudioRef.current.src = audioUrlObject;
+            return questionAudioRef.current.play();
+          })
           .then(() => {
             console.log('Playing custom question:', questionIndex);
           })
