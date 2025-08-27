@@ -845,29 +845,6 @@ export default function MockInterviewPage() {
 
           {interviewComplete && !customInterviewStarted && (
             <div>
-              <div className="text-center mb-8">
-                <h2 className="text-2xl font-bold text-green-400 mb-4">
-                  🎉 Initial Interview Complete!
-                </h2>
-                <p className="text-gray-300 mb-6">
-                  Thank you for completing the initial interview. Here are your responses:
-                </p>
-              </div>
-
-              {/* Interview Summary */}
-              <div className="space-y-6 mb-8 max-h-96 overflow-y-auto">
-                {responses.map((response, index) => (
-                  <div key={response.questionId} className="bg-gray-700 border border-gray-600 rounded-lg p-6">
-                    <h3 className="text-lg font-semibold text-white mb-2">
-                      {index + 1}. {response.questionTitle}
-                    </h3>
-                    <div className="bg-gray-800 border border-gray-600 rounded-lg p-4">
-                      <p className="text-gray-200 leading-relaxed">{response.transcript}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-
               {/* Custom Interview Generation */}
               {isGeneratingCustomInterview && (
                 <div className="text-center mb-8">
