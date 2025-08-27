@@ -15,52 +15,56 @@ import java.util.List;
 @Repository
 public interface PostRepository extends JpaRepository<Post, Long> {
 
-    // Find all posts by profile, sorted newest first
-    List<Post> findByProfileOrderByCreatedAtDesc(Profile profile);
+       // Find all posts by profile, sorted newest first
+       List<Post> findByProfileOrderByCreatedAtDesc(Profile profile);
 
-    // Paginated version of profile posts
-    Page<Post> findByProfile(Profile profile, Pageable pageable);
+       // Paginated version of profile posts
+       Page<Post> findByProfile(Profile profile, Pageable pageable);
 
-    // Get latest posts across all profiles
-    List<Post> findTop10ByOrderByCreatedAtDesc();
+       // Get latest posts across all profiles
+       List<Post> findTop10ByOrderByCreatedAtDesc();
 
-    // Count posts by profile
-    long countByProfile(Profile profile);
+       // Count posts by profile
+       long countByProfile(Profile profile);
 
-    // Find posts by type (for CV section generation)
-    List<Post> findByProfileAndTypeOrderByCreatedAtDesc(Profile profile, PostType type);
+       // Find posts by type (for CV section generation)
+       List<Post> findByProfileAndTypeOrderByCreatedAtDesc(Profile profile, PostType type);
 
-    // Search posts by AI-generated tags/skills
-    List<Post> findByProfileAndTagsContaining(Profile profile, String tag);
+       // Search posts by AI-generated tags/skills
+       List<Post> findByProfileAndTagsContaining(Profile profile, String tag);
 
-    // Find posts needing human review (autoTagged = false)
-    Page<Post> findByProfileAndAutoTaggedFalse(Profile profile, Pageable pageable);
+       // Find posts needing human review (autoTagged = false)
+       Page<Post> findByProfileAndAutoTaggedFalse(Profile profile, Pageable pageable);
 
-    // NEW: Get all unique skills/tags for a profile
-    @Query("SELECT DISTINCT t FROM Post p JOIN p.tags t WHERE p.profile.id = :profileId")
-    List<String> findDistinctTagsByProfileId(Long profileId);
+       // NEW: Get all unique skills/tags for a profile
+       @Query("SELECT DISTINCT t FROM Post p JOIN p.tags t WHERE p.profile.id = :profileId")
+       List<String> findDistinctTagsByProfileId(Long profileId);
 
-    // NEW: Find posts by multiple tags (AND condition)
-    @Query("SELECT p FROM Post p WHERE p.profile = :profile AND :tag MEMBER OF p.tags")
-    List<Post> findByProfileAndTag(Profile profile, String tag);
+       // NEW: Find posts by multiple tags (AND condition)
+       @Query("SELECT p FROM Post p WHERE p.profile = :profile AND :tag MEMBER OF p.tags")
+       List<Post> findByProfileAndTag(Profile profile, String tag);
 
-    // NEW: Count how many times a tag appears across a profile's posts
-    @Query("SELECT COUNT(p) FROM Post p WHERE p.profile = :profile AND :tag MEMBER OF p.tags")
-    long countByProfileAndTag(Profile profile, String tag);
+       // NEW: Count how many times a tag appears across a profile's posts
+       @Query("SELECT COUNT(p) FROM Post p WHERE p.profile = :profile AND :tag MEMBER OF p.tags")
+       long countByProfileAndTag(Profile profile, String tag);
 
-    // NEW: Get posts from friends and current user for feed - Fixed query
-    @Query("SELECT p FROM Post p WHERE p.profile.user IN " +
-           "(SELECT DISTINCT c.receiver FROM Connection c WHERE c.requester = :currentUser AND c.status = 'ACCEPTED') " +
-           "OR p.profile.user IN " +
-           "(SELECT DISTINCT c.requester FROM Connection c WHERE c.receiver = :currentUser AND c.status = 'ACCEPTED') " +
-           "OR p.profile.user = :currentUser " +
-           "ORDER BY p.createdAt DESC")
-    List<Post> findPostsFromFriendsAndSelf(@Param("currentUser") com.example.postfolio.user.entity.User currentUser);
+       // NEW: Get posts from friends, current user, and followed employers for feed
+       @Query("SELECT p FROM Post p WHERE p.profile.user IN " +
+                     "(SELECT DISTINCT c.receiver FROM Connection c WHERE c.requester = :currentUser AND c.status = 'ACCEPTED') "
+                     +
+                     "OR p.profile.user IN " +
+                     "(SELECT DISTINCT c.requester FROM Connection c WHERE c.receiver = :currentUser AND c.status = 'ACCEPTED') "
+                     +
+                     "OR p.profile.user IN " +
+                     "(SELECT DISTINCT f.following FROM Follow f WHERE f.follower = :currentUser) " +
+                     "OR p.profile.user = :currentUser " +
+                     "ORDER BY p.createdAt DESC")
+       List<Post> findPostsFromFriendsAndSelf(@Param("currentUser") com.example.postfolio.user.entity.User currentUser);
 
-    // NEW: Find post with profile and user data for modal
-    @Query("SELECT p FROM Post p " +
-           "JOIN FETCH p.profile pr " +
-           "JOIN FETCH pr.user u " +
-           "WHERE p.id = :postId")
-    Post findByIdWithProfileAndUser(@Param("postId") Long postId);
+       // NEW: Find post with profile and user data for modal
+       @Query("SELECT p FROM Post p " +
+                     "JOIN FETCH p.profile pr " +
+                     "JOIN FETCH pr.user u " +
+                     "WHERE p.id = :postId")
+       Post findByIdWithProfileAndUser(@Param("postId") Long postId);
 }

@@ -10,5 +10,6 @@ public enum NotificationType {
     JOB_APPLICATION,
     INTERVIEW_SCHEDULED,
     MESSAGE,
-    SYSTEM
+    SYSTEM,
+    FOLLOW
 }

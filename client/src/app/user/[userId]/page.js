@@ -7,14 +7,14 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { 
-    ArrowLeft, 
-    User, 
-    Mail, 
-    Phone, 
-    MapPin, 
-    Calendar, 
-    GraduationCap, 
+import {
+    ArrowLeft,
+    User,
+    Mail,
+    Phone,
+    MapPin,
+    Calendar,
+    GraduationCap,
     FileText,
     Users,
     MessageSquare,
@@ -25,6 +25,7 @@ import {
     AlertCircle
 } from 'lucide-react';
 import ConnectionButton from "@/components/ConnectionButton";
+import FollowButton from "@/components/FollowButton";
 import UserPosts from "@/components/UserPosts";
 import CvViewer from "@/component/CvViewer";
 import Navbar from "@/components/Navbar";
@@ -33,7 +34,7 @@ export default function UserProfilePage() {
     const params = useParams();
     const router = useRouter();
     const userId = params.userId;
-    
+
     const [profile, setProfile] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -53,7 +54,7 @@ export default function UserProfilePage() {
 
             // Get current user's profile to check if this is their own profile
             const currentUserResponse = await apiFetch('/api/profile/me');
-            
+
             if (currentUserResponse.ok) {
                 const currentUser = await currentUserResponse.json();
                 setIsOwnProfile(currentUser.id.toString() === userId);
@@ -106,7 +107,7 @@ export default function UserProfilePage() {
                         </div>
                         <h3 className="text-xl font-semibold text-gray-900 mb-2">Error loading profile</h3>
                         <p className="text-gray-600 mb-6">{error}</p>
-                        <Button 
+                        <Button
                             onClick={() => router.back()}
                             className="bg-gray-200 hover:bg-gray-300 text-gray-900"
                         >
@@ -152,10 +153,23 @@ export default function UserProfilePage() {
                                 </Button>
                                 <h1 className="text-xl font-semibold text-gray-900">Profile</h1>
                             </div>
-                            
+
                             {!isOwnProfile && (
                                 <div className="flex items-center gap-3">
-                                    <ConnectionButton targetUserId={userId} />
+                                    {/* Show ConnectionButton for Users, FollowButton for Employers */}
+                                    {profile.role === 'User' && (
+                                        <ConnectionButton
+                                            targetUserId={userId}
+                                            targetUserName={profile.name}
+                                        />
+                                    )}
+                                    {profile.role === 'Employer' && (
+                                        <FollowButton
+                                            targetUserId={userId}
+                                            targetUserName={profile.name}
+                                            userRole={profile.role}
+                                        />
+                                    )}
                                     <Button
                                         variant="ghost"
                                         size="sm"
@@ -236,10 +250,10 @@ export default function UserProfilePage() {
                                                 <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl border border-gray-200">
                                                     <Calendar className="h-5 w-5 text-sky-600" />
                                                     <span className="text-gray-700">
-                                                        {new Date(profile.birthDate).toLocaleDateString('en-US', { 
-                                                            year: 'numeric', 
-                                                            month: 'long', 
-                                                            day: 'numeric' 
+                                                        {new Date(profile.birthDate).toLocaleDateString('en-US', {
+                                                            year: 'numeric',
+                                                            month: 'long',
+                                                            day: 'numeric'
                                                         })}
                                                     </span>
                                                 </div>
@@ -290,33 +304,30 @@ export default function UserProfilePage() {
                     <div className="flex space-x-1 bg-gray-100 rounded-xl p-1">
                         <button
                             onClick={() => setActiveTab('profile')}
-                            className={`flex-1 py-3 px-4 rounded-lg font-medium transition-all duration-200 ${
-                                activeTab === 'profile'
+                            className={`flex-1 py-3 px-4 rounded-lg font-medium transition-all duration-200 ${activeTab === 'profile'
                                     ? 'bg-gradient-to-r from-sky-500 to-sky-600 text-white shadow-sm'
                                     : 'text-gray-600 hover:text-gray-900 hover:bg-white'
-                            }`}
+                                }`}
                         >
                             <User className="h-4 w-4 inline mr-2" />
                             Profile
                         </button>
                         <button
                             onClick={() => setActiveTab('posts')}
-                            className={`flex-1 py-3 px-4 rounded-lg font-medium transition-all duration-200 ${
-                                activeTab === 'posts'
+                            className={`flex-1 py-3 px-4 rounded-lg font-medium transition-all duration-200 ${activeTab === 'posts'
                                     ? 'bg-gradient-to-r from-sky-500 to-sky-600 text-white shadow-sm'
                                     : 'text-gray-600 hover:text-gray-900 hover:bg-white'
-                            }`}
+                                }`}
                         >
                             <MessageSquare className="h-4 w-4 inline mr-2" />
                             Posts
                         </button>
                         <button
                             onClick={() => setActiveTab('cv')}
-                            className={`flex-1 py-3 px-4 rounded-lg font-medium transition-all duration-200 ${
-                                activeTab === 'cv'
+                            className={`flex-1 py-3 px-4 rounded-lg font-medium transition-all duration-200 ${activeTab === 'cv'
                                     ? 'bg-gradient-to-r from-sky-500 to-sky-600 text-white shadow-sm'
                                     : 'text-gray-600 hover:text-gray-900 hover:bg-white'
-                            }`}
+                                }`}
                         >
                             <FileText className="h-4 w-4 inline mr-2" />
                             CV

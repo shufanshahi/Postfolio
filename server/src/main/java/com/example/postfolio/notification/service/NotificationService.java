@@ -89,6 +89,25 @@ public class NotificationService {
         return notificationRepository.save(notification);
     }
 
+    // Create follow notification
+    public void createFollowNotification(Long followedUserId, Long followerId, String followerName) {
+        // Don't send notification if user follows themselves
+        if (followedUserId.equals(followerId)) {
+            return;
+        }
+
+        Notification notification = new Notification(
+                followedUserId,
+                followerId,
+                followerName,
+                "New Follower",
+                followerName + " started following you",
+                NotificationType.FOLLOW);
+        notification.setActionUrl("/profile");
+
+        notificationRepository.save(notification);
+    }
+
     // Create post celebrated notification
     public void createPostCelebratedNotification(Long postOwnerId, Long celebratorId, String celebratorName,
             Long postId) {
