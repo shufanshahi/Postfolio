@@ -15,6 +15,7 @@ import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 
 import java.util.HashMap;
@@ -32,7 +33,7 @@ public class VideoCallSocketServer {
     // Track room -> set of session IDs to enforce 1:1 calls
     private final Map<String, Set<String>> roomParticipants = new HashMap<>();
 
-    public VideoCallSocketServer(SocketIOServer server) {
+    public VideoCallSocketServer(@Qualifier("videoCallSocketIOServer") SocketIOServer server) {
         this.server = server;
     }
 
@@ -81,7 +82,8 @@ public class VideoCallSocketServer {
 
                 client.joinRoom(roomId);
                 participants.add(client.getSessionId().toString());
-                log.info("Client {} joined room {} ({} participants)", client.getSessionId(), roomId, participants.size());
+                log.info("Client {} joined room {} ({} participants)", client.getSessionId(), roomId,
+                        participants.size());
 
                 // When two participants are present, signal readiness
                 if (participants.size() == 2) {
@@ -95,7 +97,8 @@ public class VideoCallSocketServer {
             @Override
             public void onData(SocketIOClient client, JoinPayload data, AckRequest ackSender) {
                 String roomId = data.getRoomId();
-                if (roomId == null) return;
+                if (roomId == null)
+                    return;
                 client.leaveRoom(roomId);
                 Set<String> participants = roomParticipants.get(roomId);
                 if (participants != null) {
@@ -160,5 +163,3 @@ public class VideoCallSocketServer {
         }
     }
 }
-
-

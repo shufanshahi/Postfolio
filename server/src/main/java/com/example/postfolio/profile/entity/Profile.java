@@ -40,6 +40,10 @@ public class Profile {
     @JsonIgnore
     private List<University> universities = new ArrayList<>();
 
+    @OneToMany(mappedBy = "profile", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @JsonIgnore
+    private List<Work> works = new ArrayList<>();
+
     @OneToOne
     @JoinColumn(name = "user_id", nullable = false, unique = true)
     @JsonIgnore

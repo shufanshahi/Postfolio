@@ -2,6 +2,8 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Modal from 'react-modal';
+import EducationManagement from "@/components/EducationManagement";
+import WorkManagement from "../../components/WorkManagement";
 
 // Initialize modal only on client side
 if (typeof window !== 'undefined') {
@@ -107,7 +109,12 @@ export default function ProfilePage() {
     if (!profile) return <div>No profile found</div>;
 
     return (
+
+
+
+
         <div className="profile-container">
+            <WorkManagement/>
             <h1 className="profile-title">Profile</h1>
 
             <button

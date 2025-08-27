@@ -3,6 +3,7 @@ package com.example.postfolio.connection.service;
 import com.example.postfolio.connection.entity.Connection;
 import com.example.postfolio.connection.model.ConnectionStatus;
 import com.example.postfolio.connection.repository.ConnectionRepository;
+import com.example.postfolio.notification.service.NotificationService;
 import com.example.postfolio.user.entity.User;
 import com.example.postfolio.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -21,6 +22,7 @@ public class ConnectionService {
 
     private final ConnectionRepository connectionRepository;
     private final UserRepository userRepository;
+    private final NotificationService notificationService;
 
     /**
      * Send a friend request from current user to another user
@@ -56,7 +58,16 @@ public class ConnectionService {
                 .status(ConnectionStatus.PENDING)
                 .build();
 
-        return connectionRepository.save(connection);
+        Connection savedConnection = connectionRepository.save(connection);
+
+        // Create notification for the receiver
+        notificationService.createConnectionRequestNotification(
+                receiverId,
+                requester.getId(),
+                requester.getName(),
+                savedConnection.getId());
+
+        return savedConnection;
     }
 
     /**
@@ -78,7 +89,16 @@ public class ConnectionService {
         }
 
         connection.setStatus(ConnectionStatus.ACCEPTED);
-        return connectionRepository.save(connection);
+        Connection savedConnection = connectionRepository.save(connection);
+
+        // Create notification for the original requester
+        notificationService.createConnectionAcceptedNotification(
+                connection.getRequester().getId(),
+                currentUser.getId(),
+                currentUser.getName(),
+                connectionId);
+
+        return savedConnection;
     }
 
     /**
@@ -100,7 +120,16 @@ public class ConnectionService {
         }
 
         connection.setStatus(ConnectionStatus.REJECTED);
-        return connectionRepository.save(connection);
+        Connection savedConnection = connectionRepository.save(connection);
+
+        // Optionally create notification for the original requester
+        notificationService.createConnectionRejectedNotification(
+                connection.getRequester().getId(),
+                currentUser.getId(),
+                currentUser.getName(),
+                connectionId);
+
+        return savedConnection;
     }
 
     /**
@@ -113,8 +142,8 @@ public class ConnectionService {
                 .orElseThrow(() -> new RuntimeException("Connection not found"));
 
         // Verify the current user is part of this connection
-        if (!connection.getRequester().getId().equals(currentUser.getId()) && 
-            !connection.getReceiver().getId().equals(currentUser.getId())) {
+        if (!connection.getRequester().getId().equals(currentUser.getId()) &&
+                !connection.getReceiver().getId().equals(currentUser.getId())) {
             throw new RuntimeException("You can only remove your own connections");
         }
 
@@ -157,7 +186,7 @@ public class ConnectionService {
                 .orElseThrow(() -> new RuntimeException("User not found"));
         User user2 = userRepository.findById(userId2)
                 .orElseThrow(() -> new RuntimeException("User not found"));
-        
+
         return connectionRepository.areUsersConnected(user1, user2);
     }
 
@@ -170,7 +199,7 @@ public class ConnectionService {
                 .orElseThrow(() -> new RuntimeException("User not found"));
         User user2 = userRepository.findById(userId2)
                 .orElseThrow(() -> new RuntimeException("User not found"));
-        
+
         return connectionRepository.hasPendingRequest(user1, user2);
     }
 
@@ -204,4 +233,4 @@ public class ConnectionService {
         return userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("User not found"));
     }
-} 
+}

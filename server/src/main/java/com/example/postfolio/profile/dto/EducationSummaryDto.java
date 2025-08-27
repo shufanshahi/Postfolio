@@ -16,6 +16,7 @@ public class EducationSummaryDto {
 
     private List<SchoolDto> schools;
     private List<UniversityDto> universities;
+    private List<WorkDto> works;
 
     // Helper method to get SSC result
     public SchoolDto getSscResult() {

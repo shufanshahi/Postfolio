@@ -13,6 +13,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
+import java.util.HashMap;
 import java.util.stream.Collectors;
 import com.example.postfolio.post.entity.Reaction;
 import com.example.postfolio.post.model.ReactionType;
@@ -32,8 +34,7 @@ public class PostController {
         Post post = postService.createPost(
                 createPostDTO.getProfileId(),
                 createPostDTO.getContent(),
-                createPostDTO.getImages()
-        );
+                createPostDTO.getImages());
         return ResponseEntity.ok(convertToDto(post));
     }
 
@@ -106,8 +107,7 @@ public class PostController {
                 postId,
                 updatePostDTO.getProfileId(),
                 updatePostDTO.getContent(),
-                updatePostDTO.getImages()
-        );
+                updatePostDTO.getImages());
         return ResponseEntity.ok(convertToDto(post));
     }
 
@@ -118,8 +118,7 @@ public class PostController {
         Post post = postService.updatePostTags(
                 postId,
                 tagUpdateDTO.getProfileId(),
-                tagUpdateDTO.getTags()
-        );
+                tagUpdateDTO.getTags());
         return ResponseEntity.ok(convertToDto(post));
     }
 
@@ -132,9 +131,30 @@ public class PostController {
     }
 
     @PostMapping("/{postId}/celebrate")
-    public ResponseEntity<Void> celebratePost(@PathVariable Long postId) {
-        postService.celebratePost(postId);
-        return ResponseEntity.ok().build();
+    public ResponseEntity<Map<String, Object>> celebratePost(@PathVariable Long postId) {
+        boolean isCelebrated = postService.toggleCelebratePost(postId);
+        Long celebrationCount = postService.getCelebrationCount(postId);
+        boolean userCelebrated = postService.isPostCelebratedByCurrentUser(postId);
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("isCelebrated", isCelebrated);
+        response.put("celebrationCount", celebrationCount);
+        response.put("userCelebrated", userCelebrated);
+        response.put("message", isCelebrated ? "Post celebrated with confetti! 🎉" : "Post uncelebrated");
+
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/{postId}/celebration-info")
+    public ResponseEntity<Map<String, Object>> getCelebrationInfo(@PathVariable Long postId) {
+        Long celebrationCount = postService.getCelebrationCount(postId);
+        boolean userCelebrated = postService.isPostCelebratedByCurrentUser(postId);
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("celebrationCount", celebrationCount);
+        response.put("userCelebrated", userCelebrated);
+
+        return ResponseEntity.ok(response);
     }
 
     @GetMapping("/{postId}/reactions")

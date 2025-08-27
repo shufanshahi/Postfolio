@@ -76,17 +76,17 @@ const PendingRequests = ({ className }) => {
 
     if (loading) {
         return (
-            <Card className={`bg-gray-800 border-gray-700 ${className}`}>
+            <Card className={`bg-white border-gray-200 ${className}`}>
                 <CardHeader>
-                    <CardTitle className="flex items-center gap-2 text-white">
-                        <Users className="h-5 w-5 text-purple-400" />
+                    <CardTitle className="flex items-center gap-2 text-gray-900">
+                        <Users className="h-5 w-5 text-purple-500" />
                         Pending Requests
                     </CardTitle>
                 </CardHeader>
                 <CardContent>
                     <div className="flex items-center justify-center py-8">
-                        <Loader2 className="h-6 w-6 animate-spin text-green-400" />
-                        <span className="ml-2 text-gray-300">Loading requests...</span>
+                        <Loader2 className="h-6 w-6 animate-spin text-sky-500" />
+                        <span className="ml-2 text-gray-600">Loading requests...</span>
                     </div>
                 </CardContent>
             </Card>
@@ -95,15 +95,15 @@ const PendingRequests = ({ className }) => {
 
     if (error) {
         return (
-            <Card className={`bg-gray-800 border-gray-700 ${className}`}>
+            <Card className={`bg-white border-gray-200 ${className}`}>
                 <CardHeader>
-                    <CardTitle className="flex items-center gap-2 text-white">
-                        <Users className="h-5 w-5 text-purple-400" />
+                    <CardTitle className="flex items-center gap-2 text-gray-900">
+                        <Users className="h-5 w-5 text-purple-500" />
                         Pending Requests
                     </CardTitle>
                 </CardHeader>
                 <CardContent>
-                    <div className="text-red-400 text-center py-4">
+                    <div className="text-red-600 text-center py-4">
                         Error: {error}
                     </div>
                 </CardContent>
@@ -112,32 +112,32 @@ const PendingRequests = ({ className }) => {
     }
 
     return (
-        <Card className={`bg-gray-800 border-gray-700 ${className}`}>
+        <Card className={`bg-white border-gray-200 ${className}`}>
             <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-white">
-                    <Users className="h-5 w-5 text-purple-400" />
+                <CardTitle className="flex items-center gap-2 text-gray-900">
+                    <Users className="h-5 w-5 text-purple-500" />
                     Pending Requests
-                    <Badge className="ml-2 bg-gradient-to-r from-purple-900/50 to-purple-800/50 text-purple-300 border-purple-800">
+                    <Badge className="ml-2 bg-purple-100 text-purple-800 border-purple-200">
                         {pendingRequests.length}
                     </Badge>
                 </CardTitle>
-                <CardDescription className="text-gray-400">
+                <CardDescription className="text-gray-600">
                     Connection requests waiting for your response
                 </CardDescription>
             </CardHeader>
             <CardContent>
                 {pendingRequests.length === 0 ? (
-                    <div className="text-center py-8 text-gray-400">
+                    <div className="text-center py-8 text-gray-500">
                         <Users className="h-12 w-12 mx-auto mb-4 opacity-50" />
                         <p>No pending requests</p>
-                        <p className="text-sm text-gray-500">When someone sends you a request, it will appear here</p>
+                        <p className="text-sm text-gray-400">When someone sends you a request, it will appear here</p>
                     </div>
                 ) : (
                     <div className="space-y-3">
                         {pendingRequests.map((request) => (
                             <div
                                 key={request.id}
-                                className="flex items-center justify-between p-4 rounded-lg bg-gray-700/50 border border-gray-600 hover:border-green-500/30 transition-colors duration-200"
+                                className="flex items-center justify-between p-4 rounded-lg bg-gray-50 border border-gray-200 hover:border-sky-300 transition-colors duration-200"
                                 onClick={() => handleUserClick(request.requesterProfileId)}
                             >
                                 <div className="flex items-center gap-3 flex-1 cursor-pointer">
@@ -145,14 +145,14 @@ const PendingRequests = ({ className }) => {
                                         {request.requesterPictureBase64 ? (
                                             <AvatarImage src={`data:image/jpeg;base64,${request.requesterPictureBase64}`} />
                                         ) : (
-                                            <AvatarFallback className="bg-gradient-to-br from-green-500 to-blue-600 text-white">
+                                            <AvatarFallback className="bg-gradient-to-br from-sky-400 to-sky-500 text-white">
                                                 {request.requesterName?.charAt(0)?.toUpperCase() || 'U'}
                                             </AvatarFallback>
                                         )}
                                     </Avatar>
                                     <div className="flex-1">
-                                        <h4 className="font-medium text-white">{request.requesterName || 'Unknown User'}</h4>
-                                        <p className="text-sm text-gray-400">{request.requesterEmail}</p>
+                                        <h4 className="font-medium text-gray-900">{request.requesterName || 'Unknown User'}</h4>
+                                        <p className="text-sm text-gray-600">{request.requesterEmail}</p>
                                     </div>
                                     <ExternalLink className="h-4 w-4 text-gray-400" />
                                 </div>
@@ -164,7 +164,7 @@ const PendingRequests = ({ className }) => {
                                         }}
                                         disabled={actionLoading[request.id]}
                                         size="sm"
-                                        className="bg-gradient-to-r from-green-600 to-green-700 text-white hover:from-green-700 hover:to-green-800"
+                                        className="bg-gradient-to-r from-sky-500 to-sky-600 text-white hover:from-sky-600 hover:to-sky-700"
                                     >
                                         {actionLoading[request.id] ? (
                                             <Loader2 className="h-4 w-4 animate-spin mr-2" />
@@ -181,7 +181,7 @@ const PendingRequests = ({ className }) => {
                                         disabled={actionLoading[request.id]}
                                         variant="outline"
                                         size="sm"
-                                        className="text-red-400 border-red-400 hover:bg-red-900/20 hover:text-red-300"
+                                        className="text-red-600 border-red-300 hover:bg-red-50 hover:text-red-700"
                                     >
                                         {actionLoading[request.id] ? (
                                             <Loader2 className="h-4 w-4 animate-spin mr-2" />

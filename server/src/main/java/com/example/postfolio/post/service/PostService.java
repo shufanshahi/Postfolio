@@ -1,6 +1,7 @@
 package com.example.postfolio.post.service;
 
 import com.example.postfolio.cvInApp.service.CvUpdateService;
+import com.example.postfolio.notification.service.NotificationService;
 import com.example.postfolio.post.dto.CreatePostDTO;
 import com.example.postfolio.post.dto.PostResponseDTO;
 import com.example.postfolio.post.dto.UpdatePostDTO;
@@ -41,6 +42,7 @@ public class PostService {
     private final CvUpdateService cvUpdateService;
     private final UserRepository userRepository;
     private final ReactionRepository reactionRepository;
+    private final NotificationService notificationService;
 
     @Transactional
     public Post createPost(Long profileId, String content, List<String> images) {
@@ -50,8 +52,7 @@ public class PostService {
         if (images != null && images.size() > 4) {
             throw new ResponseStatusException(
                     HttpStatus.BAD_REQUEST,
-                    "Maximum 4 images allowed per post"
-            );
+                    "Maximum 4 images allowed per post");
         }
 
         // Validate base64 images
@@ -107,8 +108,7 @@ public class PostService {
             log.error("Failed to reprocess post {} with AI: {}", postId, e.getMessage());
             throw new ResponseStatusException(
                     HttpStatus.INTERNAL_SERVER_ERROR,
-                    "Failed to reprocess post with AI"
-            );
+                    "Failed to reprocess post with AI");
         }
     }
 
@@ -123,8 +123,7 @@ public class PostService {
         return postRepository.findById(postId)
                 .orElseThrow(() -> new ResponseStatusException(
                         HttpStatus.NOT_FOUND,
-                        "Post not found with id: " + postId
-                ));
+                        "Post not found with id: " + postId));
     }
 
     @Transactional(readOnly = true)
@@ -167,8 +166,7 @@ public class PostService {
         if (images != null && images.size() > 4) {
             throw new ResponseStatusException(
                     HttpStatus.BAD_REQUEST,
-                    "Maximum 4 images allowed per post"
-            );
+                    "Maximum 4 images allowed per post");
         }
 
         // Validate and clean images
@@ -236,6 +234,7 @@ public class PostService {
 
         return savedPost;
     }
+
     @Transactional(readOnly = true)
     public Page<Post> getPostsNeedingReview(Long profileId, Pageable pageable) {
         Profile profile = profileService.getProfileById(profileId);
@@ -259,22 +258,61 @@ public class PostService {
     }
 
     @Transactional
-    public void celebratePost(Long postId) {
+    public boolean toggleCelebratePost(Long postId) {
         Post post = getPostById(postId);
         User currentUser = getCurrentUser();
-        
+
         // Check if user already celebrated this post
         if (reactionRepository.existsByPostAndUser(post, currentUser)) {
-            throw new RuntimeException("User already celebrated this post");
+            // Remove celebration
+            reactionRepository.deleteByPostAndUser(post, currentUser);
+
+            // Remove notification
+            notificationService.removePostCelebratedNotification(
+                    post.getProfile().getUser().getId(),
+                    currentUser.getId(),
+                    postId);
+
+            return false; // Post was uncelebrated
+        } else {
+            // Add celebration
+            Reaction reaction = Reaction.builder()
+                    .post(post)
+                    .user(currentUser)
+                    .type(ReactionType.CELEBRATE)
+                    .build();
+
+            reactionRepository.save(reaction);
+
+            // Send notification to post owner
+            notificationService.createPostCelebratedNotification(
+                    post.getProfile().getUser().getId(),
+                    currentUser.getId(),
+                    currentUser.getName(),
+                    postId);
+
+            return true; // Post was celebrated
         }
-        
-        Reaction reaction = Reaction.builder()
-                .post(post)
-                .user(currentUser)
-                .type(ReactionType.CELEBRATE)
-                .build();
-        
-        reactionRepository.save(reaction);
+    }
+
+    @Transactional
+    public void celebratePost(Long postId) {
+        toggleCelebratePost(postId);
+    }
+
+    @Transactional(readOnly = true)
+    public Long getCelebrationCount(Long postId) {
+        Post post = getPostById(postId);
+        return reactionRepository.findByPost(post).stream()
+                .filter(reaction -> reaction.getType() == ReactionType.CELEBRATE)
+                .count();
+    }
+
+    @Transactional(readOnly = true)
+    public boolean isPostCelebratedByCurrentUser(Long postId) {
+        Post post = getPostById(postId);
+        User currentUser = getCurrentUser();
+        return reactionRepository.existsByPostAndUser(post, currentUser);
     }
 
     @Transactional(readOnly = true)
@@ -284,8 +322,8 @@ public class PostService {
     }
 
     private Post savePost(String content, Profile profile, PostType type,
-                          List<String> tags, String cvHeading, boolean autoTagged,
-                          List<String> images) {
+            List<String> tags, String cvHeading, boolean autoTagged,
+            List<String> images) {
         return postRepository.save(Post.builder()
                 .content(content)
                 .type(type)
@@ -303,8 +341,7 @@ public class PostService {
         if (!post.getProfile().getId().equals(profileId)) {
             throw new ResponseStatusException(
                     HttpStatus.FORBIDDEN,
-                    "You can only modify your own posts"
-            );
+                    "You can only modify your own posts");
         }
     }
 
@@ -355,8 +392,7 @@ public class PostService {
         if (validImages.size() > 4) {
             throw new ResponseStatusException(
                     HttpStatus.BAD_REQUEST,
-                    "Maximum 4 images allowed per post"
-            );
+                    "Maximum 4 images allowed per post");
         }
 
         return validImages;
