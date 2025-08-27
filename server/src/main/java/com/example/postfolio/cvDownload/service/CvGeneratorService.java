@@ -103,9 +103,7 @@ public class CvGeneratorService {
 
                 // Location and dates
                 StringBuilder details = new StringBuilder();
-                if (work.getLocation() != null && !work.getLocation().isEmpty()) {
-                    details.append(work.getLocation()).append(" | ");
-                }
+            
                 details.append(work.getDisplayDateRange());
                 if (work.getIsCurrent()) {
                     details.append(" (Current)");
@@ -113,23 +111,13 @@ public class CvGeneratorService {
                 document.add(new Paragraph(details.toString(), ITALIC_FONT));
 
                 // Description
-                if (work.getDescription() != null && !work.getDescription().isEmpty()) {
-                    document.add(new Paragraph(work.getDescription(), NORMAL_FONT));
-                }
+
 
                 // Achievements
-                if (work.getAchievements() != null && !work.getAchievements().isEmpty()) {
-                    document.add(new Paragraph("Key Achievements:", NORMAL_FONT));
-                    String[] achievements = work.getAchievements().split(",");
-                    for (String achievement : achievements) {
-                        document.add(new Paragraph("• " + achievement.trim(), NORMAL_FONT));
-                    }
-                }
+
 
                 // Technologies
-                if (work.getTechnologiesUsed() != null && !work.getTechnologiesUsed().isEmpty()) {
-                    document.add(new Paragraph("Technologies: " + work.getTechnologiesUsed(), ITALIC_FONT));
-                }
+
 
                 document.add(Chunk.NEWLINE);
             }

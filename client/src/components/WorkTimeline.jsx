@@ -2,13 +2,14 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
-import { Separator } from './ui/separator';
-import { Edit, Trash2, Building, MapPin, Calendar, Briefcase, Code, Award, Loader2 } from 'lucide-react';
+import { Edit, Trash2, Building, Calendar, Loader2, Clock } from 'lucide-react';
 
 const WorkTimeline = ({ userId, onEdit, onDelete }) => {
     const [works, setWorks] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    const [deleteLoading, setDeleteLoading] = useState(null);
+    const [endDateLoading, setEndDateLoading] = useState(null);
 
     useEffect(() => {
         fetchWorks();
@@ -34,6 +35,77 @@ const WorkTimeline = ({ userId, onEdit, onDelete }) => {
             setError(error.message);
         } finally {
             setLoading(false);
+        }
+    };
+
+    const handleDelete = async (work) => {
+        if (!window.confirm(`Are you sure you want to delete the work experience at ${work.companyName}?`)) {
+            return;
+        }
+
+        setDeleteLoading(work.id);
+        try {
+            const token = localStorage.getItem('token');
+            const response = await fetch(`http://localhost:8080/api/work/${work.id}`, {
+                method: 'DELETE',
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to delete work experience');
+            }
+
+            // Remove the work from the local state
+            setWorks(works.filter(w => w.id !== work.id));
+
+            // Call the parent's onDelete if provided
+            if (onDelete) {
+                onDelete({ type: 'work', data: work });
+            }
+        } catch (error) {
+            console.error('Error deleting work experience:', error);
+            alert('Failed to delete work experience: ' + error.message);
+        } finally {
+            setDeleteLoading(null);
+        }
+    };
+
+    const handleSetEndDate = async (work) => {
+        const today = new Date().toISOString().split('T')[0];
+
+        setEndDateLoading(work.id);
+        try {
+            const token = localStorage.getItem('token');
+            const updatedWork = {
+                ...work,
+                endDate: today,
+                isCurrent: false
+            };
+
+            const response = await fetch(`http://localhost:8080/api/work/${work.id}`, {
+                method: 'PUT',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(updatedWork)
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to update work experience');
+            }
+
+            const data = await response.json();
+
+            // Update the work in the local state
+            setWorks(works.map(w => w.id === work.id ? data : w));
+        } catch (error) {
+            console.error('Error updating work experience:', error);
+            alert('Failed to update work experience: ' + error.message);
+        } finally {
+            setEndDateLoading(null);
         }
     };
 
@@ -92,14 +164,8 @@ const WorkTimeline = ({ userId, onEdit, onDelete }) => {
                                         <p className="text-sky-600 font-medium">{work.companyName}</p>
                                     </div>
                                 </div>
-                                
+
                                 <div className="flex items-center gap-4 text-sm text-slate-500">
-                                    {work.location && (
-                                        <div className="flex items-center gap-1">
-                                            <MapPin className="h-4 w-4" />
-                                            <span>{work.location}</span>
-                                        </div>
-                                    )}
                                     <div className="flex items-center gap-1">
                                         <Calendar className="h-4 w-4" />
                                         <span>{work.displayDateRange}</span>
@@ -111,80 +177,50 @@ const WorkTimeline = ({ userId, onEdit, onDelete }) => {
                                     )}
                                 </div>
                             </div>
-                            
+
                             <div className="flex items-center gap-2">
+                                {work.isCurrent && (
+                                    <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={() => handleSetEndDate(work)}
+                                        disabled={endDateLoading === work.id}
+                                        className="text-slate-400 hover:text-orange-600 hover:bg-orange-50"
+                                        title="Set end date to today"
+                                    >
+                                        {endDateLoading === work.id ? (
+                                            <Loader2 className="h-4 w-4 animate-spin" />
+                                        ) : (
+                                            <Clock className="h-4 w-4" />
+                                        )}
+                                    </Button>
+                                )}
                                 <Button
                                     variant="ghost"
                                     size="sm"
                                     onClick={() => onEdit && onEdit({ type: 'work', data: work })}
                                     className="text-slate-400 hover:text-slate-600 hover:bg-slate-100"
+                                    title="Edit work experience"
                                 >
                                     <Edit className="h-4 w-4" />
                                 </Button>
                                 <Button
                                     variant="ghost"
                                     size="sm"
-                                    onClick={() => onDelete && onDelete({ type: 'work', data: work })}
+                                    onClick={() => handleDelete(work)}
+                                    disabled={deleteLoading === work.id}
                                     className="text-slate-400 hover:text-red-500 hover:bg-red-50"
+                                    title="Delete work experience"
                                 >
-                                    <Trash2 className="h-4 w-4" />
+                                    {deleteLoading === work.id ? (
+                                        <Loader2 className="h-4 w-4 animate-spin" />
+                                    ) : (
+                                        <Trash2 className="h-4 w-4" />
+                                    )}
                                 </Button>
                             </div>
                         </div>
                     </CardHeader>
-                    
-                    <CardContent className="space-y-4">
-                        {work.description && (
-                            <div>
-                                <h4 className="text-sm font-medium text-slate-700 mb-2 flex items-center gap-2">
-                                    <Briefcase className="h-4 w-4" />
-                                    Job Description
-                                </h4>
-                                <p className="text-slate-600 text-sm leading-relaxed">{work.description}</p>
-                            </div>
-                        )}
-                        
-                        {work.achievements && (
-                            <div>
-                                <h4 className="text-sm font-medium text-slate-700 mb-2 flex items-center gap-2">
-                                    <Award className="h-4 w-4" />
-                                    Key Achievements
-                                </h4>
-                                <div className="text-slate-600 text-sm">
-                                    {work.achievements.split(',').map((achievement, idx) => (
-                                        <div key={idx} className="flex items-start gap-2 mb-1">
-                                            <span className="text-sky-500 mt-1">•</span>
-                                            <span>{achievement.trim()}</span>
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-                        )}
-                        
-                        {work.technologiesUsed && (
-                            <div>
-                                <h4 className="text-sm font-medium text-slate-700 mb-2 flex items-center gap-2">
-                                    <Code className="h-4 w-4" />
-                                    Technologies Used
-                                </h4>
-                                <div className="flex flex-wrap gap-2">
-                                    {work.technologiesUsed.split(',').map((tech, idx) => (
-                                        <Badge
-                                            key={idx}
-                                            variant="outline"
-                                            className="text-xs bg-slate-100 text-slate-700 border-slate-200"
-                                        >
-                                            {tech.trim()}
-                                        </Badge>
-                                    ))}
-                                </div>
-                            </div>
-                        )}
-                        
-                        <div className="text-xs text-slate-500">
-                            Duration: {work.duration}
-                        </div>
-                    </CardContent>
                 </Card>
             ))}
         </div>
