@@ -112,14 +112,23 @@ export default function Dashboard() {
                 color: "bg-cyan-500/10",
                 iconColor: "text-cyan-400"
             },
-        {
+            {
             title: "My Interviews",
             description: "View and manage your interviews",
             icon: <Video className="h-5 w-5 text-orange-400" />,
             path: "/my-interviews",
             color: "bg-orange-500/10",
             iconColor: "text-orange-400"
-        }
+            },
+            {
+            title: "Mock Interviews",
+            description: "View and manage your mock interviews",
+            icon: <Video className="h-5 w-5 text-orange-400" />,
+            path: "/mockInterview",
+            color: "bg-orange-500/10",
+            iconColor: "text-orange-400"
+            }
+
         ];
     }
 
