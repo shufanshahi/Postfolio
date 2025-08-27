@@ -68,10 +68,17 @@ public class InterviewController {
         return mockInterviewService.storeMockInterview(request);
     }
 
+
     // Get mock interviews by profile ID
     @GetMapping("/mock-interviews/{profileId}")
     public List<MockInterview> getMockInterviewsByProfileId(@PathVariable Long profileId) {
         return mockInterviewService.getMockInterviewsByProfileId(profileId);
+    }
+
+    // Get a single mock interview by its ID
+    @GetMapping("/mock-interview/{id}")
+    public MockInterview getMockInterviewById(@PathVariable Long id) {
+        return mockInterviewService.getMockInterviewById(id);
     }
 
     // Evaluate interview performance based on questions and answers
