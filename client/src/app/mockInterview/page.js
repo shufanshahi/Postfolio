@@ -753,25 +753,50 @@ export default function MockInterviewPage() {
         {/* Content Area */}
         <div className="bg-gray-800 p-6">
           {!interviewStarted && !interviewComplete && (
-            <div className="text-center">
-              <div className="mb-8">
-                <h2 className="text-2xl font-semibold text-white mb-4">
-                  Welcome to the AI Mock Interview
-                </h2>
-                <p className="text-gray-300 mb-6">
-                  This interview will ask you {questions.length - 1} questions. Listen to each question 
-                  and provide your response when prompted. Click the microphone when you&apos;re ready to answer.
-                </p>
+            <>
+              <div className="text-center">
+                <div className="mb-8">
+                  <h2 className="text-2xl font-semibold text-white mb-4">
+                    Welcome to the AI Mock Interview
+                  </h2>
+                  <p className="text-gray-300 mb-6">
+                    This interview will ask you {questions.length - 1} questions. Listen to each question 
+                    and provide your response when prompted. Click the microphone when you&apos;re ready to answer.
+                  </p>
+                </div>
+                <button
+                  onClick={startInterview}
+                  className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white px-8 py-4 rounded-lg font-semibold text-lg transition-all duration-200 transform hover:scale-105"
+                >
+                  Join Interview Room
+                </button>
               </div>
-              
-              <button
-                onClick={startInterview}
-                className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white px-8 py-4 rounded-lg font-semibold text-lg transition-all duration-200 transform hover:scale-105"
-              >
-                Join Interview Room
-              </button>
 
-            </div>
+              {/* Previous Mock Interviews Section - only visible on welcome screen */}
+              <div className="mt-12 mb-8">
+                <h3 className="text-xl font-semibold text-white mb-4 text-center">Previous Mock Interviews</h3>
+                {loadingPrevious && (
+                  <div className="text-center text-blue-300">Loading previous mock interviews...</div>
+                )}
+                {errorPrevious && (
+                  <div className="text-center text-red-400">{errorPrevious}</div>
+                )}
+                {!loadingPrevious && !errorPrevious && previousMockInterviews && previousMockInterviews.length === 0 && (
+                  <div className="text-center text-gray-400">No previous mock interviews found.</div>
+                )}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {previousMockInterviews && previousMockInterviews.map((mock) => (
+                    <div key={mock.id} className="bg-gray-700 border border-gray-600 rounded-lg p-6 shadow-lg">
+                      <div className="mb-2 text-blue-300 font-semibold">Role: {mock.role}</div>
+                      <div className="mb-1 text-gray-200">Experience: {mock.experience}</div>
+                      <div className="mb-1 text-gray-200">Interview Type: {mock.interviewType}</div>
+                      <div className="mb-1 text-gray-200">Number of Questions: {mock.numQuestions}</div>
+                      {/* <div className="text-xs text-gray-400 mt-2">Mock ID: {mock.id}</div> */}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </>
           )}
 
           {interviewStarted && !interviewComplete && (
@@ -881,30 +906,7 @@ export default function MockInterviewPage() {
               </div>
             </div>
           )}
-          {/* Previous Mock Interviews Section - always visible at the bottom */}
-          <div className="mt-12 mb-8">
-            <h3 className="text-xl font-semibold text-white mb-4 text-center">Previous Mock Interviews</h3>
-            {loadingPrevious && (
-              <div className="text-center text-blue-300">Loading previous mock interviews...</div>
-            )}
-            {errorPrevious && (
-              <div className="text-center text-red-400">{errorPrevious}</div>
-            )}
-            {!loadingPrevious && !errorPrevious && previousMockInterviews && previousMockInterviews.length === 0 && (
-              <div className="text-center text-gray-400">No previous mock interviews found.</div>
-            )}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {previousMockInterviews && previousMockInterviews.map((mock) => (
-                <div key={mock.id} className="bg-gray-700 border border-gray-600 rounded-lg p-6 shadow-lg">
-                  <div className="mb-2 text-blue-300 font-semibold">Role: {mock.role}</div>
-                  <div className="mb-1 text-gray-200">Experience: {mock.experience}</div>
-                  <div className="mb-1 text-gray-200">Interview Type: {mock.interviewType}</div>
-                  <div className="mb-1 text-gray-200">Number of Questions: {mock.numQuestions}</div>
-                  <div className="text-xs text-gray-400 mt-2">Mock ID: {mock.id}</div>
-                </div>
-              ))}
-            </div>
-          </div>
+
 
           {customInterviewStarted && (
             <div>
