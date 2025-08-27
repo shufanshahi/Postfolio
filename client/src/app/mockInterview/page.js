@@ -24,6 +24,11 @@ export default function MockInterviewPage() {
   const [previousMockInterviews, setPreviousMockInterviews] = useState([]);
   const [loadingPrevious, setLoadingPrevious] = useState(false);
   const [errorPrevious, setErrorPrevious] = useState('');
+  
+  // For interview evaluation
+  const [evaluationResults, setEvaluationResults] = useState(null);
+  const [isEvaluating, setIsEvaluating] = useState(false);
+  const [showEvaluation, setShowEvaluation] = useState(false);
   // Fetch profileId and previous mock interviews
   useEffect(() => {
     const fetchProfileAndInterviews = async () => {
@@ -192,6 +197,17 @@ export default function MockInterviewPage() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [interviewComplete, responses.length]);
+
+  // Evaluate interview when custom interview transcription is complete
+  useEffect(() => {
+    if (!customInterviewStarted && !isTranscribing && responses.length > 5 && customInterviewData && !evaluationResults && !isEvaluating) {
+      // Delay evaluation slightly to ensure all state updates are complete
+      setTimeout(() => {
+        evaluateInterview();
+      }, 1000);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [customInterviewStarted, isTranscribing, responses.length, customInterviewData]);
 
   const handleQuestionEnded = () => {
     setIsPlayingQuestion(false);
@@ -426,6 +442,73 @@ export default function MockInterviewPage() {
     setCustomInterviewStarted(false);
     setCustomQuestionIndex(0);
     setIsGeneratingCustomInterview(false);
+    setEvaluationResults(null);
+    setIsEvaluating(false);
+    setShowEvaluation(false);
+  };
+
+  const evaluateInterview = async () => {
+    if (!customInterviewData || !responses || responses.length === 0) {
+      setError('No interview data available for evaluation');
+      return;
+    }
+
+    setIsEvaluating(true);
+    setError('');
+
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        throw new Error('No authentication token found');
+      }
+
+      // Prepare question-answer pairs for evaluation
+      const questionAnswers = [];
+      
+      // Add custom interview questions and their responses
+      if (customInterviewData.questions && responses.length > 0) {
+        for (let i = 0; i < customInterviewData.questions.length && i < responses.length - 5; i++) {
+          const question = customInterviewData.questions[i];
+          const response = responses[i + 5]; // Skip the initial 5 setup questions
+          
+          if (question && response && response.transcript) {
+            questionAnswers.push({
+              question: question.question,
+              answer: response.transcript
+            });
+          }
+        }
+      }
+
+      if (questionAnswers.length === 0) {
+        throw new Error('No valid question-answer pairs found for evaluation');
+      }
+
+      const response = await fetch('http://localhost:8080/api/interviews/evaluate', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          questionAnswers: questionAnswers
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const evaluationData = await response.json();
+      setEvaluationResults(evaluationData);
+      setShowEvaluation(true);
+
+    } catch (err) {
+      console.error('Evaluation error:', err);
+      setError(`Failed to evaluate interview: ${err.message}`);
+    } finally {
+      setIsEvaluating(false);
+    }
   };
 
   const generateCustomInterview = async () => {
@@ -931,6 +1014,102 @@ export default function MockInterviewPage() {
                   </div>
                 )}
               </div>
+            </div>
+          )}
+
+          {/* Interview Evaluation Results */}
+          {showEvaluation && evaluationResults && !customInterviewStarted && (
+            <div className="mb-8">
+              <div className="bg-gradient-to-r from-green-900 to-blue-900 border border-green-500 rounded-lg p-6 mb-6">
+                <h3 className="text-xl font-semibold text-green-300 mb-4 text-center">
+                  🎯 Interview Evaluation Results
+                </h3>
+                
+                {/* Rating */}
+                <div className="bg-green-800/30 border border-green-600 rounded-lg p-4 mb-4 text-center">
+                  <h4 className="text-lg font-semibold text-green-300 mb-2">Overall Rating</h4>
+                  <div className="text-3xl font-bold text-white mb-2">
+                    {evaluationResults.rating}/100
+                  </div>
+                  <div className="w-full bg-gray-700 rounded-full h-3">
+                    <div 
+                      className="bg-gradient-to-r from-green-500 to-blue-500 h-3 rounded-full transition-all duration-1000"
+                      style={{ width: `${evaluationResults.rating}%` }}
+                    ></div>
+                  </div>
+                </div>
+
+                {/* Strengths */}
+                {evaluationResults.strengths && evaluationResults.strengths.length > 0 && (
+                  <div className="bg-green-800/20 border border-green-600 rounded-lg p-4 mb-4">
+                    <h4 className="text-lg font-semibold text-green-300 mb-3 flex items-center">
+                      <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                      </svg>
+                      Strengths
+                    </h4>
+                    <ul className="list-disc list-inside space-y-2 text-green-200">
+                      {evaluationResults.strengths.map((strength, index) => (
+                        <li key={index}>{strength}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+                {/* Weaknesses */}
+                {evaluationResults.weaknesses && evaluationResults.weaknesses.length > 0 && (
+                  <div className="bg-red-800/20 border border-red-600 rounded-lg p-4 mb-4">
+                    <h4 className="text-lg font-semibold text-red-300 mb-3 flex items-center">
+                      <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                      </svg>
+                      Areas for Improvement
+                    </h4>
+                    <ul className="list-disc list-inside space-y-2 text-red-200">
+                      {evaluationResults.weaknesses.map((weakness, index) => (
+                        <li key={index}>{weakness}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+                {/* Improvements */}
+                {evaluationResults.improvements && evaluationResults.improvements.length > 0 && (
+                  <div className="bg-blue-800/20 border border-blue-600 rounded-lg p-4 mb-4">
+                    <h4 className="text-lg font-semibold text-blue-300 mb-3 flex items-center">
+                      <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clipRule="evenodd" />
+                      </svg>
+                      Actionable Recommendations
+                    </h4>
+                    <ul className="list-disc list-inside space-y-2 text-blue-200">
+                      {evaluationResults.improvements.map((improvement, index) => (
+                        <li key={index}>{improvement}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+                <div className="text-center">
+                  <button
+                    onClick={resetInterview}
+                    className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white px-8 py-3 rounded-lg font-semibold transition-all duration-200 transform hover:scale-105"
+                  >
+                    Start New Interview
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Show loading during evaluation */}
+          {isEvaluating && (
+            <div className="text-center mb-8">
+              <div className="flex items-center justify-center space-x-2 text-green-400">
+                <div className="w-5 h-5 border-2 border-green-400 border-t-transparent rounded-full animate-spin"></div>
+                <span className="font-medium">Evaluating your interview performance...</span>
+              </div>
+              <p className="text-gray-300 text-sm mt-2">This may take a few moments</p>
             </div>
           )}
 

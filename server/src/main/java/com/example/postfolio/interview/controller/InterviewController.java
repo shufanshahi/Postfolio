@@ -5,9 +5,12 @@ import com.example.postfolio.interview.dto.InterviewResponse;
 import com.example.postfolio.interview.dto.MockInterviewRequest;
 import com.example.postfolio.interview.dto.MockInterviewResponse;
 import com.example.postfolio.interview.dto.MockInterviewStoreRequest;
+import com.example.postfolio.interview.dto.EvaluationRequest;
+import com.example.postfolio.interview.dto.EvaluationResponse;
 import com.example.postfolio.interview.entity.MockInterview;
 import com.example.postfolio.interview.service.InterviewService;
 import com.example.postfolio.interview.service.MockInterviewService;
+import com.example.postfolio.interview.service.EvaluationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -21,6 +24,7 @@ import java.util.List;
 public class InterviewController {
     private final InterviewService interviewService;
     private final MockInterviewService mockInterviewService;
+    private final EvaluationService evaluationService;
 
     // Schedule interview with all details
     @PostMapping("/schedule")
@@ -68,6 +72,12 @@ public class InterviewController {
     @GetMapping("/mock-interviews/{profileId}")
     public List<MockInterview> getMockInterviewsByProfileId(@PathVariable Long profileId) {
         return mockInterviewService.getMockInterviewsByProfileId(profileId);
+    }
+
+    // Evaluate interview performance based on questions and answers
+    @PostMapping("/evaluate")
+    public EvaluationResponse evaluateInterview(@RequestBody EvaluationRequest request) {
+        return evaluationService.evaluateInterview(request);
     }
 
     // Test endpoint to check authentication
