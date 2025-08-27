@@ -845,17 +845,21 @@ export default function MockInterviewPage() {
 
           {interviewComplete && !customInterviewStarted && (
             <div>
-              {/* Custom Interview Generation */}
-              {isGeneratingCustomInterview && (
+              {/* Show loading spinner/message when generating custom interview or transcribing after interview */}
+              {(isGeneratingCustomInterview || isTranscribing) && (
                 <div className="text-center mb-8">
                   <div className="flex items-center justify-center space-x-2 text-blue-400">
                     <div className="w-5 h-5 border-2 border-blue-400 border-t-transparent rounded-full animate-spin"></div>
-                    <span className="font-medium">Generating your personalized interview questions...</span>
+                    <span className="font-medium">
+                      {isTranscribing
+                        ? 'Processing all your responses...'
+                        : 'Generating your personalized interview questions...'}
+                    </span>
                   </div>
                 </div>
               )}
 
-              {customInterviewData && !isGeneratingCustomInterview && (
+              {customInterviewData && !isGeneratingCustomInterview && !isTranscribing && (
                 <div className="bg-gradient-to-r from-blue-900 to-purple-900 border border-blue-500 rounded-lg p-6 mb-8">
                   <h3 className="text-lg font-semibold text-blue-300 mb-4">
                     🚀 Your Personalized Interview is Ready!
