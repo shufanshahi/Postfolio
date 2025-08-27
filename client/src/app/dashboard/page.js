@@ -166,6 +166,12 @@ export default function FunctionalDashboard() {
       icon: <BarChart3 className="h-4 w-4" />, 
       color: 'bg-amber-300 hover:bg-amber-400 text-amber-900',
       action: () => handleQuickAction('mcq')
+    },
+    { 
+      label: 'News System', 
+      icon: <Settings className="h-4 w-4" />, 
+      color: 'bg-red-300 hover:bg-red-400 text-red-900',
+      action: () => handleNavigation('/news-system')
     }
   ];
 
