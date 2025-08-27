@@ -1,9 +1,11 @@
 "use client";
 
 import { useState, useRef, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { AssemblyAI } from "assemblyai";
 
 export default function MockInterviewPage() {
+  const router = useRouter();
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [isRecording, setIsRecording] = useState(false);
   const [isPlayingQuestion, setIsPlayingQuestion] = useState(false);
@@ -876,10 +878,10 @@ export default function MockInterviewPage() {
                       <div className="mb-1 text-gray-200">Number of Questions: {mock.numQuestions}</div>
                       <button
                         className="mt-4 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white px-4 py-2 rounded-lg font-semibold transition-all duration-200"
-                        // onClick handler to be added for navigation
+                        onClick={() => router.push(`/prev-mock-interview/${mock.id}`)}
                         type="button"
                       >
-                        Start Interview
+                        View Details
                       </button>
                     </div>
                   ))}

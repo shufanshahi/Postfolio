@@ -1,88 +1,147 @@
 "use client";
 
 import { useState, useRef, useEffect } from 'react';
+import { useParams, useRouter } from 'next/navigation';
 import { AssemblyAI } from "assemblyai";
 
-export default function MockInterviewPage() {
-  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
+export default function PreviousMockInterviewPage() {
+  const { mockInterviewId } = useParams();
+  const router = useRouter();
+  
+  const [customInterviewComplete, setCustomInterviewComplete] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
   const [isPlayingQuestion, setIsPlayingQuestion] = useState(false);
   const [audioBlob, setAudioBlob] = useState(null);
   const [isTranscribing, setIsTranscribing] = useState(false);
   const [error, setError] = useState('');
-  const [interviewStarted, setInterviewStarted] = useState(false);
-  const [interviewComplete, setInterviewComplete] = useState(false);
   const [responses, setResponses] = useState([]);
-  const [audioRecordings, setAudioRecordings] = useState([]); // Store audio recordings
+  const [audioRecordings, setAudioRecordings] = useState([]);
   const [customInterviewData, setCustomInterviewData] = useState(null);
   const [isGeneratingCustomInterview, setIsGeneratingCustomInterview] = useState(false);
   const [customInterviewStarted, setCustomInterviewStarted] = useState(false);
   const [customQuestionIndex, setCustomQuestionIndex] = useState(0);
 
-  // For previous mock interviews
-  const [profileId, setProfileId] = useState(null);
-  const [previousMockInterviews, setPreviousMockInterviews] = useState([]);
-  const [loadingPrevious, setLoadingPrevious] = useState(false);
-  const [errorPrevious, setErrorPrevious] = useState('');
+  // For mock interview data
+  const [mockInterviewData, setMockInterviewData] = useState(null);
+  const [loadingMockInterview, setLoadingMockInterview] = useState(true);
   
   // For interview evaluation
   const [evaluationResults, setEvaluationResults] = useState(null);
   const [isEvaluating, setIsEvaluating] = useState(false);
   const [showEvaluation, setShowEvaluation] = useState(false);
-  // Fetch profileId and previous mock interviews
+  
+  // Fetch mock interview data and generate custom interview
   useEffect(() => {
-    const fetchProfileAndInterviews = async () => {
-      setLoadingPrevious(true);
-      setErrorPrevious('');
+    const fetchMockInterviewAndGenerate = async () => {
+      if (!mockInterviewId) return;
+      
+      setLoadingMockInterview(true);
+      setError('');
+      
       try {
         const token = localStorage.getItem("token");
-        // Get profile info
-        const profileRes = await fetch('http://localhost:8080/api/profile/me', {
+        if (!token) {
+          throw new Error('No authentication token found');
+        }
+
+        // Fetch specific mock interview data
+        const mockRes = await fetch(`http://localhost:8080/api/interviews/mock-interview/${mockInterviewId}`, {
           headers: { 'Authorization': `Bearer ${token}` }
         });
-        if (!profileRes.ok) throw new Error('Failed to fetch profile');
-        const profileData = await profileRes.json();
-        setProfileId(profileData.id);
-        // Get previous mock interviews
-        const mockRes = await fetch(`http://localhost:8080/api/interviews/mock-interviews/${profileData.id}`, {
-          headers: { 'Authorization': `Bearer ${token}` }
-        });
-        if (!mockRes.ok) throw new Error('Failed to fetch previous mock interviews');
+        
+        if (!mockRes.ok) {
+          throw new Error('Failed to fetch mock interview data');
+        }
+        
         const mockData = await mockRes.json();
-        console.log('Previous Mock Interviews:', mockData);
-        setPreviousMockInterviews(mockData);
+        setMockInterviewData(mockData);
+        
+        // Start generating custom interview immediately
+        generateCustomInterviewFromMockData(mockData, token);
+        
       } catch (err) {
-        setErrorPrevious(err.message || 'Error fetching previous mock interviews');
+        console.error('Error fetching mock interview:', err);
+        setError(`Failed to load mock interview: ${err.message}`);
       } finally {
-        setLoadingPrevious(false);
+        setLoadingMockInterview(false);
       }
     };
-    fetchProfileAndInterviews();
-  }, []);
+    
+    fetchMockInterviewAndGenerate();
+  }, [mockInterviewId]);
 
-  // Refetch previous interviews after a new one is completed
-  useEffect(() => {
-    if (interviewComplete && profileId) {
-      const fetchPrevious = async () => {
-        setLoadingPrevious(true);
-        setErrorPrevious('');
-        try {
-          const token = localStorage.getItem("token");
-          const mockRes = await fetch(`http://localhost:8080/api/interviews/mock-interviews/${profileId}`, {
-            headers: { 'Authorization': `Bearer ${token}` }
-          });
-          if (!mockRes.ok) throw new Error('Failed to fetch previous mock interviews');
-          const mockData = await mockRes.json();
-          setPreviousMockInterviews(mockData);
-        } catch (err) {
-          setErrorPrevious(err.message || 'Error fetching previous mock interviews');
-        } finally {
-          setLoadingPrevious(false);
+  // Function to generate custom interview from mock data
+  const generateCustomInterviewFromMockData = async (mockData, token) => {
+    setIsGeneratingCustomInterview(true);
+    setError('');
+
+    try {
+      // Create mock responses based on the stored mock interview data
+      const mockResponses = [
+        {
+          questionId: 'startInterview',
+          questionTitle: 'Interview Introduction',
+          responseKey: 'resstartInterview',
+          transcript: 'Ready to start the interview',
+          timestamp: new Date().toISOString()
+        },
+        {
+          questionId: 'getRole',
+          questionTitle: 'Role Information',
+          responseKey: 'resgetRole',
+          transcript: mockData.role,
+          timestamp: new Date().toISOString()
+        },
+        {
+          questionId: 'experience',
+          questionTitle: 'Experience Details',
+          responseKey: 'resexperience',
+          transcript: mockData.experience,
+          timestamp: new Date().toISOString()
+        },
+        {
+          questionId: 'interviewType',
+          questionTitle: 'Interview Type',
+          responseKey: 'resinterviewType',
+          transcript: mockData.interviewType,
+          timestamp: new Date().toISOString()
+        },
+        {
+          questionId: 'questionNumber',
+          questionTitle: 'Question Number',
+          responseKey: 'resquestionNumber',
+          transcript: mockData.numQuestions,
+          timestamp: new Date().toISOString()
         }
-      };
-      fetchPrevious();
+      ];
+
+      setResponses(mockResponses);
+
+      const response = await fetch('http://localhost:8080/api/interviews/generate-custom', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          responses: mockResponses
+        }),
+      });
+
+      if (response.ok) {
+        const customData = await response.json();
+        setCustomInterviewData(customData);
+      } else {
+        const errorText = await response.text();
+        throw new Error(`Server error: ${response.status} - ${errorText}`);
+      }
+    } catch (err) {
+      console.error('Error generating custom interview:', err);
+      setError('Error generating personalized interview. Please try again.');
+    } finally {
+      setIsGeneratingCustomInterview(false);
     }
-  }, [interviewComplete, profileId]);
+  };
   
   const mediaRecorderRef = useRef(null);
   const audioChunksRef = useRef([]);
@@ -93,95 +152,6 @@ export default function MockInterviewPage() {
     apiKey: "09d85cff6d24428d88d54bb6dde7007d",
   });
 
-  // Interview questions sequence
-  const questions = [
-    { 
-      id: 'startInterview', 
-      audioFile: '/startInterview.mp3', 
-      title: 'Interview Introduction',
-      responseKey: 'resstartInterview'
-    },
-    { 
-      id: 'getRole', 
-      audioFile: '/getRole.mp3', 
-      title: 'Role Information',
-      responseKey: 'resgetRole'
-    },
-    { 
-      id: 'experience', 
-      audioFile: '/experience.mp3', 
-      title: 'Experience Details',
-      responseKey: 'resexperience'
-    },
-    { 
-      id: 'interviewType', 
-      audioFile: '/interviewType.mp3', 
-      title: 'Interview Type',
-      responseKey: 'resinterviewType'
-    },
-    { 
-      id: 'questionNumber', 
-      audioFile: '/questionNumber.mp3', 
-      title: 'Question Number',
-      responseKey: 'resquestionNumber'
-    }
-  ];
-
-  const currentQuestion = questions[currentQuestionIndex];
-
-  const startInterview = () => {
-    setInterviewStarted(true);
-    setCurrentQuestionIndex(0);
-    setResponses([]);
-  };
-
-  const playCurrentQuestion = () => {
-    if (currentQuestionIndex < questions.length) {
-      setIsPlayingQuestion(true);
-      setError('');
-      if (questionAudioRef.current) {
-        const audio = questionAudioRef.current;
-        
-        // Reset the audio element first
-        audio.pause();
-        audio.currentTime = 0;
-        
-        const handleCanPlay = () => {
-          audio.removeEventListener('canplay', handleCanPlay);
-          audio.play()
-            .then(() => {
-              console.log('Playing question:', questions[currentQuestionIndex].title);
-            })
-            .catch((err) => {
-              setError('Failed to play question audio');
-              console.error('Audio play error:', err);
-              setIsPlayingQuestion(false);
-            });
-        };
-        
-        const handleError = () => {
-          audio.removeEventListener('error', handleError);
-          setError('Failed to load question audio');
-          setIsPlayingQuestion(false);
-        };
-        
-        audio.addEventListener('canplay', handleCanPlay);
-        audio.addEventListener('error', handleError);
-        
-        audio.src = questions[currentQuestionIndex].audioFile;
-        audio.load(); // Explicitly load the audio
-      }
-    }
-  };
-
-  // Play question audio whenever currentQuestionIndex changes and interview is started
-  useEffect(() => {
-    if (interviewStarted && !interviewComplete) {
-      playCurrentQuestion();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentQuestionIndex, interviewStarted, interviewComplete]);
-
   // Play custom question audio when custom interview progresses
   useEffect(() => {
     if (customInterviewStarted && customInterviewData) {
@@ -190,24 +160,26 @@ export default function MockInterviewPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [customQuestionIndex, customInterviewStarted]);
 
-  // Generate custom interview when interview is complete
-  useEffect(() => {
-    if (interviewComplete && responses.length > 0 && !customInterviewData && !isGeneratingCustomInterview) {
-      generateCustomInterview();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [interviewComplete, responses.length]);
-
   // Evaluate interview when custom interview transcription is complete
   useEffect(() => {
-    if (!customInterviewStarted && !isTranscribing && responses.length > 5 && customInterviewData && !evaluationResults && !isEvaluating) {
+    console.log('Evaluation useEffect triggered:', {
+      customInterviewComplete,
+      isTranscribing,
+      responsesLength: responses.length,
+      hasCustomInterviewData: !!customInterviewData,
+      hasEvaluationResults: !!evaluationResults,
+      isEvaluating
+    });
+    
+    if (customInterviewComplete && !isTranscribing && responses.length > 5 && customInterviewData && !evaluationResults && !isEvaluating) {
+      console.log('Starting evaluation...');
       // Delay evaluation slightly to ensure all state updates are complete
       setTimeout(() => {
         evaluateInterview();
       }, 1000);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [customInterviewStarted, isTranscribing, responses.length, customInterviewData]);
+  }, [customInterviewComplete, isTranscribing, responses.length, customInterviewData]);
 
   const handleQuestionEnded = () => {
     setIsPlayingQuestion(false);
@@ -275,28 +247,7 @@ export default function MockInterviewPage() {
       } else {
         // Custom interview complete - transcribe all recordings
         setCustomInterviewStarted(false);
-        transcribeAllRecordings([...audioRecordings, newRecording]);
-      }
-    } else {
-      // Handle regular interview responses
-      const newRecording = {
-        questionId: currentQuestion.id,
-        questionTitle: currentQuestion.title,
-        responseKey: currentQuestion.responseKey,
-        audioBlob: audioBlob,
-        timestamp: new Date().toISOString()
-      };
-
-      setAudioRecordings(prev => [...prev, newRecording]);
-      
-      // Move to next question or complete interview
-      if (currentQuestionIndex < questions.length - 1) {
-        setTimeout(() => {
-          setCurrentQuestionIndex(prev => prev + 1);
-        }, 1000);
-      } else {
-        // All questions answered - transcribe all recordings
-        setInterviewComplete(true);
+        setCustomInterviewComplete(true);
         transcribeAllRecordings([...audioRecordings, newRecording]);
       }
     }
@@ -345,7 +296,8 @@ export default function MockInterviewPage() {
         }
       }
       
-      setResponses(transcribedResponses);
+      // Append transcribed responses to existing responses (keeping the initial setup responses)
+      setResponses(prevResponses => [...prevResponses, ...transcribedResponses]);
       
     } catch (err) {
       setError('Failed to transcribe audio recordings. Please try again.');
@@ -355,96 +307,9 @@ export default function MockInterviewPage() {
     }
   };
 
-  const transcribeResponse = async (audioBlob) => {
-    setIsTranscribing(true);
-    setError('');
-
-    try {
-      // Convert blob to array buffer
-      const arrayBuffer = await audioBlob.arrayBuffer();
-      const uint8Array = new Uint8Array(arrayBuffer);
-
-      const params = {
-        audio: uint8Array,
-        speech_model: "universal",
-      };
-
-      const transcript = await client.transcripts.transcribe(params);
-      
-      if (transcript.text) {
-        if (customInterviewStarted) {
-          // Handle custom interview responses
-          const customQuestion = getCurrentCustomQuestion();
-          const newResponse = {
-            questionId: `custom_${customQuestionIndex}`,
-            questionTitle: customQuestion?.title || `Custom Question ${customQuestionIndex + 1}`,
-            responseKey: `custom_response_${customQuestionIndex}`,
-            transcript: transcript.text,
-            timestamp: new Date().toISOString()
-          };
-
-          setResponses(prev => [...prev, newResponse]);
-          
-          // Move to next custom question
-          if (customQuestionIndex < (customInterviewData?.audioUrls?.length || 0) - 1) {
-            setTimeout(() => {
-              setCustomQuestionIndex(prev => prev + 1);
-            }, 1000);
-          } else {
-            // Custom interview complete
-            setCustomInterviewStarted(false);
-            alert('🎉 Custom interview complete! All responses have been recorded.');
-          }
-        } else {
-          // Handle regular interview responses
-          const newResponse = {
-            questionId: currentQuestion.id,
-            questionTitle: currentQuestion.title,
-            responseKey: currentQuestion.responseKey,
-            transcript: transcript.text,
-            timestamp: new Date().toISOString()
-          };
-
-          setResponses(prev => [...prev, newResponse]);
-          
-          // Move to next question or complete interview
-          if (currentQuestionIndex < questions.length - 1) {
-            setTimeout(() => {
-              setCurrentQuestionIndex(prev => prev + 1);
-            }, 1000);
-          } else {
-            setInterviewComplete(true);
-          }
-        }
-      } else {
-        setError('No speech detected in the audio recording. Please try again.');
-      }
-    } catch (err) {
-      setError('Failed to transcribe audio. Please try again.');
-      console.error('Transcription error:', err);
-    } finally {
-      setIsTranscribing(false);
-      setAudioBlob(null);
-    }
-  };
-
   const resetInterview = () => {
-    setInterviewStarted(false);
-    setInterviewComplete(false);
-    setCurrentQuestionIndex(0);
-    setResponses([]);
-    setAudioRecordings([]); // Clear audio recordings
-    setIsRecording(false);
-    setIsPlayingQuestion(false);
-    setAudioBlob(null);
-    setError('');
-    setCustomInterviewData(null);
-    setCustomInterviewStarted(false);
-    setCustomQuestionIndex(0);
-    setIsGeneratingCustomInterview(false);
-    setEvaluationResults(null);
-    setIsEvaluating(false);
-    setShowEvaluation(false);
+    // Navigate back to the main mock interview page
+    router.push('/mockInterview');
   };
 
   const evaluateInterview = async () => {
@@ -465,13 +330,22 @@ export default function MockInterviewPage() {
       // Prepare question-answer pairs for evaluation
       const questionAnswers = [];
       
-      // Add custom interview questions and their responses
-      if (customInterviewData.questions && responses.length > 0) {
-        for (let i = 0; i < customInterviewData.questions.length && i < responses.length - 5; i++) {
+      // Filter out only the custom interview responses (not the setup responses)
+      const customResponses = responses.filter(response => 
+        response.questionId && response.questionId.startsWith('custom_')
+      );
+      
+      console.log('Total responses:', responses.length);
+      console.log('Custom responses:', customResponses.length);
+      console.log('Custom interview questions:', customInterviewData.questions?.length || 0);
+      
+      // Match custom questions with custom responses
+      if (customInterviewData.questions && customResponses.length > 0) {
+        for (let i = 0; i < customInterviewData.questions.length && i < customResponses.length; i++) {
           const question = customInterviewData.questions[i];
-          const response = responses[i + 5]; // Skip the initial 5 setup questions
+          const response = customResponses[i];
           
-          if (question && response && response.transcript) {
+          if (question && response && response.transcript && response.transcript !== "[No speech detected]") {
             questionAnswers.push({
               question: question.question,
               answer: response.transcript
@@ -480,7 +354,10 @@ export default function MockInterviewPage() {
         }
       }
 
+      console.log('Question-answer pairs for evaluation:', questionAnswers);
+
       if (questionAnswers.length === 0) {
+        console.error('No valid question-answer pairs found');
         throw new Error('No valid question-answer pairs found for evaluation');
       }
 
@@ -500,6 +377,7 @@ export default function MockInterviewPage() {
       }
 
       const evaluationData = await response.json();
+      console.log('Evaluation data received:', evaluationData);
       setEvaluationResults(evaluationData);
       setShowEvaluation(true);
 
@@ -508,96 +386,6 @@ export default function MockInterviewPage() {
       setError(`Failed to evaluate interview: ${err.message}`);
     } finally {
       setIsEvaluating(false);
-    }
-  };
-
-  const generateCustomInterview = async () => {
-    setIsGeneratingCustomInterview(true);
-    setError('');
-
-    try {
-      // Filter out the startInterview response before sending to backend
-      const filteredResponses = responses.filter(response => response.questionId !== 'startInterview');
-      console.log('Total responses collected:', responses.length);
-      console.log('All responses:', responses.map(r => ({ id: r.questionId, title: r.questionTitle })));
-      console.log('Filtered responses being sent to backend:', filteredResponses.length);
-      console.log('Filtered responses:', filteredResponses.map(r => ({ id: r.questionId, title: r.questionTitle })));
-
-      const token = localStorage.getItem("token");
-
-      // Extract information from responses for storing mock interview
-      const roleResponse = filteredResponses.find(r => r.questionId === 'getRole');
-      const experienceResponse = filteredResponses.find(r => r.questionId === 'experience');
-      const interviewTypeResponse = filteredResponses.find(r => r.questionId === 'interviewType');
-      const numQuestionsResponse = filteredResponses.find(r => r.questionId === 'questionNumber');
-
-      // Store mock interview data first
-      if (profileId && roleResponse && experienceResponse && interviewTypeResponse && numQuestionsResponse) {
-        const storeMockInterviewData = {
-          profileId: profileId,
-          role: roleResponse.transcript,
-          experience: experienceResponse.transcript,
-          interviewType: interviewTypeResponse.transcript,
-          numQuestions: numQuestionsResponse.transcript
-        };
-
-        console.log('Storing mock interview data:', storeMockInterviewData);
-
-        const storeResponse = await fetch('http://localhost:8080/api/interviews/store-mock-interview', {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify(storeMockInterviewData),
-        });
-
-        if (storeResponse.ok) {
-          const storedData = await storeResponse.json();
-          console.log('Mock interview stored successfully:', storedData);
-          
-          // Refresh previous mock interviews list
-          const mockRes = await fetch(`http://localhost:8080/api/interviews/mock-interviews/${profileId}`, {
-            headers: { 'Authorization': `Bearer ${token}` }
-          });
-          if (mockRes.ok) {
-            const mockData = await mockRes.json();
-            setPreviousMockInterviews(mockData);
-          }
-        } else {
-          console.error('Failed to store mock interview:', await storeResponse.text());
-        }
-      }
-      
-      // Then generate custom interview
-      const response = await fetch('http://localhost:8080/api/interviews/generate-custom', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          responses: filteredResponses
-        }),
-      });
-
-      console.log('Response status:', response.status);
-      console.log('Response headers:', response.headers);
-
-      if (response.ok) {
-        const data = await response.json();
-        console.log('Custom interview data:', data);
-        setCustomInterviewData(data);
-      } else {
-        const errorText = await response.text();
-        console.error('Server error:', errorText);
-        setError(`Failed to generate custom interview. Server returned: ${response.status} - ${errorText}`);
-      }
-    } catch (err) {
-      console.error('Network error:', err);
-      setError('Error connecting to server. Please ensure the backend is running on port 8080.');
-    } finally {
-      setIsGeneratingCustomInterview(false);
     }
   };
 
@@ -686,8 +474,18 @@ export default function MockInterviewPage() {
   return (
     <div className="min-h-screen bg-gray-900 py-4">
       <div className="max-w-6xl mx-auto px-4">
-        {/* Video Call Interface - Only show when interview is active */}
-        {(interviewStarted || customInterviewStarted) && (
+        {/* Show loading while fetching mock interview data */}
+        {loadingMockInterview && (
+          <div className="text-center py-20">
+            <div className="flex items-center justify-center space-x-2 text-blue-400 mb-4">
+              <div className="w-5 h-5 border-2 border-blue-400 border-t-transparent rounded-full animate-spin"></div>
+              <span className="font-medium">Loading mock interview data...</span>
+            </div>
+          </div>
+        )}
+
+        {/* Video Call Interface - Show when custom interview is ready or started */}
+        {!loadingMockInterview && customInterviewStarted && (
           <>
             {/* Video Call Header */}
             <div className="bg-gray-800 rounded-t-lg p-4 flex items-center justify-between">
@@ -697,11 +495,8 @@ export default function MockInterviewPage() {
               </div>
               <div className="flex items-center space-x-2">
                 <div className="text-gray-300 text-sm">
-                  {interviewStarted && !interviewComplete && (
-                    <span>Question {currentQuestionIndex + 1} of {questions.length}</span>
-                  )}
                   {customInterviewStarted && (
-                    <span>Custom Q{customQuestionIndex + 1} of {customInterviewData?.audioUrls?.length || 0}</span>
+                    <span>Question {customQuestionIndex + 1} of {customInterviewData?.audioUrls?.length || 0}</span>
                   )}
                 </div>
               </div>
@@ -763,9 +558,9 @@ export default function MockInterviewPage() {
                       </button>
 
                       {/* Replay Question Button */}
-                      {!isPlayingQuestion && !isRecording && !isTranscribing && (interviewStarted || customInterviewStarted) && (
+                      {!isPlayingQuestion && !isRecording && !isTranscribing && customInterviewStarted && (
                         <button
-                          onClick={customInterviewStarted ? () => playCustomQuestion(customQuestionIndex) : playCurrentQuestion}
+                          onClick={() => playCustomQuestion(customQuestionIndex)}
                           className="w-14 h-14 rounded-full bg-blue-600 hover:bg-blue-700 flex items-center justify-center transition-all duration-200"
                           title="Replay Question"
                         >
@@ -835,139 +630,51 @@ export default function MockInterviewPage() {
 
         {/* Content Area */}
         <div className="bg-gray-800 p-6">
-          {!interviewStarted && !interviewComplete && (
-            <>
-              <div className="text-center">
-                <div className="mb-8">
-                  <h2 className="text-2xl font-semibold text-white mb-4">
-                    Welcome to the AI Mock Interview
-                  </h2>
-                  <p className="text-gray-300 mb-6">
-                    This interview will ask you {questions.length - 1} questions. Listen to each question 
-                    and provide your response when prompted. Click the microphone when you&apos;re ready to answer.
-                  </p>
-                </div>
-                <button
-                  onClick={startInterview}
-                  className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white px-8 py-4 rounded-lg font-semibold text-lg transition-all duration-200 transform hover:scale-105"
-                >
-                  Join Interview Room
-                </button>
-              </div>
-
-              {/* Previous Mock Interviews Section - only visible on welcome screen */}
-              <div className="mt-12 mb-8">
-                <h3 className="text-xl font-semibold text-white mb-4 text-center">Previous Mock Interviews</h3>
-                {loadingPrevious && (
-                  <div className="text-center text-blue-300">Loading previous mock interviews...</div>
-                )}
-                {errorPrevious && (
-                  <div className="text-center text-red-400">{errorPrevious}</div>
-                )}
-                {!loadingPrevious && !errorPrevious && previousMockInterviews && previousMockInterviews.length === 0 && (
-                  <div className="text-center text-gray-400">No previous mock interviews found.</div>
-                )}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {previousMockInterviews && previousMockInterviews.map((mock) => (
-                    <div key={mock.id} className="bg-gray-700 border border-gray-600 rounded-lg p-6 shadow-lg">
-                      <div className="mb-2 text-blue-300 font-semibold">Role: {mock.role}</div>
-                      <div className="mb-1 text-gray-200">Experience: {mock.experience}</div>
-                      <div className="mb-1 text-gray-200">Interview Type: {mock.interviewType}</div>
-                      <div className="mb-1 text-gray-200">Number of Questions: {mock.numQuestions}</div>
-                      {/* <div className="text-xs text-gray-400 mt-2">Mock ID: {mock.id}</div> */}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </>
-          )}
-
-          {interviewStarted && !interviewComplete && (
-            <div>
-              {/* Current Question Display */}
-              <div className="bg-gray-700 border border-gray-600 rounded-lg p-6 mb-6">
-                <h3 className="text-xl font-semibold text-white mb-4 text-center">
-                  {currentQuestion.title}
-                </h3>
-                
-                {isPlayingQuestion && (
-                  <div className="flex items-center justify-center space-x-2 text-blue-400 mb-4">
-                    <div className="w-3 h-3 bg-blue-400 rounded-full animate-pulse"></div>
-                    <span className="font-medium">AI is asking the question...</span>
-                  </div>
-                )}
-
-                {!isPlayingQuestion && !isRecording && !isTranscribing && (
-                  <div className="text-center">
-                    <p className="text-gray-300 mb-4">Question audio has finished. Ready to record your answer?</p>
-                  </div>
-                )}
-
-                {isRecording && (
-                  <div className="text-center">
-                    <div className="flex items-center justify-center space-x-2 text-red-400 mb-4">
-                      <div className="w-3 h-3 bg-red-400 rounded-full animate-pulse"></div>
-                      <span className="font-medium">Recording your response...</span>
-                    </div>
-                    <p className="text-gray-300">Speak clearly and click the microphone button when done.</p>
-                  </div>
-                )}
-
-                {isTranscribing && (
-                  <div className="text-center">
-                    <div className="flex items-center justify-center space-x-2 text-yellow-400 mb-4">
-                      <div className="w-5 h-5 border-2 border-yellow-400 border-t-transparent rounded-full animate-spin"></div>
-                      <span className="font-medium">Processing all your responses...</span>
-                    </div>
-                    <p className="text-gray-300 text-sm">This may take a few moments</p>
-                  </div>
-                )}
+          {/* Show mock interview information */}
+          {!loadingMockInterview && mockInterviewData && !customInterviewStarted && (
+            <div className="text-center mb-8">
+              <h2 className="text-2xl font-semibold text-white mb-4">
+                Previous Mock Interview Details
+              </h2>
+              <div className="bg-gray-700 border border-gray-600 rounded-lg p-6 mb-6 max-w-md mx-auto">
+                <div className="mb-2 text-blue-300 font-semibold">Role: {mockInterviewData.role}</div>
+                <div className="mb-1 text-gray-200">Experience: {mockInterviewData.experience}</div>
+                <div className="mb-1 text-gray-200">Interview Type: {mockInterviewData.interviewType}</div>
+                <div className="mb-1 text-gray-200">Number of Questions: {mockInterviewData.numQuestions}</div>
               </div>
             </div>
           )}
 
-          {interviewComplete && !customInterviewStarted && (
-            <div>
-              {/* Show loading spinner/message when generating custom interview or transcribing after interview */}
-              {(isGeneratingCustomInterview || isTranscribing) && (
-                <div className="text-center mb-8">
-                  <div className="flex items-center justify-center space-x-2 text-blue-400">
-                    <div className="w-5 h-5 border-2 border-blue-400 border-t-transparent rounded-full animate-spin"></div>
-                    <span className="font-medium">
-                      {isTranscribing
-                        ? 'Processing all your responses...'
-                        : 'Generating your personalized interview questions...'}
-                    </span>
-                  </div>
-                </div>
-              )}
-
-              {customInterviewData && !isGeneratingCustomInterview && !isTranscribing && (
-                <div className="bg-gradient-to-r from-blue-900 to-purple-900 border border-blue-500 rounded-lg p-6 mb-8">
-                  <h3 className="text-lg font-semibold text-blue-300 mb-4">
-                    🚀 Your Personalized Interview is Ready!
-                  </h3>
-                  <p className="text-blue-200 mb-4">
-                    Based on your responses, we&apos;ve generated {customInterviewData.questions?.length || 0} personalized questions 
-                    for the role of <strong>{customInterviewData.role}</strong> with your experience level.
-                  </p>
-                  <button
-                    onClick={startCustomInterview}
-                    className="bg-gradient-to-r from-purple-500 to-blue-600 hover:from-purple-600 hover:to-blue-700 text-white px-8 py-3 rounded-lg font-semibold transition-all duration-200 transform hover:scale-105"
-                  >
-                    Start Personalized Interview
-                  </button>
-                </div>
-              )}
-
-              <div className="text-center">
-                <button
-                  onClick={resetInterview}
-                  className="bg-gray-600 hover:bg-gray-700 text-white px-8 py-3 rounded-lg font-semibold transition-colors duration-200"
-                >
-                  Start New Interview
-                </button>
+          {/* Show loading spinner/message when generating custom interview */}
+          {(isGeneratingCustomInterview || isTranscribing) && (
+            <div className="text-center mb-8">
+              <div className="flex items-center justify-center space-x-2 text-blue-400">
+                <div className="w-5 h-5 border-2 border-blue-400 border-t-transparent rounded-full animate-spin"></div>
+                <span className="font-medium">
+                  {isTranscribing
+                    ? 'Processing your responses...'
+                    : 'Generating your personalized interview questions...'}
+                </span>
               </div>
+            </div>
+          )}
+
+          {/* Show custom interview ready message */}
+          {customInterviewData && !isGeneratingCustomInterview && !isTranscribing && !customInterviewStarted && (
+            <div className="bg-gradient-to-r from-blue-900 to-purple-900 border border-blue-500 rounded-lg p-6 mb-8">
+              <h3 className="text-lg font-semibold text-blue-300 mb-4">
+                🚀 Your Personalized Interview is Ready!
+              </h3>
+              <p className="text-blue-200 mb-4">
+                Based on your previous responses, we&apos;ve generated {customInterviewData.questions?.length || 0} personalized questions 
+                for the role of <strong>{mockInterviewData?.role}</strong> with your experience level.
+              </p>
+              <button
+                onClick={startCustomInterview}
+                className="bg-gradient-to-r from-purple-500 to-blue-600 hover:from-purple-600 hover:to-blue-700 text-white px-8 py-3 rounded-lg font-semibold transition-all duration-200 transform hover:scale-105"
+              >
+                Start Personalized Interview
+              </button>
             </div>
           )}
 
@@ -1102,12 +809,14 @@ export default function MockInterviewPage() {
             </div>
           )}
 
-          {/* Show loading during evaluation */}
-          {isEvaluating && (
+          {/* Show loading during evaluation or when waiting for evaluation */}
+          {(isEvaluating || (customInterviewComplete && !customInterviewStarted && !showEvaluation && !isTranscribing)) && (
             <div className="text-center mb-8">
               <div className="flex items-center justify-center space-x-2 text-green-400">
                 <div className="w-5 h-5 border-2 border-green-400 border-t-transparent rounded-full animate-spin"></div>
-                <span className="font-medium">Evaluating your interview performance...</span>
+                <span className="font-medium">
+                  {isEvaluating ? 'Evaluating your interview performance...' : 'Preparing evaluation...'}
+                </span>
               </div>
               <p className="text-gray-300 text-sm mt-2">This may take a few moments</p>
             </div>
@@ -1125,23 +834,6 @@ export default function MockInterviewPage() {
             </div>
           )}
 
-          {/* Instructions */}
-          {!interviewStarted && (
-            <div className="bg-gradient-to-r from-blue-900 to-purple-900 border border-blue-500 rounded-lg p-6 mt-8">
-              <h3 className="text-lg font-semibold text-blue-300 mb-3">How the Video Interview Works:</h3>
-              <ol className="list-decimal list-inside text-blue-200 space-y-2">
-                <li>Click &quot;Join Interview Room&quot; to begin</li>
-                <li>The AI interviewer will appear and ask questions</li>
-                <li>Listen carefully to each audio question</li>
-                <li>Click the microphone button to start recording your response</li>
-                <li>Speak clearly and naturally</li>
-                <li>Click the microphone again to stop recording</li>
-                <li>Your response will be automatically transcribed</li>
-                <li>The next question will play automatically</li>
-                <li>View all your responses at the end</li>
-              </ol>
-            </div>
-          )}
         </div>
       </div>
     </div>
