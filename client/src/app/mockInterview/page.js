@@ -869,12 +869,18 @@ export default function MockInterviewPage() {
                 )}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                   {previousMockInterviews && previousMockInterviews.map((mock) => (
-                    <div key={mock.id} className="bg-gray-700 border border-gray-600 rounded-lg p-6 shadow-lg">
+                    <div key={mock.id} className="bg-gray-700 border border-gray-600 rounded-lg p-6 shadow-lg flex flex-col gap-2">
                       <div className="mb-2 text-blue-300 font-semibold">Role: {mock.role}</div>
                       <div className="mb-1 text-gray-200">Experience: {mock.experience}</div>
                       <div className="mb-1 text-gray-200">Interview Type: {mock.interviewType}</div>
                       <div className="mb-1 text-gray-200">Number of Questions: {mock.numQuestions}</div>
-                      {/* <div className="text-xs text-gray-400 mt-2">Mock ID: {mock.id}</div> */}
+                      <button
+                        className="mt-4 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white px-4 py-2 rounded-lg font-semibold transition-all duration-200"
+                        // onClick handler to be added for navigation
+                        type="button"
+                      >
+                        Start Interview
+                      </button>
                     </div>
                   ))}
                 </div>
