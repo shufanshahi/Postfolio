@@ -10,6 +10,8 @@ import com.example.postfolio.post.models.PostType;
 import com.example.postfolio.post.repository.PostRepository;
 import com.example.postfolio.profile.entity.Profile;
 import com.example.postfolio.profile.service.ProfileService;
+import com.example.postfolio.profile.service.WorkService;
+import com.example.postfolio.profile.dto.WorkDto;
 import com.example.postfolio.user.entity.User;
 import com.example.postfolio.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -22,7 +24,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -43,6 +48,7 @@ public class PostService {
     private final UserRepository userRepository;
     private final ReactionRepository reactionRepository;
     private final NotificationService notificationService;
+    private final WorkService workService;
 
     @Transactional
     public Post createPost(Long profileId, String content, List<String> images) {
@@ -62,15 +68,29 @@ public class PostService {
 
         try {
             GeminiService.GeminiResponse analysis = geminiService.analyzePost(content);
-            Post savedPost = savePost(content, profile, analysis.getPostType(),
-                    analysis.getTags(), analysis.getSummary(), true, images);
 
-            // Only update CV if the post is CV-relevant (not GENERAL)
-            if (analysis.isCvRelevant()) {
-                cvUpdateService.updateCvFromPost(savedPost);
+            // Handle EXPERIENCE type specially
+            if (analysis.getPostType() == PostType.EXPERIENCE) {
+                // Create work entry from tags
+                createWorkFromExperiencePost(analysis);
+
+                // Save post as GENERAL to not show in CV
+                Post savedPost = savePost(content, profile, PostType.GENERAL,
+                        List.of(), analysis.getSummary(), true, images);
+
+                return savedPost;
+            } else {
+                // Normal flow for other post types
+                Post savedPost = savePost(content, profile, analysis.getPostType(),
+                        analysis.getTags(), analysis.getSummary(), true, images);
+
+                // Only update CV if the post is CV-relevant (not GENERAL)
+                if (analysis.isCvRelevant()) {
+                    cvUpdateService.updateCvFromPost(savedPost);
+                }
+
+                return savedPost;
             }
-
-            return savedPost;
         } catch (Exception e) {
             log.error("Failed to generate CV heading for post, using fallback", e);
             Post savedPost = savePost(content, profile, PostType.GENERAL,
@@ -87,23 +107,43 @@ public class PostService {
 
         try {
             GeminiService.GeminiResponse analysis = geminiService.analyzePost(post.getContent());
-            post.setType(analysis.getPostType());
-            post.setTags(analysis.getTags());
-            post.setCvHeading(analysis.getSummary());
-            post.setAutoTagged(true);
-            post.setUpdatedAt(LocalDateTime.now());
-            Post savedPost = postRepository.save(post);
 
-            // Only update CV if the post is CV-relevant
-            if (analysis.isCvRelevant()) {
-                cvUpdateService.updateCvFromPost(savedPost);
-            } else {
-                // If post was previously CV-relevant but now classified as GENERAL,
-                // remove it from CV
+            // Handle EXPERIENCE type specially
+            if (analysis.getPostType() == PostType.EXPERIENCE) {
+                // Create work entry from tags
+                createWorkFromExperiencePost(analysis);
+
+                // Update post as GENERAL to not show in CV
+                post.setType(PostType.GENERAL);
+                post.setTags(List.of());
+                post.setCvHeading(analysis.getSummary());
+                post.setAutoTagged(true);
+                post.setUpdatedAt(LocalDateTime.now());
+
+                // Remove from CV if it was there
                 cvUpdateService.removeCvEntriesByPostId(postId);
-            }
 
-            return savedPost;
+                return postRepository.save(post);
+            } else {
+                // Normal flow for other post types
+                post.setType(analysis.getPostType());
+                post.setTags(analysis.getTags());
+                post.setCvHeading(analysis.getSummary());
+                post.setAutoTagged(true);
+                post.setUpdatedAt(LocalDateTime.now());
+                Post savedPost = postRepository.save(post);
+
+                // Only update CV if the post is CV-relevant
+                if (analysis.isCvRelevant()) {
+                    cvUpdateService.updateCvFromPost(savedPost);
+                } else {
+                    // If post was previously CV-relevant but now classified as GENERAL,
+                    // remove it from CV
+                    cvUpdateService.removeCvEntriesByPostId(postId);
+                }
+
+                return savedPost;
+            }
         } catch (Exception e) {
             log.error("Failed to reprocess post {} with AI: {}", postId, e.getMessage());
             throw new ResponseStatusException(
@@ -111,6 +151,174 @@ public class PostService {
                     "Failed to reprocess post with AI");
         }
     }
+
+    @Transactional
+    public Post updatePost(Long postId, Long profileId, String newContent, List<String> images) {
+        Post post = getPostById(postId);
+        validatePostOwnership(post, profileId);
+        PostType previousType = post.getType();
+
+        // Validate image count
+        if (images != null && images.size() > 4) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Maximum 4 images allowed per post");
+        }
+
+        // Validate and clean images
+        if (images != null) {
+            images = validateAndCleanImages(images);
+        }
+
+        post.setContent(newContent);
+        post.setImages(images != null ? new ArrayList<>(images) : new ArrayList<>());
+
+        try {
+            GeminiService.GeminiResponse analysis = geminiService.analyzePost(newContent);
+
+            // Handle EXPERIENCE type specially
+            if (analysis.getPostType() == PostType.EXPERIENCE) {
+                // Create work entry from tags
+                createWorkFromExperiencePost(analysis);
+
+                // Update post as GENERAL to not show in CV
+                post.setType(PostType.GENERAL);
+                post.setTags(List.of());
+                post.setCvHeading(analysis.getSummary());
+                post.setUpdatedAt(LocalDateTime.now());
+                post.setAutoTagged(false);
+
+                // Remove from CV if it was there
+                if (previousType != PostType.GENERAL) {
+                    cvUpdateService.removeCvEntriesByPostId(postId);
+                }
+
+                return postRepository.save(post);
+            } else {
+                // Normal flow for other post types
+                post.setCvHeading(analysis.getSummary());
+                post.setType(analysis.getPostType());
+                post.setTags(analysis.getTags());
+                post.setUpdatedAt(LocalDateTime.now());
+                post.setAutoTagged(false);
+
+                Post savedPost = postRepository.save(post);
+
+                // Handle CV updates based on post type changes
+                if (analysis.isCvRelevant()) {
+                    cvUpdateService.updateCvFromPost(savedPost);
+                } else if (previousType != PostType.GENERAL) {
+                    // Post was CV-relevant before but now is GENERAL, remove from CV
+                    cvUpdateService.removeCvEntriesByPostId(postId);
+                }
+
+                return savedPost;
+            }
+        } catch (Exception e) {
+            log.error("Failed to generate CV heading for updated post, using fallback", e);
+            post.setCvHeading(generateFallbackCvHeading(newContent));
+            post.setType(PostType.GENERAL); // Fallback to GENERAL
+            post.setTags(List.of());
+
+            post.setUpdatedAt(LocalDateTime.now());
+            post.setAutoTagged(false);
+
+            Post savedPost = postRepository.save(post);
+
+            // Remove from CV since we're treating it as GENERAL
+            if (previousType != PostType.GENERAL) {
+                cvUpdateService.removeCvEntriesByPostId(postId);
+            }
+
+            return savedPost;
+        }
+    }
+
+    /**
+     * Creates a Work entry from EXPERIENCE post analysis
+     * Expected tags format: "Company Name,Position,Date" or "Company Name,Position,none"
+     */
+    private void createWorkFromExperiencePost(GeminiService.GeminiResponse analysis) {
+        try {
+            List<String> tags = analysis.getTags();
+            if (tags.isEmpty()) {
+                log.warn("No tags found for EXPERIENCE post, skipping work creation");
+                return;
+            }
+
+            // Parse tags - expecting format: "Company Name,Position,Date"
+            String tagString = tags.get(0); // Take first tag which should contain all info
+            String[] parts = tagString.split(",");
+
+            if (parts.length < 2) {
+                log.warn("Invalid tag format for EXPERIENCE post: {}", tagString);
+                return;
+            }
+
+            String companyName = parts[0].trim();
+            String position = parts[1].trim();
+            String dateString = parts.length > 2 ? parts[2].trim() : "none";
+
+            LocalDate startDate;
+            if ("none".equals(dateString) || dateString.isEmpty()) {
+                // Use current date if no date provided
+                startDate = LocalDate.now();
+            } else {
+                startDate = parseDateString(dateString);
+            }
+
+            // Get current user
+            User currentUser = getCurrentUser();
+
+            // Create WorkDto
+            WorkDto workDto = WorkDto.builder()
+                    .companyName(companyName)
+                    .position(position)
+                    .startDate(startDate)
+                    .endDate(null) // No end date as it's a new position
+                    .isCurrent(true) // Assume it's current position
+                    .build();
+
+            // Create work entry
+            workService.createWork(workDto, currentUser);
+            log.info("Created work entry: {} at {}", position, companyName);
+
+        } catch (Exception e) {
+            log.error("Failed to create work entry from EXPERIENCE post: {}", e.getMessage());
+        }
+    }
+
+    /**
+     * Parses date string from various formats
+     */
+    private LocalDate parseDateString(String dateString) {
+        DateTimeFormatter[] formatters = {
+                DateTimeFormatter.ofPattern("d MMMM yyyy"),
+                DateTimeFormatter.ofPattern("d MMMM"),
+                DateTimeFormatter.ofPattern("MMMM yyyy"),
+                DateTimeFormatter.ofPattern("yyyy-MM-dd"),
+                DateTimeFormatter.ofPattern("dd/MM/yyyy"),
+                DateTimeFormatter.ofPattern("MM/dd/yyyy")
+        };
+
+        for (DateTimeFormatter formatter : formatters) {
+            try {
+                if (dateString.matches("\\d{1,2} \\w+$")) {
+                    // Format like "21 January" - add current year
+                    dateString += " " + LocalDate.now().getYear();
+                }
+                return LocalDate.parse(dateString, formatter);
+            } catch (DateTimeParseException e) {
+                // Try next formatter
+            }
+        }
+
+        // If all parsing fails, return current date
+        log.warn("Could not parse date: {}, using current date", dateString);
+        return LocalDate.now();
+    }
+
+    // ... (rest of the existing methods remain unchanged)
 
     @Transactional(readOnly = true)
     public List<String> getProfileSkills(Long profileId) {
@@ -154,67 +362,6 @@ public class PostService {
     public List<Post> getFeedPosts() {
         User currentUser = getCurrentUser();
         return postRepository.findPostsFromFriendsAndSelf(currentUser);
-    }
-
-    @Transactional
-    public Post updatePost(Long postId, Long profileId, String newContent, List<String> images) {
-        Post post = getPostById(postId);
-        validatePostOwnership(post, profileId);
-        PostType previousType = post.getType();
-
-        // Validate image count
-        if (images != null && images.size() > 4) {
-            throw new ResponseStatusException(
-                    HttpStatus.BAD_REQUEST,
-                    "Maximum 4 images allowed per post");
-        }
-
-        // Validate and clean images
-        if (images != null) {
-            images = validateAndCleanImages(images);
-        }
-
-        post.setContent(newContent);
-        post.setImages(images != null ? new ArrayList<>(images) : new ArrayList<>());
-
-        try {
-            GeminiService.GeminiResponse analysis = geminiService.analyzePost(newContent);
-            post.setCvHeading(analysis.getSummary());
-            post.setType(analysis.getPostType());
-            post.setTags(analysis.getTags());
-
-            post.setUpdatedAt(LocalDateTime.now());
-            post.setAutoTagged(false);
-
-            Post savedPost = postRepository.save(post);
-
-            // Handle CV updates based on post type changes
-            if (analysis.isCvRelevant()) {
-                cvUpdateService.updateCvFromPost(savedPost);
-            } else if (previousType != PostType.GENERAL) {
-                // Post was CV-relevant before but now is GENERAL, remove from CV
-                cvUpdateService.removeCvEntriesByPostId(postId);
-            }
-
-            return savedPost;
-        } catch (Exception e) {
-            log.error("Failed to generate CV heading for updated post, using fallback", e);
-            post.setCvHeading(generateFallbackCvHeading(newContent));
-            post.setType(PostType.GENERAL); // Fallback to GENERAL
-            post.setTags(List.of());
-
-            post.setUpdatedAt(LocalDateTime.now());
-            post.setAutoTagged(false);
-
-            Post savedPost = postRepository.save(post);
-
-            // Remove from CV since we're treating it as GENERAL
-            if (previousType != PostType.GENERAL) {
-                cvUpdateService.removeCvEntriesByPostId(postId);
-            }
-
-            return savedPost;
-        }
     }
 
     @Transactional
@@ -322,8 +469,8 @@ public class PostService {
     }
 
     private Post savePost(String content, Profile profile, PostType type,
-            List<String> tags, String cvHeading, boolean autoTagged,
-            List<String> images) {
+                          List<String> tags, String cvHeading, boolean autoTagged,
+                          List<String> images) {
         return postRepository.save(Post.builder()
                 .content(content)
                 .type(type)

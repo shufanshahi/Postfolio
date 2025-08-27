@@ -103,7 +103,7 @@ public class CvGeneratorService {
 
                 // Location and dates
                 StringBuilder details = new StringBuilder();
-            
+
                 details.append(work.getDisplayDateRange());
                 if (work.getIsCurrent()) {
                     details.append(" (Current)");

@@ -42,7 +42,7 @@ public class GeminiService {
         Return STRICT JSON format with:
         1. "summary" (a concise 5-7 word summary suitable for a CV heading - ONLY if CV-relevant, otherwise "General Post")
         2. "type" (choose one: EXPERIENCE, SKILL, PROJECT, ACHIEVEMENT, or GENERAL)
-        3. "tags" (comma-separated PROFESSIONAL SKILLS only - empty string if GENERAL post or no clear skills mentioned)
+        3. "tags" (comma-separated format based on type - see guidelines below)
         
         CV-RELEVANT posts include:
         - Work experience, internships, jobs
@@ -55,8 +55,8 @@ public class GeminiService {
         
         TYPE CLASSIFICATION PRIORITY:
         - ACHIEVEMENT: If post mentions winning, placing, or achieving recognition in competitions, contests, hackathons, awards, certifications - PRIORITIZE this even if technical project details are mentioned
+        - EXPERIENCE: Work roles, internships, jobs, starting new positions
         - PROJECT: Only if post is primarily about building/developing something WITHOUT mentioning competitive wins or achievements
-        - EXPERIENCE: Work roles, internships, jobs
         - SKILL: Learning new skills, attending workshops/courses without competitive element
         
         GENERAL posts include:
@@ -70,31 +70,35 @@ public class GeminiService {
         
         KEY RECOGNITION PATTERNS:
         - Words indicating ACHIEVEMENT: "won", "first place", "secured", "achieved", "awarded", "recognized", "champion", "winner", "placed", "ranked"
+        - Words indicating EXPERIENCE: "started working", "joined", "began", "appointed as", "hired as", "new role", "position at"
         - Competition contexts: "hackathon", "competition", "contest", "championship", "tournament" + achievement words = ACHIEVEMENT type
         - Even if technical project details are mentioned, winning/placing takes PRIORITY for classification
         
-        IMPORTANT GUIDELINES FOR TAGS:
+        TAGS GUIDELINES BY TYPE:
+        
+        FOR EXPERIENCE TYPE ONLY:
+        - Include: Company name, Job title/position, Date (if mentioned, otherwise "none")
+        - Format: "Company Name,Job Title,Date" or "Company Name,Job Title,none" if no date
+        - Example: "Robi,Junior Developer,21 January" or "Google,Software Engineer,none"
+        
+        FOR ALL OTHER TYPES (ACHIEVEMENT, PROJECT, SKILL):
         - Extract ONLY transferable professional skills, technical competencies, and soft skills
         - DO NOT include: event names, competition names, company names, project names, locations, dates
         - DO NOT include: generic terms like "competition", "hackathon", "datathon", "contest"
         - Focus on WHAT SKILLS were demonstrated or used, not WHERE or WHEN
+        - Examples of GOOD tags: "Machine Learning", "Data Analysis", "Python", "React", "Team Leadership"
+        - Examples of BAD tags: "Google Summer of Code", "NASA Space Apps", "Competition", "Hackathon"
         
-        Examples of GOOD tags:
-        - Technical skills: "Machine Learning", "Data Analysis", "Python", "React", "Cloud Computing"
-        - Soft skills: "Team Leadership", "Problem Solving", "Public Speaking", "Project Management"
-        - Domain expertise: "Financial Modeling", "UI/UX Design", "Digital Marketing", "Research"
+        FOR GENERAL TYPE:
+        - Leave tags as empty string
         
-        Examples of BAD tags (DO NOT use):
-        - Event names: "Google Summer of Code", "NASA Space Apps", "Datathon"
-        - Generic terms: "Competition", "Hackathon", "Conference", "Workshop"
-        - Companies: "Google", "Microsoft", "Facebook"
-        - Locations: "Silicon Valley", "Dhaka University"
+
         
         Guidelines for CV-relevant posts:
         - Summary should be professional and highlight key achievements
-        - For ACHIEVEMENT: Lead with the accomplishment ("Won first place in...", "Secured championship in...", "Achieved recognition for...")
+        - For EXPERIENCE: Focus on role and company ("Started position at Company", "Joined as Developer")
+        - For ACHIEVEMENT: Lead with the accomplishment ("Won first place in...", "Secured championship in...")
         - For PROJECT: Focus on what was built/developed ("Built mobile app", "Developed web platform")
-        - For EXPERIENCE: Focus on role and impact ("Completed internship", "Led development team")
         - Keep summary under 10 words
         
         For GENERAL posts:
@@ -104,19 +108,26 @@ public class GeminiService {
         
         Return ONLY the JSON object, without any markdown formatting or additional text.
         
-        Example CV-relevant responses:
+        Example responses:
+        
+        EXPERIENCE examples:
+        {
+          "summary": "Started junior developer position at Robi",
+          "type": "EXPERIENCE",
+          "tags": "Robi,Junior Developer,21 January"
+        }
+        
+        {
+          "summary": "Joined Google as software engineer",
+          "type": "EXPERIENCE",
+          "tags": "Google,Software Engineer,none"
+        }
         
         ACHIEVEMENT examples:
         {
           "summary": "Won first place in AI hackathon",
           "type": "ACHIEVEMENT", 
           "tags": "Artificial Intelligence,Problem Solving,Team Collaboration"
-        }
-        
-        {
-          "summary": "Secured championship in data competition",
-          "type": "ACHIEVEMENT",
-          "tags": "Data Analysis,Machine Learning,Problem Solving"
         }
         
         PROJECT examples:
@@ -126,7 +137,7 @@ public class GeminiService {
           "tags": "Web Development,React,Node.js,Full Stack Development"
         }
         
-        Example GENERAL post response:
+        GENERAL post example:
         {
           "summary": "General Post",
           "type": "GENERAL",
@@ -221,12 +232,25 @@ public class GeminiService {
                 type = PostType.GENERAL;
             }
 
+            // Parse date
+            String date = "none";
+            if (result.has("date")) {
+                date = result.get("date").getAsString().trim();
+                if (date.isEmpty()) {
+                    date = "none";
+                }
+            }
+
             // Parse tags
             String tagsString = result.get("tags").getAsString();
             List<String> tags = new ArrayList<>();
 
-            // Only process tags if it's not a GENERAL post
-            if (type != PostType.GENERAL && !tagsString.isBlank()) {
+            // Handle EXPERIENCE type tags specially
+            if (type == PostType.EXPERIENCE && !tagsString.isBlank()) {
+                // For EXPERIENCE, tags contain "Company,Position,Date" format
+                tags.add(tagsString.trim());
+            } else if (type != PostType.GENERAL && !tagsString.isBlank()) {
+                // For other non-GENERAL types, split by comma
                 tags = Arrays.stream(tagsString.split(",\\s*"))
                         .filter(tag -> !tag.isBlank())
                         .map(String::trim)
