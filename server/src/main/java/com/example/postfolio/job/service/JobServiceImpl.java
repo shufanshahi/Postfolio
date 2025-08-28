@@ -65,7 +65,7 @@ public class JobServiceImpl implements JobService {
         return jobRepository.findAll().stream().map(this::toResponse).collect(Collectors.toList());
     }
 
-     @Override
+    @Override
     @Transactional
     public JobResponse rejectApplicant(Long jobId, Long applicantId) {
         Job job = jobRepository.findById(jobId).orElseThrow(() ->
@@ -78,6 +78,21 @@ public class JobServiceImpl implements JobService {
         }
         return toResponse(job);
     }
+
+    @Override
+    @Transactional
+    public JobResponse selectApplicant(Long jobId, Long applicantId) {
+        Job job = jobRepository.findById(jobId).orElseThrow(() ->
+                new RuntimeException("Job not found with id: " + jobId));
+        Profile applicant = profileRepository.findById(applicantId).orElseThrow(() ->
+                new RuntimeException("Profile not found with id: " + applicantId));
+        if (!job.getSelectedApplicants().contains(applicant)) {
+            job.getSelectedApplicants().add(applicant);
+            jobRepository.save(job);
+        }
+        return toResponse(job);
+    }
+
 
     @Override
     @Transactional

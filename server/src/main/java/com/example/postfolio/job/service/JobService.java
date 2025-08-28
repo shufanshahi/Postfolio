@@ -18,6 +18,7 @@ public interface JobService {
     void deleteJob(Long jobId);
     JobResponse updateJobStatus(Long jobId, JobStatus status);
     JobResponse rejectApplicant(Long jobId, Long applicantId);
+    JobResponse selectApplicant(Long jobId, Long applicantId);
 
 
     // Additional methods to support matching

@@ -72,6 +72,19 @@ public class JobController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
+    @PostMapping("/{jobId}/select/{applicantId}")
+    public ResponseEntity<JobResponse> selectApplicant(@PathVariable Long jobId, @PathVariable Long applicantId) {
+        try {
+            JobResponse jobResponse = jobService.selectApplicant(jobId, applicantId);
+            return ResponseEntity.ok(jobResponse);
+        } catch (RuntimeException e) {
+            log.error("Failed to select applicant {} for job {}", applicantId, jobId, e);
+            return ResponseEntity.notFound().build();
+        } catch (Exception e) {
+            log.error("Unexpected error while selecting applicant {} for job {}", applicantId, jobId, e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
 
     @GetMapping("/{jobId}/details")
     public ResponseEntity<JobResponse> getJobDetails(@PathVariable Long jobId) {
