@@ -1,3 +1,4 @@
+
 package com.example.postfolio.job.controller;
 
 import com.example.postfolio.job.dto.JobRequest;
@@ -56,6 +57,20 @@ public class JobController {
     @GetMapping("/employer/ajob/{jobId}")
     public ResponseEntity<JobResponse> getJobById(@PathVariable Long jobId) {
         return ResponseEntity.ok(jobService.getJobById(jobId));
+    }
+
+    @PostMapping("/{jobId}/reject/{applicantId}")
+    public ResponseEntity<JobResponse> rejectApplicant(@PathVariable Long jobId, @PathVariable Long applicantId) {
+        try {
+            JobResponse jobResponse = jobService.rejectApplicant(jobId, applicantId);
+            return ResponseEntity.ok(jobResponse);
+        } catch (RuntimeException e) {
+            log.error("Failed to reject applicant {} for job {}", applicantId, jobId, e);
+            return ResponseEntity.notFound().build();
+        } catch (Exception e) {
+            log.error("Unexpected error while rejecting applicant {} for job {}", applicantId, jobId, e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
     }
 
     @GetMapping("/{jobId}/details")

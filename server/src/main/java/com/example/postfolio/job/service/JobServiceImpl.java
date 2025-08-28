@@ -1,3 +1,4 @@
+
 package com.example.postfolio.job.service;
 
 import com.example.postfolio.job.dto.JobRequest;
@@ -62,6 +63,20 @@ public class JobServiceImpl implements JobService {
     @Override
     public List<JobResponse> getAllJobs() {
         return jobRepository.findAll().stream().map(this::toResponse).collect(Collectors.toList());
+    }
+
+     @Override
+    @Transactional
+    public JobResponse rejectApplicant(Long jobId, Long applicantId) {
+        Job job = jobRepository.findById(jobId).orElseThrow(() ->
+                new RuntimeException("Job not found with id: " + jobId));
+        Profile applicant = profileRepository.findById(applicantId).orElseThrow(() ->
+                new RuntimeException("Profile not found with id: " + applicantId));
+        if (!job.getRejectedApplicants().contains(applicant)) {
+            job.getRejectedApplicants().add(applicant);
+            jobRepository.save(job);
+        }
+        return toResponse(job);
     }
 
     @Override

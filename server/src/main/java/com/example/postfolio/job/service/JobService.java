@@ -17,6 +17,8 @@ public interface JobService {
     JobResponse withdrawApplication(Long jobId, Long applicantId);
     void deleteJob(Long jobId);
     JobResponse updateJobStatus(Long jobId, JobStatus status);
+    JobResponse rejectApplicant(Long jobId, Long applicantId);
+
 
     // Additional methods to support matching
     List<Job> findAllActiveJobs();
