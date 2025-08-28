@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { Dialog } from "@headlessui/react";
 import { useParams, useRouter } from "next/navigation";
 import { jobServiceFetch } from '@/lib/api';
@@ -10,7 +10,29 @@ export default function JobApplicants() {
   const params = useParams();
   const router = useRouter();
   const jobId = params.jobId;
-  
+
+
+  // Section state: 'applicants', 'rejected', 'selected'
+  const [section, setSection] = useState('applicants');
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useRef(null);
+
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (menuRef.current && !menuRef.current.contains(event.target)) {
+        setMenuOpen(false);
+      }
+    }
+    if (menuOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    } else {
+      document.removeEventListener('mousedown', handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [menuOpen]);
+
   const [job, setJob] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -336,7 +358,7 @@ export default function JobApplicants() {
       <div className="max-w-4xl mx-auto space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between">
-          <div>
+          <div className="relative flex items-center">
             <Button 
               variant="outline" 
               onClick={() => router.back()}
@@ -344,11 +366,52 @@ export default function JobApplicants() {
             >
               ← Back to Job Postings
             </Button>
-            <h1 className="text-3xl font-bold text-white">Job Applicants</h1>
             {job && (
-              <p className="text-gray-400 mt-2">
-                Showing applicants for: <span className="text-white font-semibold">{job.title}</span>
-              </p>
+              <>
+                <span className="ml-2 text-3xl font-bold text-white">{job.title}</span>
+                <button
+                  className="ml-2 p-2 rounded-full hover:bg-gray-700 focus:outline-none"
+                  onClick={() => setMenuOpen((v) => !v)}
+                  aria-label="Open menu"
+                  type="button"
+                >
+                  <svg width="24" height="24" fill="none" viewBox="0 0 24 24">
+                    <circle cx="5" cy="12" r="2" fill="#fff"/>
+                    <circle cx="12" cy="12" r="2" fill="#fff"/>
+                    <circle cx="19" cy="12" r="2" fill="#fff"/>
+                  </svg>
+                </button>
+                {menuOpen && (
+                  <div ref={menuRef} className="absolute left-40 top-10 z-50 bg-gray-800 border border-gray-700 rounded shadow-lg w-56">
+                    <ul className="py-1">
+                      {section !== 'applicants' && (
+                        <li>
+                          <button
+                            className="w-full text-left px-4 py-2 text-white hover:bg-gray-700"
+                            onClick={() => { setSection('applicants'); setMenuOpen(false); }}
+                          >Show Applicants</button>
+                        </li>
+                      )}
+                      {section !== 'rejected' && (
+                        <li>
+                          <button
+                            className="w-full text-left px-4 py-2 text-white hover:bg-gray-700"
+                            onClick={() => { setSection('rejected'); setMenuOpen(false); }}
+                          >Show Rejected Applicants</button>
+                        </li>
+                      )}
+                      {section !== 'selected' && (
+                        <li>
+                          <button
+                            className="w-full text-left px-4 py-2 text-white hover:bg-gray-700"
+                            onClick={() => { setSection('selected'); setMenuOpen(false); }}
+                          >Show Selected Applicants</button>
+                        </li>
+                      )}
+                    </ul>
+                  </div>
+                )}
+              </>
             )}
           </div>
         </div>
@@ -404,133 +467,172 @@ export default function JobApplicants() {
           </Card>
         )}
 
-        {/* Applicants Section */}
-        <Card className="bg-gray-800 border-gray-700">
-          <CardHeader>
-            <CardTitle className="text-white">Applicants</CardTitle>
-            <CardDescription className="text-gray-400">
-              {job?.applicantIds?.length ? 
-                `${job.applicantIds.length} applicant(s) found` : 
-                "No applicants yet"
-              }
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            {!job?.applicantIds || job.applicantIds.length === 0 ? (
-              <div className="text-gray-400 text-center py-8">
-                No one has applied for this job yet.
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {applicantsWithDetails
-                  .filter(({ applicantId }) => {
-                    const selectedIds = job?.selectedApplicantIds || [];
-                    const rejectedIds = job?.rejectedApplicantIds || [];
-                    return !selectedIds.includes(applicantId) && !rejectedIds.includes(applicantId);
-                  })
-                  .map(({ applicantId, interview, profile }, index) => (
-                    <div 
-                      key={applicantId} 
-                      className="flex items-center justify-between p-4 bg-gray-700 rounded-lg border border-gray-600"
-                    >
-                      <div className="flex items-center space-x-3">
-                        <div className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center text-white font-semibold">
-                          {index + 1}
-                        </div>
-                        <div>
-                          <p className="text-white font-medium">
-                            {profile ? `${profile.name} ` : ``}
-                          </p>
-                          {profile?.email && (
-                            <p className="text-gray-400 text-sm">{profile.email}</p>
-                          )}
-                          {interview && (
-                            <p className="text-gray-400 text-sm">Interview Status: {interview.status}</p>
-                          )}
-                        </div>
-                      </div>
-                      <div className="flex space-x-2">
-                        <Button 
-                          variant="outline" 
-                          size="sm"
-                          onClick={() => handleViewProfile(applicantId)}
-                          className="bg-gray-600 border-gray-500 text-white hover:bg-gray-500"
-                        >
-                          View Profile
-                        </Button>
-                        <Button 
-                          variant="outline" 
-                          size="sm"
-                          className="bg-blue-700 border-blue-600 text-white hover:bg-blue-600"
-                          onClick={() => handleScheduleClick(applicantId)}
-                        >
-                          {interview ? "Reschedule" : "Schedule"}
-                        </Button>
-                        <Button 
-                          variant="outline" 
-                          size="sm"
-                          className="bg-green-700 border-green-600 text-white hover:bg-green-600"
-                          onClick={() => handleSelectApplicant(applicantId)}
-                        >
-                          Select
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="bg-red-700 border-red-600 text-white hover:bg-red-800"
-                          onClick={() => handleRejectApplicant(applicantId)}
-                        >
-                          Reject
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="bg-yellow-600 border-yellow-500 text-white hover:bg-yellow-700"
-                          onClick={() => handleStartInterview(applicantId)}
-                        >
-                          Start Interview
-                        </Button>
-                      </div>
-                    </div>
-                  ))}
-      {/* Schedule Modal */}
-      {showSchedule && (
-        <Dialog open={showSchedule} onClose={() => setShowSchedule(false)} className="fixed z-50 inset-0 overflow-y-auto">
-          <div className="flex items-center justify-center min-h-screen">
-            <Dialog.Panel className="bg-gray-900 p-6 rounded-lg shadow-lg w-full max-w-md border border-gray-700">
-              <form onSubmit={handleScheduleSubmit}>
-                <h2 className="text-white mb-2 text-lg font-bold">Schedule Interview</h2>
-                <label className="block text-gray-300 mb-1">Date & Time</label>
-                <input
-                  type="datetime-local"
-                  value={scheduleInput}
-                  onChange={e => setScheduleInput(e.target.value)}
-                  className="mb-2 p-1 rounded w-full bg-gray-800 text-white border border-gray-600"
-                  required
-                />
-                <label className="block text-gray-300 mb-1">Notes</label>
-                <textarea
-                  value={notesInput}
-                  onChange={e => setNotesInput(e.target.value)}
-                  className="mb-2 p-1 rounded w-full bg-gray-800 text-white border border-gray-600"
-                />
-                {scheduleError && <div className="text-red-400 mb-2">{scheduleError}</div>}
-                <div className="flex gap-2">
-                  <Button type="submit" className="bg-green-700">Submit</Button>
-                  <Button type="button" onClick={() => setShowSchedule(false)}>Cancel</Button>
+
+        {/* Section Switcher */}
+        {section === 'applicants' && (
+          <Card className="bg-gray-800 border-gray-700">
+            <CardHeader>
+              <CardTitle className="text-white">Applicants</CardTitle>
+              <CardDescription className="text-gray-400">
+                {job?.applicantIds?.length ? 
+                  `${job.applicantIds.length} applicant(s) found` : 
+                  "No applicants yet"
+                }
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {!job?.applicantIds || job.applicantIds.length === 0 ? (
+                <div className="text-gray-400 text-center py-8">
+                  No one has applied for this job yet.
                 </div>
-              </form>
-            </Dialog.Panel>
-          </div>
-        </Dialog>
-      )}
-              </div>
-            )}
-          </CardContent>
-        </Card>
+              ) : (
+                <div className="space-y-3">
+                  {applicantsWithDetails
+                    .filter(({ applicantId }) => {
+                      const selectedIds = job?.selectedApplicantIds || [];
+                      const rejectedIds = job?.rejectedApplicantIds || [];
+                      return !selectedIds.includes(applicantId) && !rejectedIds.includes(applicantId);
+                    })
+                    .map(({ applicantId, interview, profile }, index) => (
+                      <div 
+                        key={applicantId} 
+                        className="flex items-center justify-between p-4 bg-gray-700 rounded-lg border border-gray-600"
+                      >
+                        <div className="flex items-center space-x-3">
+                          <div className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center text-white font-semibold">
+                            {index + 1}
+                          </div>
+                          <div>
+                            <p className="text-white font-medium">
+                              {profile ? `${profile.name} ` : ``}
+                            </p>
+                            {profile?.email && (
+                              <p className="text-gray-400 text-sm">{profile.email}</p>
+                            )}
+                            {interview && (
+                              <p className="text-gray-400 text-sm">Interview Status: {interview.status}</p>
+                            )}
+                          </div>
+                        </div>
+                        <div className="flex space-x-2">
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => handleViewProfile(applicantId)}
+                            className="bg-gray-600 border-gray-500 text-white hover:bg-gray-500"
+                          >
+                            View Profile
+                          </Button>
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            className="bg-blue-700 border-blue-600 text-white hover:bg-blue-600"
+                            onClick={() => handleScheduleClick(applicantId)}
+                          >
+                            {interview ? "Reschedule" : "Schedule"}
+                          </Button>
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            className="bg-green-700 border-green-600 text-white hover:bg-green-600"
+                            onClick={() => handleSelectApplicant(applicantId)}
+                          >
+                            Select
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="bg-red-700 border-red-600 text-white hover:bg-red-800"
+                            onClick={() => handleRejectApplicant(applicantId)}
+                          >
+                            Reject
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="bg-yellow-600 border-yellow-500 text-white hover:bg-yellow-700"
+                            onClick={() => handleStartInterview(applicantId)}
+                          >
+                            Start Interview
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+        {/* Schedule Modal */}
+        {showSchedule && (
+          <Dialog open={showSchedule} onClose={() => setShowSchedule(false)} className="fixed z-50 inset-0 overflow-y-auto">
+            <div className="flex items-center justify-center min-h-screen">
+              <Dialog.Panel className="bg-gray-900 p-6 rounded-lg shadow-lg w-full max-w-md border border-gray-700">
+                <form onSubmit={handleScheduleSubmit}>
+                  <h2 className="text-white mb-2 text-lg font-bold">Schedule Interview</h2>
+                  <label className="block text-gray-300 mb-1">Date & Time</label>
+                  <input
+                    type="datetime-local"
+                    value={scheduleInput}
+                    onChange={e => setScheduleInput(e.target.value)}
+                    className="mb-2 p-1 rounded w-full bg-gray-800 text-white border border-gray-600"
+                    required
+                  />
+                  <label className="block text-gray-300 mb-1">Notes</label>
+                  <textarea
+                    value={notesInput}
+                    onChange={e => setNotesInput(e.target.value)}
+                    className="mb-2 p-1 rounded w-full bg-gray-800 text-white border border-gray-600"
+                  />
+                  {scheduleError && <div className="text-red-400 mb-2">{scheduleError}</div>}
+                  <div className="flex gap-2">
+                    <Button type="submit" className="bg-green-700">Submit</Button>
+                    <Button type="button" onClick={() => setShowSchedule(false)}>Cancel</Button>
+                  </div>
+                </form>
+              </Dialog.Panel>
+            </div>
+          </Dialog>
+        )}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Rejected Applicants Section */}
+        {section === 'rejected' && (
+          <Card className="bg-gray-800 border-gray-700">
+            <CardHeader>
+              <CardTitle className="text-white">Rejected Applicants</CardTitle>
+              <CardDescription className="text-gray-400">
+                {job?.rejectedApplicantIds?.length ? `${job.rejectedApplicantIds.length} applicant(s) rejected` : 'No rejected applicants'}
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {(!job?.rejectedApplicantIds || job.rejectedApplicantIds.length === 0) ? (
+                <div className="text-gray-400 text-center py-8">No rejected applicants.</div>
+              ) : (
+                <div className="space-y-3">
+                  {applicantsWithDetails
+                    .filter(({ applicantId }) => (job?.rejectedApplicantIds || []).includes(applicantId))
+                    .map(({ applicantId, interview, profile }, index) => (
+                      <div key={applicantId} className="flex items-center justify-between p-4 bg-gray-700 rounded-lg border border-gray-600">
+                        <div className="flex items-center space-x-3">
+                          <div className="w-10 h-10 bg-red-600 rounded-full flex items-center justify-center text-white font-semibold">
+                            {index + 1}
+                          </div>
+                          <div>
+                            <p className="text-white font-medium">{profile ? `${profile.name} ` : ``}</p>
+                            {profile?.email && <p className="text-gray-400 text-sm">{profile.email}</p>}
+                            {interview && <p className="text-gray-400 text-sm">Interview Status: {interview.status}</p>}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
 
         {/* Selected Applicants Section (if any) */}
-        {job?.selectedApplicantIds && job.selectedApplicantIds.length > 0 && (
+        {section === 'selected' && job?.selectedApplicantIds && job.selectedApplicantIds.length > 0 && (
           <Card className="bg-gray-800 border-gray-700">
             <CardHeader>
               <CardTitle className="text-white">Selected Applicants</CardTitle>
@@ -540,34 +642,40 @@ export default function JobApplicants() {
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
-                {job.selectedApplicantIds.map((applicantId, index) => (
-                  <div 
-                    key={applicantId} 
-                    className="flex items-center justify-between p-4 bg-green-900 rounded-lg border border-green-700"
-                  >
-                    <div className="flex items-center space-x-3">
-                      <div className="w-10 h-10 bg-green-600 rounded-full flex items-center justify-center text-white font-semibold">
-                        ✓
-                      </div>
-                      <div>
-                        <p className="text-white font-medium">Selected Applicant ID: {applicantId}</p>
-                        <p className="text-green-400 text-sm">Selected for {job.position}</p>
-                      </div>
-                    </div>
-                    <Button 
-                      variant="outline" 
-                      size="sm"
-                      onClick={() => handleViewProfile(applicantId)}
-                      className="bg-gray-600 border-gray-500 text-white hover:bg-gray-500"
+                {job.selectedApplicantIds.map((applicantId, index) => {
+                  const profileObj = applicantsWithDetails.find(a => a.applicantId === applicantId);
+                  const profile = profileObj?.profile;
+                  return (
+                    <div 
+                      key={applicantId} 
+                      className="flex items-center justify-between p-4 bg-green-900 rounded-lg border border-green-700"
                     >
-                      View Profile
-                    </Button>
-                  </div>
-                ))}
+                      <div className="flex items-center space-x-3">
+                        <div className="w-10 h-10 bg-green-600 rounded-full flex items-center justify-center text-white font-semibold">
+                          ✓
+                        </div>
+                        <div>
+                          <p className="text-white font-medium">{profile ? `${profile.name}` : `Selected Applicant ID: ${applicantId}`}</p>
+                          <p className="text-green-400 text-sm">Selected for {job.position}</p>
+                        </div>
+                      </div>
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => handleViewProfile(applicantId)}
+                        className="bg-gray-600 border-gray-500 text-white hover:bg-gray-500"
+                      >
+                        View Profile
+                      </Button>
+                    </div>
+                  );
+                })}
               </div>
             </CardContent>
           </Card>
         )}
+
+
       </div>
     </div>
   );
