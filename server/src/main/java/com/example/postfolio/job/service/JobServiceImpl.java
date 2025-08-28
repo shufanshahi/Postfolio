@@ -109,6 +109,14 @@ public class JobServiceImpl implements JobService {
     }
 
     @Override
+    public JobResponse getJobDetails(Long jobId) {
+        Job job = jobRepository.findById(jobId).orElseThrow(() ->
+                new RuntimeException("Job not found with id: " + jobId));
+
+        return toDetailedResponse(job);
+    }
+
+    @Override
     @Transactional
     public void deleteJob(Long jobId) {
         Job job = jobRepository.findById(jobId).orElseThrow(() ->
@@ -144,6 +152,28 @@ public class JobServiceImpl implements JobService {
     }
 
     private JobResponse toResponse(Job job) {
+        JobResponse res = new JobResponse();
+        res.setJobId(job.getJobId());
+        res.setTitle(job.getTitle());
+        res.setPosition(job.getPosition());
+        res.setDescription(job.getDescription());
+        res.setDatePosted(job.getDatePosted());
+        res.setEndDate(job.getEndDate());
+        res.setRequiredProject(job.getRequiredProject());
+        res.setRequiredSkills(job.getRequiredSkills());
+        res.setRequiredEducation(job.getRequiredEducation());
+        res.setRequiredExperience(job.getRequiredExperience());
+        res.setStatus(job.getStatus());
+        res.setEmployerId(job.getEmployer() != null ? job.getEmployer().getId() : null);
+        res.setMinSalary(job.getMinSalary());
+        res.setMaxSalary(job.getMaxSalary());
+        res.setApplicantIds(job.getApplicants().stream().map(Profile::getId).collect(Collectors.toList()));
+        res.setRejectedApplicantIds(job.getRejectedApplicants().stream().map(Profile::getId).collect(Collectors.toList()));
+        res.setSelectedApplicantIds(job.getSelectedApplicants().stream().map(Profile::getId).collect(Collectors.toList()));
+        return res;
+    }
+
+    private JobResponse toDetailedResponse(Job job) {
         JobResponse res = new JobResponse();
         res.setJobId(job.getJobId());
         res.setTitle(job.getTitle());

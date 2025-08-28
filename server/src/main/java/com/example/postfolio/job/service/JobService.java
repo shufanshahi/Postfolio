@@ -13,6 +13,7 @@ public interface JobService {
     List<JobResponse> getJobsByEmployer(Long employerId);
     JobResponse applyForJob(Long jobId, Long applicantId);
     JobResponse getJobById(Long jobId);
+    JobResponse getJobDetails(Long jobId);
     JobResponse withdrawApplication(Long jobId, Long applicantId);
     void deleteJob(Long jobId);
     JobResponse updateJobStatus(Long jobId, JobStatus status);

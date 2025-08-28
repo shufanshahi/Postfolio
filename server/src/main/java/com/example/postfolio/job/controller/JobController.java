@@ -58,6 +58,20 @@ public class JobController {
         return ResponseEntity.ok(jobService.getJobById(jobId));
     }
 
+    @GetMapping("/{jobId}/details")
+    public ResponseEntity<JobResponse> getJobDetails(@PathVariable Long jobId) {
+        try {
+            JobResponse jobDetails = jobService.getJobDetails(jobId);
+            return ResponseEntity.ok(jobDetails);
+        } catch (RuntimeException e) {
+            log.error("Failed to get job details for job ID: {}", jobId, e);
+            return ResponseEntity.notFound().build();
+        } catch (Exception e) {
+            log.error("Unexpected error while getting job details for job ID: {}", jobId, e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
     @DeleteMapping("/{jobId}/withdraw/{applicantId}")
     public ResponseEntity<JobResponse> withdrawApplication(
             @PathVariable Long jobId,
