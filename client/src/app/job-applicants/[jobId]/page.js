@@ -1,3 +1,4 @@
+
 "use client";
 import { useEffect, useState, useCallback } from "react";
 import { Dialog } from "@headlessui/react";
@@ -27,6 +28,29 @@ export default function JobApplicants() {
     setScheduleInput("");
     setNotesInput("");
     setScheduleError("");
+  };
+
+    // Handle reject applicant
+  const handleRejectApplicant = async (applicantId) => {
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch(`http://localhost:8080/api/jobs/${jobId}/reject/${applicantId}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      if (res.ok) {
+        alert("Applicant rejected successfully!");
+        fetchJobApplicants();
+      } else {
+        alert("Failed to reject applicant.");
+      }
+    } catch (error) {
+      console.error("Error rejecting applicant:", error);
+      alert("Error rejecting applicant.");
+    }
   };
 
   const handleScheduleSubmit = async (e) => {
@@ -284,6 +308,30 @@ export default function JobApplicants() {
     );
   }
 
+  // Handle select applicant
+  const handleSelectApplicant = async (applicantId) => {
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch(`http://localhost:8080/api/jobs/${jobId}/select/${applicantId}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      if (res.ok) {
+        alert("Applicant selected successfully!");
+        // Refresh job data to update selected applicants
+        fetchJobApplicants();
+      } else {
+        alert("Failed to select applicant.");
+      }
+    } catch (error) {
+      console.error("Error selecting applicant:", error);
+      alert("Error selecting applicant.");
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-900 p-6">
       <div className="max-w-4xl mx-auto space-y-6">
@@ -417,8 +465,17 @@ export default function JobApplicants() {
                         variant="outline" 
                         size="sm"
                         className="bg-green-700 border-green-600 text-white hover:bg-green-600"
+                        onClick={() => handleSelectApplicant(applicantId)}
                       >
                         Select
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="bg-red-700 border-red-600 text-white hover:bg-red-800"
+                        onClick={() => handleRejectApplicant(applicantId)}
+                      >
+                        Reject
                       </Button>
                       <Button
                         variant="outline"
