@@ -115,7 +115,7 @@ public class JobMatchingService {
         }
     }
 
-    public    String generateJobHash(Job job) {
+    public String generateJobHash(Job job) {
         try {
             MessageDigest digest = MessageDigest.getInstance("SHA-256");
 
@@ -197,7 +197,7 @@ public class JobMatchingService {
                 .build();
     }
 
-   public String buildScoringPrompt(Job job, ApplicantProfileDTO applicant) {
+    public String buildScoringPrompt(Job job, ApplicantProfileDTO applicant) {
         return String.format("""
                 You are an expert HR recruiter. Score this candidate for the job (0-100).
 
