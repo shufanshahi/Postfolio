@@ -372,57 +372,55 @@ export default function JobApplicants() {
           <Card className="bg-gray-800 border-gray-700">
             <CardHeader className="flex flex-row items-start justify-between">
               <div>
-                <CardTitle className="text-white flex items-center">
-                  {job.title}
-                  <span className="ml-2 relative">
-                    <button
-                      className="p-2 rounded-full hover:bg-gray-700 focus:outline-none"
-                      onClick={() => setMenuOpen((v) => !v)}
-                      aria-label="Open menu"
-                      type="button"
-                    >
-                      <svg width="24" height="24" fill="none" viewBox="0 0 24 24">
-                        <circle cx="5" cy="12" r="2" fill="#fff"/>
-                        <circle cx="12" cy="12" r="2" fill="#fff"/>
-                        <circle cx="19" cy="12" r="2" fill="#fff"/>
-                      </svg>
-                    </button>
-                    {menuOpen && (
-                      <div ref={menuRef} className="absolute left-0 top-10 z-50 bg-gray-800 border border-gray-700 rounded shadow-lg w-56">
-                        <ul className="py-1">
-                          {section !== 'applicants' && (
-                            <li>
-                              <button
-                                className="w-full text-left px-4 py-2 text-white hover:bg-gray-700"
-                                onClick={() => { setSection('applicants'); setMenuOpen(false); }}
-                              >Show Applicants</button>
-                            </li>
-                          )}
-                          {section !== 'rejected' && (
-                            <li>
-                              <button
-                                className="w-full text-left px-4 py-2 text-white hover:bg-gray-700"
-                                onClick={() => { setSection('rejected'); setMenuOpen(false); }}
-                              >Show Rejected Applicants</button>
-                            </li>
-                          )}
-                          {section !== 'selected' && (
-                            <li>
-                              <button
-                                className="w-full text-left px-4 py-2 text-white hover:bg-gray-700"
-                                onClick={() => { setSection('selected'); setMenuOpen(false); }}
-                              >Show Selected Applicants</button>
-                            </li>
-                          )}
-                        </ul>
-                      </div>
-                    )}
-                  </span>
-                </CardTitle>
+                <CardTitle className="text-white">{job.title}</CardTitle>
                 <CardDescription className="text-gray-400">
                   <span className="font-semibold">Position:</span> {job.position} <br />
                   Posted: {job.datePosted} | Ends: {job.endDate}
                 </CardDescription>
+              </div>
+              <div className="relative">
+                <button
+                  className="p-2 rounded-full hover:bg-gray-700 focus:outline-none"
+                  onClick={() => setMenuOpen((v) => !v)}
+                  aria-label="Open menu"
+                  type="button"
+                >
+                  <svg width="24" height="24" fill="none" viewBox="0 0 24 24">
+                    <circle cx="5" cy="12" r="2" fill="#fff"/>
+                    <circle cx="12" cy="12" r="2" fill="#fff"/>
+                    <circle cx="19" cy="12" r="2" fill="#fff"/>
+                  </svg>
+                </button>
+                {menuOpen && (
+                  <div ref={menuRef} className="absolute right-0 top-10 z-50 bg-gray-800 border border-gray-700 rounded shadow-lg w-56">
+                    <ul className="py-1">
+                      {section !== 'applicants' && (
+                        <li>
+                          <button
+                            className="w-full text-left px-4 py-2 text-white hover:bg-gray-700"
+                            onClick={() => { setSection('applicants'); setMenuOpen(false); }}
+                          >Show Applicants</button>
+                        </li>
+                      )}
+                      {section !== 'rejected' && (
+                        <li>
+                          <button
+                            className="w-full text-left px-4 py-2 text-white hover:bg-gray-700"
+                            onClick={() => { setSection('rejected'); setMenuOpen(false); }}
+                          >Show Rejected Applicants</button>
+                        </li>
+                      )}
+                      {section !== 'selected' && (
+                        <li>
+                          <button
+                            className="w-full text-left px-4 py-2 text-white hover:bg-gray-700"
+                            onClick={() => { setSection('selected'); setMenuOpen(false); }}
+                          >Show Selected Applicants</button>
+                        </li>
+                      )}
+                    </ul>
+                  </div>
+                )}
               </div>
             </CardHeader>
             <CardContent className="text-gray-300">
