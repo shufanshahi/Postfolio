@@ -320,23 +320,31 @@ export default function FindJobs() {
                 <div className="mt-2">
                   <span className="font-semibold">Selected:</span> {job.selectedApplicantIds?.length || 0}
                 </div>
-                {job.status !== "CLOSED" && (
-                  job.isApplied ? (
-                    <button
-                      onClick={() => handleWithdraw(job.jobId)}
-                      className="mt-4 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 ml-2"
-                    >
-                      Withdraw
-                    </button>
-                  ) : (
-                    <button
-                      onClick={() => handleApply(job.jobId)}
-                      className="mt-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-                    >
-                      Apply
-                    </button>
-                  )
-                )}
+                <div className="flex flex-wrap gap-2 mt-4">
+                  {job.status !== "CLOSED" && (
+                    job.isApplied ? (
+                      <button
+                        onClick={() => handleWithdraw(job.jobId)}
+                        className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
+                      >
+                        Withdraw
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => handleApply(job.jobId)}
+                        className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+                      >
+                        Apply
+                      </button>
+                    )
+                  )}
+                  <button
+                    onClick={() => window.location.href = `/job-mock-interview/${job.jobId}`}
+                    className="px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700"
+                  >
+                    Mock Interview
+                  </button>
+                </div>
               </CardContent>
             </Card>
           ))}

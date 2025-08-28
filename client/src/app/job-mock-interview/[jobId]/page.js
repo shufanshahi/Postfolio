@@ -1,0 +1,909 @@
+"use client";
+
+import { useState, useRef, useEffect } from 'react';
+import { useParams, useRouter } from 'next/navigation';
+import { AssemblyAI } from "assemblyai";
+
+export default function JobMockInterviewPage() {
+  const { jobId } = useParams();
+  const router = useRouter();
+  
+  const [customInterviewComplete, setCustomInterviewComplete] = useState(false);
+  const [isRecording, setIsRecording] = useState(false);
+  const [isPlayingQuestion, setIsPlayingQuestion] = useState(false);
+  const [audioBlob, setAudioBlob] = useState(null);
+  const [isTranscribing, setIsTranscribing] = useState(false);
+  const [error, setError] = useState('');
+  const [responses, setResponses] = useState([]);
+  const [audioRecordings, setAudioRecordings] = useState([]);
+  const [customInterviewData, setCustomInterviewData] = useState(null);
+  const [isGeneratingCustomInterview, setIsGeneratingCustomInterview] = useState(false);
+  const [customInterviewStarted, setCustomInterviewStarted] = useState(false);
+  const [customQuestionIndex, setCustomQuestionIndex] = useState(0);
+
+  // For job-based interview data
+  const [jobData, setJobData] = useState(null);
+  const [loadingJobData, setLoadingJobData] = useState(false);
+  const [numQuestions, setNumQuestions] = useState('5');
+  const [interviewType, setInterviewType] = useState('Technical');
+  const [showInputForm, setShowInputForm] = useState(true);
+  
+  // For interview evaluation
+  const [evaluationResults, setEvaluationResults] = useState(null);
+  const [isEvaluating, setIsEvaluating] = useState(false);
+  const [showEvaluation, setShowEvaluation] = useState(false);
+  
+  // Fetch job data and generate custom interview
+  const fetchJobDataAndGenerate = async () => {
+    if (!jobId) return;
+    
+    setLoadingJobData(true);
+    setError('');
+    
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        throw new Error('No authentication token found');
+      }
+
+      // Fetch job details
+      const jobRes = await fetch(`http://localhost:8080/api/jobs/${jobId}/details`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      
+      if (!jobRes.ok) {
+        throw new Error('Failed to fetch job details');
+      }
+      
+      const jobDetails = await jobRes.json();
+      setJobData(jobDetails);
+      
+      // Create role and experience from job data
+      const role = `${jobDetails.position} - ${jobDetails.requiredSkills}`;
+      const experience = jobDetails.requiredExperience;
+      
+      // Generate interview data using job information
+      generateInterviewFromJobData(role, experience, token);
+      
+    } catch (err) {
+      console.error('Error fetching job data:', err);
+      setError(`Failed to load job details: ${err.message}`);
+    } finally {
+      setLoadingJobData(false);
+    }
+  };
+
+  // Function to generate interview from job data
+  const generateInterviewFromJobData = async (role, experience, token) => {
+    setIsGeneratingCustomInterview(true);
+    setError('');
+
+    try {
+      // Create responses based on the job data and user inputs
+      const jobBasedResponses = [
+        {
+          questionId: 'startInterview',
+          questionTitle: 'Interview Introduction',
+          responseKey: 'resstartInterview',
+          transcript: 'Ready to start the interview',
+          timestamp: new Date().toISOString()
+        },
+        {
+          questionId: 'getRole',
+          questionTitle: 'Role Information',
+          responseKey: 'resgetRole',
+          transcript: role,
+          timestamp: new Date().toISOString()
+        },
+        {
+          questionId: 'experience',
+          questionTitle: 'Experience Details',
+          responseKey: 'resexperience',
+          transcript: experience,
+          timestamp: new Date().toISOString()
+        },
+        {
+          questionId: 'interviewType',
+          questionTitle: 'Interview Type',
+          responseKey: 'resinterviewType',
+          transcript: interviewType,
+          timestamp: new Date().toISOString()
+        },
+        {
+          questionId: 'questionNumber',
+          questionTitle: 'Question Number',
+          responseKey: 'resquestionNumber',
+          transcript: numQuestions,
+          timestamp: new Date().toISOString()
+        }
+      ];
+
+      setResponses(jobBasedResponses);
+
+      const response = await fetch('http://localhost:8080/api/interviews/generate-custom', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          responses: jobBasedResponses
+        }),
+      });
+
+      if (response.ok) {
+        const customData = await response.json();
+        setCustomInterviewData(customData);
+        setShowInputForm(false);
+      } else {
+        const errorText = await response.text();
+        throw new Error(`Server error: ${response.status} - ${errorText}`);
+      }
+    } catch (err) {
+      console.error('Error generating custom interview:', err);
+      setError('Error generating personalized interview. Please try again.');
+    } finally {
+      setIsGeneratingCustomInterview(false);
+    }
+  };
+  
+  const mediaRecorderRef = useRef(null);
+  const audioChunksRef = useRef([]);
+  const questionAudioRef = useRef(null);
+
+  // Initialize AssemblyAI client
+  const client = new AssemblyAI({
+    apiKey: "09d85cff6d24428d88d54bb6dde7007d",
+  });
+
+  // Play custom question audio when custom interview progresses
+  useEffect(() => {
+    if (customInterviewStarted && customInterviewData) {
+      playCustomQuestion(customQuestionIndex);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [customQuestionIndex, customInterviewStarted]);
+
+  // Evaluate interview when custom interview transcription is complete
+  useEffect(() => {
+    console.log('Evaluation useEffect triggered:', {
+      customInterviewComplete,
+      isTranscribing,
+      responsesLength: responses.length,
+      hasCustomInterviewData: !!customInterviewData,
+      hasEvaluationResults: !!evaluationResults,
+      isEvaluating
+    });
+    
+    if (customInterviewComplete && !isTranscribing && responses.length > 5 && customInterviewData && !evaluationResults && !isEvaluating) {
+      console.log('Starting evaluation...');
+      // Delay evaluation slightly to ensure all state updates are complete
+      setTimeout(() => {
+        evaluateInterview();
+      }, 1000);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [customInterviewComplete, isTranscribing, responses.length, customInterviewData]);
+
+  const handleQuestionEnded = () => {
+    setIsPlayingQuestion(false);
+  };
+
+  const startRecording = async () => {
+    try {
+      setError('');
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      
+      mediaRecorderRef.current = new MediaRecorder(stream);
+      audioChunksRef.current = [];
+
+      mediaRecorderRef.current.ondataavailable = (event) => {
+        if (event.data.size > 0) {
+          audioChunksRef.current.push(event.data);
+        }
+      };
+
+      mediaRecorderRef.current.onstop = () => {
+        const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/mp3' });
+        setAudioBlob(audioBlob);
+        
+        // Stop all tracks to release the microphone
+        stream.getTracks().forEach(track => track.stop());
+        
+        // Store audio recording instead of transcribing immediately
+        storeAudioRecording(audioBlob);
+      };
+
+      mediaRecorderRef.current.start();
+      setIsRecording(true);
+    } catch (err) {
+      setError('Failed to access microphone. Please ensure microphone permissions are granted.');
+      console.error('Error accessing microphone:', err);
+    }
+  };
+
+  const stopRecording = () => {
+    if (mediaRecorderRef.current && isRecording) {
+      mediaRecorderRef.current.stop();
+      setIsRecording(false);
+    }
+  };
+
+  const storeAudioRecording = (audioBlob) => {
+    if (customInterviewStarted) {
+      // Handle custom interview responses
+      const customQuestion = getCurrentCustomQuestion();
+      const newRecording = {
+        questionId: `custom_${customQuestionIndex}`,
+        questionTitle: customQuestion?.title || `Custom Question ${customQuestionIndex + 1}`,
+        responseKey: `custom_response_${customQuestionIndex}`,
+        audioBlob: audioBlob,
+        timestamp: new Date().toISOString()
+      };
+
+      setAudioRecordings(prev => [...prev, newRecording]);
+      
+      // Move to next custom question
+      if (customQuestionIndex < (customInterviewData?.audioUrls?.length || 0) - 1) {
+        setTimeout(() => {
+          setCustomQuestionIndex(prev => prev + 1);
+        }, 1000);
+      } else {
+        // Custom interview complete - transcribe all recordings
+        setCustomInterviewStarted(false);
+        setCustomInterviewComplete(true);
+        transcribeAllRecordings([...audioRecordings, newRecording]);
+      }
+    }
+    
+    setAudioBlob(null);
+  };
+
+  const transcribeAllRecordings = async (recordings) => {
+    setIsTranscribing(true);
+    setError('');
+    
+    try {
+      const transcribedResponses = [];
+      
+      for (let i = 0; i < recordings.length; i++) {
+        const recording = recordings[i];
+        
+        // Convert blob to array buffer
+        const arrayBuffer = await recording.audioBlob.arrayBuffer();
+        const uint8Array = new Uint8Array(arrayBuffer);
+
+        const params = {
+          audio: uint8Array,
+          speech_model: "universal",
+        };
+
+        const transcript = await client.transcripts.transcribe(params);
+        
+        if (transcript.text) {
+          transcribedResponses.push({
+            questionId: recording.questionId,
+            questionTitle: recording.questionTitle,
+            responseKey: recording.responseKey,
+            transcript: transcript.text,
+            timestamp: recording.timestamp
+          });
+        } else {
+          // If no speech detected, add a placeholder
+          transcribedResponses.push({
+            questionId: recording.questionId,
+            questionTitle: recording.questionTitle,
+            responseKey: recording.responseKey,
+            transcript: "[No speech detected]",
+            timestamp: recording.timestamp
+          });
+        }
+      }
+      
+      // Append transcribed responses to existing responses (keeping the initial setup responses)
+      setResponses(prevResponses => [...prevResponses, ...transcribedResponses]);
+      
+    } catch (err) {
+      setError('Failed to transcribe audio recordings. Please try again.');
+      console.error('Transcription error:', err);
+    } finally {
+      setIsTranscribing(false);
+    }
+  };
+
+  const resetInterview = () => {
+    // Navigate back to the main mock interview page
+    router.push('/mockInterview');
+  };
+
+  const evaluateInterview = async () => {
+    if (!customInterviewData || !responses || responses.length === 0) {
+      setError('No interview data available for evaluation');
+      return;
+    }
+
+    setIsEvaluating(true);
+    setError('');
+
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        throw new Error('No authentication token found');
+      }
+
+      // Prepare question-answer pairs for evaluation
+      const questionAnswers = [];
+      
+      // Filter out only the custom interview responses (not the setup responses)
+      const customResponses = responses.filter(response => 
+        response.questionId && response.questionId.startsWith('custom_')
+      );
+      
+      console.log('Total responses:', responses.length);
+      console.log('Custom responses:', customResponses.length);
+      console.log('Custom interview questions:', customInterviewData.questions?.length || 0);
+      
+      // Match custom questions with custom responses
+      if (customInterviewData.questions && customResponses.length > 0) {
+        for (let i = 0; i < customInterviewData.questions.length && i < customResponses.length; i++) {
+          const question = customInterviewData.questions[i];
+          const response = customResponses[i];
+          
+          if (question && response && response.transcript && response.transcript !== "[No speech detected]") {
+            questionAnswers.push({
+              question: question.question,
+              answer: response.transcript
+            });
+          }
+        }
+      }
+
+      console.log('Question-answer pairs for evaluation:', questionAnswers);
+
+      if (questionAnswers.length === 0) {
+        console.error('No valid question-answer pairs found');
+        throw new Error('No valid question-answer pairs found for evaluation');
+      }
+
+      const response = await fetch('http://localhost:8080/api/interviews/evaluate', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          questionAnswers: questionAnswers
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const evaluationData = await response.json();
+      console.log('Evaluation data received:', evaluationData);
+      setEvaluationResults(evaluationData);
+      setShowEvaluation(true);
+
+    } catch (err) {
+      console.error('Evaluation error:', err);
+      setError(`Failed to evaluate interview: ${err.message}`);
+    } finally {
+      setIsEvaluating(false);
+    }
+  };
+
+  const startCustomInterview = () => {
+    setCustomInterviewStarted(true);
+    setCustomQuestionIndex(0);
+    playCustomQuestion(0);
+  };
+
+  const playCustomQuestion = (questionIndex) => {
+    if (customInterviewData && questionIndex < customInterviewData.audioUrls.length) {
+      setIsPlayingQuestion(true);
+      setError('');
+      
+      if (questionAudioRef.current) {
+        const audioUrl = `http://localhost:8080${customInterviewData.audioUrls[questionIndex]}`;
+        const token = localStorage.getItem("token");
+        
+        // Reset the audio element first
+        questionAudioRef.current.pause();
+        questionAudioRef.current.currentTime = 0;
+        
+        fetch(audioUrl, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        })
+          .then(response => response.blob())
+          .then(blob => {
+            const audioUrlObject = URL.createObjectURL(blob);
+            
+            // Set up event listeners before setting source
+            const audio = questionAudioRef.current;
+            
+            const handleCanPlay = () => {
+              audio.removeEventListener('canplay', handleCanPlay);
+              audio.play()
+                .then(() => {
+                  console.log('Playing custom question:', questionIndex);
+                })
+                .catch((err) => {
+                  console.error('Custom audio play error:', err);
+                  setIsPlayingQuestion(false);
+                });
+            };
+            
+            const handleError = () => {
+              audio.removeEventListener('error', handleError);
+              console.error('Audio loading error');
+              setIsPlayingQuestion(false);
+            };
+            
+            audio.addEventListener('canplay', handleCanPlay);
+            audio.addEventListener('error', handleError);
+            
+            // Set the source to trigger loading
+            audio.src = audioUrlObject;
+            audio.load(); // Explicitly load the audio
+          })
+          .catch((err) => {
+            console.error('Fetch error:', err);
+            setIsPlayingQuestion(false);
+          });
+      }
+    }
+  };
+
+  const getCurrentCustomQuestion = () => {
+    if (!customInterviewData || !customInterviewData.questions) return null;
+    
+    // Introduction is at index 0, questions start at index 1
+    if (customQuestionIndex === 0) {
+      return {
+        title: 'Introduction',
+        question: customInterviewData.introduction
+      };
+    }
+    
+    const questionData = customInterviewData.questions[customQuestionIndex - 1];
+    return questionData ? {
+      title: `Question ${questionData.id}`,
+      question: questionData.question
+    } : null;
+  };
+
+  return (
+    <div className="min-h-screen bg-gray-900 py-4">
+      <div className="max-w-6xl mx-auto px-4">
+        {/* Show loading while fetching job data */}
+        {loadingJobData && (
+          <div className="text-center py-20">
+            <div className="flex items-center justify-center space-x-2 text-blue-400 mb-4">
+              <div className="w-5 h-5 border-2 border-blue-400 border-t-transparent rounded-full animate-spin"></div>
+              <span className="font-medium">Loading job details...</span>
+            </div>
+          </div>
+        )}
+
+        {/* Show input form for interview settings */}
+        {!loadingJobData && showInputForm && !jobData && (
+          <div className="text-center mb-8">
+            <h2 className="text-2xl font-semibold text-white mb-6">
+              Job-Based Mock Interview Setup
+            </h2>
+            <div className="bg-gray-700 border border-gray-600 rounded-lg p-6 mb-6 max-w-md mx-auto">
+              <div className="mb-4">
+                <label className="block text-blue-300 font-semibold mb-2">
+                  Number of Questions
+                </label>
+                <select
+                  value={numQuestions}
+                  onChange={(e) => setNumQuestions(e.target.value)}
+                  className="w-full px-3 py-2 bg-gray-600 border border-gray-500 rounded-lg text-white focus:outline-none focus:border-blue-400"
+                >
+                  <option value="3">3 Questions</option>
+                  <option value="5">5 Questions</option>
+                  <option value="7">7 Questions</option>
+                  <option value="10">10 Questions</option>
+                </select>
+              </div>
+              
+              <div className="mb-6">
+                <label className="block text-blue-300 font-semibold mb-2">
+                  Interview Type
+                </label>
+                <select
+                  value={interviewType}
+                  onChange={(e) => setInterviewType(e.target.value)}
+                  className="w-full px-3 py-2 bg-gray-600 border border-gray-500 rounded-lg text-white focus:outline-none focus:border-blue-400"
+                >
+                  <option value="Technical">Technical</option>
+                  <option value="Behavioral">Behavioral</option>
+                  <option value="Mixed">Mixed (Technical + Behavioral)</option>
+                  <option value="Coding">Coding Interview</option>
+                  <option value="System Design">System Design</option>
+                </select>
+              </div>
+              
+              <button
+                onClick={fetchJobDataAndGenerate}
+                disabled={isGeneratingCustomInterview}
+                className="bg-gradient-to-r from-purple-500 to-blue-600 hover:from-purple-600 hover:to-blue-700 text-white px-8 py-3 rounded-lg font-semibold transition-all duration-200 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isGeneratingCustomInterview ? 'Generating...' : 'Generate Interview'}
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Show job information once fetched */}
+        {!loadingJobData && jobData && showInputForm && (
+          <div className="text-center mb-8">
+            <h2 className="text-2xl font-semibold text-white mb-4">
+              Job-Based Mock Interview
+            </h2>
+            <div className="bg-gray-700 border border-gray-600 rounded-lg p-6 mb-6 max-w-lg mx-auto">
+              <div className="mb-2 text-blue-300 font-semibold">Position: {jobData.position}</div>
+              <div className="mb-2 text-gray-200">Required Skills: {jobData.requiredSkills}</div>
+              <div className="mb-2 text-gray-200">Required Experience: {jobData.requiredExperience}</div>
+              <div className="mb-2 text-gray-200">Interview Type: {interviewType}</div>
+              <div className="mb-4 text-gray-200">Number of Questions: {numQuestions}</div>
+              
+              <div className="flex space-x-4 justify-center">
+                <button
+                  onClick={() => {
+                    setShowInputForm(true);
+                    setJobData(null);
+                  }}
+                  className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg font-semibold transition-all duration-200"
+                >
+                  Change Settings
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Video Call Interface - Show when custom interview is ready or started */}
+        {!loadingJobData && customInterviewStarted && (
+          <>
+            {/* Video Call Header */}
+            <div className="bg-gray-800 rounded-t-lg p-4 flex items-center justify-between">
+              <div className="flex items-center space-x-4">
+                <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+                <span className="text-white font-medium">AI Mock Interview Session</span>
+              </div>
+              <div className="flex items-center space-x-2">
+                <div className="text-gray-300 text-sm">
+                  {customInterviewStarted && (
+                    <span>Question {customQuestionIndex + 1} of {customInterviewData?.audioUrls?.length || 0}</span>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Main Video Call Interface */}
+            <div className="bg-black rounded-b-lg overflow-hidden">
+              {/* Main Interview Screen */}
+              <div className="relative p-6" style={{ height: '600px' }}>
+                {/* AI Interviewer Main Screen */}
+                <div className={`relative bg-gray-800 rounded-lg overflow-hidden w-full transition-all duration-300 ${
+                  isPlayingQuestion ? 'ring-4 ring-blue-400 shadow-lg shadow-blue-400/50' : ''
+                }`} style={{ height: '100%' }}>
+                  <div className="w-full h-full flex items-center justify-center relative">
+                    <div className="w-48 h-48 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
+                      <svg className="w-24 h-24 text-white" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M12 2C13.1 2 14 2.9 14 4C14 5.1 13.1 6 12 6C10.9 6 10 5.1 10 4C10 2.9 10.9 2 12 2ZM21 9V7L15 13.5V10C15 8.9 14.1 8 13 8H11C9.9 8 9 8.9 9 10V14C9 15.1 9.9 16 11 16H13C14.1 16 15 15.1 15 14V10.5L21 17V15H22V9H21Z"/>
+                      </svg>
+                    </div>
+                    {isPlayingQuestion && (
+                      <div className="absolute inset-0 bg-blue-400/20 animate-pulse rounded-lg"></div>
+                    )}
+                    
+                    {/* AI Interviewer Label */}
+                    <div className="absolute bottom-6 left-6 bg-black/70 text-white px-4 py-2 rounded-full text-base">
+                      AI Interviewer
+                      {isPlayingQuestion && (
+                        <span className="ml-3 inline-flex items-center">
+                          <div className="w-3 h-3 bg-green-400 rounded-full animate-pulse"></div>
+                          <span className="ml-2 text-sm">Speaking...</span>
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Control Buttons - Center Bottom */}
+                    <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 flex items-center space-x-4">
+                      {/* Microphone/Record Button */}
+                      <button
+                        onClick={isRecording ? stopRecording : startRecording}
+                        disabled={isPlayingQuestion || isTranscribing}
+                        className={`w-14 h-14 rounded-full flex items-center justify-center transition-all duration-200 ${
+                          isRecording 
+                            ? 'bg-red-500 hover:bg-red-600 pulse' 
+                            : isPlayingQuestion || isTranscribing
+                              ? 'bg-gray-600 cursor-not-allowed opacity-50'
+                              : 'bg-green-600 hover:bg-green-700'
+                        }`}
+                        title={isRecording ? "Stop Recording" : "Start Recording"}
+                      >
+                        {isRecording ? (
+                          <svg className="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 24 24">
+                            <rect x="6" y="6" width="12" height="12" rx="2"/>
+                          </svg>
+                        ) : (
+                          <svg className="w-7 h-7 text-white" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M12 2C13.1 2 14 2.9 14 4V12C14 13.1 13.1 14 12 14C10.9 14 10 13.1 10 12V4C10 2.9 10.9 2 12 2ZM19 11C19 15.2 15.8 18.6 11.5 18.95V21H13V23H11H9V21H10.5V18.95C6.2 18.6 3 15.2 3 11H5C5 14.3 7.7 17 11 17S17 14.3 17 11H19Z"/>
+                          </svg>
+                        )}
+                      </button>
+
+                      {/* Replay Question Button */}
+                      {!isPlayingQuestion && !isRecording && !isTranscribing && customInterviewStarted && (
+                        <button
+                          onClick={() => playCustomQuestion(customQuestionIndex)}
+                          className="w-14 h-14 rounded-full bg-blue-600 hover:bg-blue-700 flex items-center justify-center transition-all duration-200"
+                          title="Replay Question"
+                        >
+                          <svg className="w-7 h-7 text-white" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M12 5V1L7 6L12 11V7C15.31 7 18 9.69 18 13S15.31 19 12 19S6 16.31 6 13H4C4 17.42 7.58 21 12 21S20 17.42 20 13S16.42 5 12 5Z"/>
+                          </svg>
+                        </button>
+                      )}
+
+                      {/* End Call Button */}
+                      <button
+                        onClick={resetInterview}
+                        className="w-14 h-14 rounded-full bg-red-600 hover:bg-red-700 flex items-center justify-center transition-all duration-200"
+                        title="End Interview"
+                      >
+                        <svg className="w-7 h-7 text-white" fill="currentColor" viewBox="0 0 24 24">
+                          <path d="M12 9C10.5 9 9.2 9.7 8.5 10.8L15.5 10.8C14.8 9.7 13.5 9 12 9ZM12 2C6.48 2 2 6.48 2 12S6.48 22 12 22S22 17.52 22 12S17.52 2 12 2ZM12 20C7.59 20 4 16.41 4 12S7.59 4 12 4S20 7.59 20 12S16.41 20 12 20ZM15.5 13H8.5C9.2 14.3 10.5 15 12 15S14.8 14.3 15.5 13Z"/>
+                        </svg>
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* User Picture-in-Picture (Upper Right) */}
+                  <div className={`absolute top-6 right-6 w-48 h-36 bg-gray-700 rounded-lg overflow-hidden transition-all duration-300 ${
+                    isRecording ? 'ring-3 ring-red-400 shadow-lg shadow-red-400/50' : 'ring-2 ring-gray-600'
+                  }`}>
+                    <div className="w-full h-full flex items-center justify-center relative">
+                      <div className="w-20 h-20 bg-gradient-to-br from-green-500 to-blue-600 rounded-full flex items-center justify-center">
+                        <svg className="w-10 h-10 text-white" fill="currentColor" viewBox="0 0 24 24">
+                          <path d="M12 12C14.21 12 16 10.21 16 8C16 5.79 14.21 4 12 4C9.79 4 8 5.79 8 8C8 10.21 9.79 12 12 12ZM12 14C9.33 14 4 15.34 4 18V20H20V18C20 15.34 14.67 14 12 14Z"/>
+                        </svg>
+                      </div>
+                      {isRecording && (
+                        <div className="absolute inset-0 bg-red-400/20 animate-pulse rounded-lg"></div>
+                      )}
+                      
+                      {/* User Label */}
+                      <div className="absolute bottom-2 left-2 bg-black/70 text-white px-2 py-1 rounded text-xs">
+                        You
+                        {isRecording && (
+                          <span className="ml-1 inline-flex items-center">
+                            <div className="w-1.5 h-1.5 bg-red-400 rounded-full animate-pulse"></div>
+                            <span className="ml-1 text-xs">Rec</span>
+                          </span>
+                        )}
+                        {isTranscribing && (
+                          <span className="ml-1 inline-flex items-center">
+                            <div className="w-1.5 h-1.5 bg-yellow-400 rounded-full animate-pulse"></div>
+                            <span className="ml-1 text-xs">Processing</span>
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </>
+        )}
+
+        {/* Hidden audio element for playing questions */}
+        <audio
+          ref={questionAudioRef}
+          onEnded={handleQuestionEnded}
+          className="hidden"
+        />
+
+        {/* Content Area */}
+        <div className="bg-gray-800 p-6">
+          {/* Show loading spinner/message when generating custom interview */}
+          {(isGeneratingCustomInterview || isTranscribing) && (
+            <div className="text-center mb-8">
+              <div className="flex items-center justify-center space-x-2 text-blue-400">
+                <div className="w-5 h-5 border-2 border-blue-400 border-t-transparent rounded-full animate-spin"></div>
+                <span className="font-medium">
+                  {isTranscribing
+                    ? 'Processing your responses...'
+                    : 'Generating your job-specific interview questions...'}
+                </span>
+              </div>
+            </div>
+          )}
+
+          {/* Show custom interview ready message */}
+          {customInterviewData && !isGeneratingCustomInterview && !isTranscribing && !customInterviewStarted && (
+            <div className="bg-gradient-to-r from-blue-900 to-purple-900 border border-blue-500 rounded-lg p-6 mb-8">
+              <h3 className="text-lg font-semibold text-blue-300 mb-4">
+                🚀 Your Job-Specific Interview is Ready!
+              </h3>
+              <p className="text-blue-200 mb-4">
+                Based on the job requirements for <strong>{jobData?.position}</strong>, we&apos;ve generated {customInterviewData.questions?.length || 0} personalized questions 
+                focusing on <strong>{jobData?.requiredSkills}</strong> and requiring <strong>{jobData?.requiredExperience}</strong> experience level.
+              </p>
+              <button
+                onClick={startCustomInterview}
+                className="bg-gradient-to-r from-purple-500 to-blue-600 hover:from-purple-600 hover:to-blue-700 text-white px-8 py-3 rounded-lg font-semibold transition-all duration-200 transform hover:scale-105"
+              >
+                Start Job-Specific Interview
+              </button>
+            </div>
+          )}
+
+
+          {customInterviewStarted && (
+            <div>
+              {/* Current Custom Question Display */}
+              <div className="bg-gradient-to-r from-purple-900 to-blue-900 border border-purple-500 rounded-lg p-6 mb-6">
+                <h3 className="text-xl font-semibold text-purple-200 mb-2 text-center">
+                  {getCurrentCustomQuestion()?.title || 'Loading...'}
+                </h3>
+                <p className="text-purple-100 mb-4 text-center">
+                  {getCurrentCustomQuestion()?.question || 'Loading question...'}
+                </p>
+                
+                {isPlayingQuestion && (
+                  <div className="flex items-center justify-center space-x-2 text-purple-300 mb-4">
+                    <div className="w-3 h-3 bg-purple-300 rounded-full animate-pulse"></div>
+                    <span className="font-medium">AI is asking the personalized question...</span>
+                  </div>
+                )}
+
+                {!isPlayingQuestion && !isRecording && !isTranscribing && (
+                  <div className="text-center">
+                    <p className="text-purple-200 mb-4">Question audio has finished. Ready to record your answer?</p>
+                  </div>
+                )}
+
+                {isRecording && (
+                  <div className="text-center">
+                    <div className="flex items-center justify-center space-x-2 text-red-400 mb-4">
+                      <div className="w-3 h-3 bg-red-400 rounded-full animate-pulse"></div>
+                      <span className="font-medium">Recording your response...</span>
+                    </div>
+                  </div>
+                )}
+
+                {isTranscribing && (
+                  <div className="text-center">
+                    <div className="flex items-center justify-center space-x-2 text-yellow-400 mb-4">
+                      <div className="w-5 h-5 border-2 border-yellow-400 border-t-transparent rounded-full animate-spin"></div>
+                      <span className="font-medium">Processing your response...</span>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Interview Evaluation Results */}
+          {showEvaluation && evaluationResults && !customInterviewStarted && (
+            <div className="mb-8">
+              <div className="bg-gradient-to-r from-green-900 to-blue-900 border border-green-500 rounded-lg p-6 mb-6">
+                <h3 className="text-xl font-semibold text-green-300 mb-4 text-center">
+                  🎯 Interview Evaluation Results
+                </h3>
+                
+                {/* Rating */}
+                <div className="bg-green-800/30 border border-green-600 rounded-lg p-4 mb-4 text-center">
+                  <h4 className="text-lg font-semibold text-green-300 mb-2">Overall Rating</h4>
+                  <div className="text-3xl font-bold text-white mb-2">
+                    {evaluationResults.rating}/100
+                  </div>
+                  <div className="w-full bg-gray-700 rounded-full h-3">
+                    <div 
+                      className="bg-gradient-to-r from-green-500 to-blue-500 h-3 rounded-full transition-all duration-1000"
+                      style={{ width: `${evaluationResults.rating}%` }}
+                    ></div>
+                  </div>
+                </div>
+
+                {/* Strengths */}
+                {evaluationResults.strengths && evaluationResults.strengths.length > 0 && (
+                  <div className="bg-green-800/20 border border-green-600 rounded-lg p-4 mb-4">
+                    <h4 className="text-lg font-semibold text-green-300 mb-3 flex items-center">
+                      <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                      </svg>
+                      Strengths
+                    </h4>
+                    <ul className="list-disc list-inside space-y-2 text-green-200">
+                      {evaluationResults.strengths.map((strength, index) => (
+                        <li key={index}>{strength}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+                {/* Weaknesses */}
+                {evaluationResults.weaknesses && evaluationResults.weaknesses.length > 0 && (
+                  <div className="bg-red-800/20 border border-red-600 rounded-lg p-4 mb-4">
+                    <h4 className="text-lg font-semibold text-red-300 mb-3 flex items-center">
+                      <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                      </svg>
+                      Areas for Improvement
+                    </h4>
+                    <ul className="list-disc list-inside space-y-2 text-red-200">
+                      {evaluationResults.weaknesses.map((weakness, index) => (
+                        <li key={index}>{weakness}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+                {/* Improvements */}
+                {evaluationResults.improvements && evaluationResults.improvements.length > 0 && (
+                  <div className="bg-blue-800/20 border border-blue-600 rounded-lg p-4 mb-4">
+                    <h4 className="text-lg font-semibold text-blue-300 mb-3 flex items-center">
+                      <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clipRule="evenodd" />
+                      </svg>
+                      Actionable Recommendations
+                    </h4>
+                    <ul className="list-disc list-inside space-y-2 text-blue-200">
+                      {evaluationResults.improvements.map((improvement, index) => (
+                        <li key={index}>{improvement}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+                <div className="text-center">
+                  <button
+                    onClick={resetInterview}
+                    className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white px-8 py-3 rounded-lg font-semibold transition-all duration-200 transform hover:scale-105"
+                  >
+                    Start New Interview
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Show loading during evaluation or when waiting for evaluation */}
+          {(isEvaluating || (customInterviewComplete && !customInterviewStarted && !showEvaluation && !isTranscribing)) && (
+            <div className="text-center mb-8">
+              <div className="flex items-center justify-center space-x-2 text-green-400">
+                <div className="w-5 h-5 border-2 border-green-400 border-t-transparent rounded-full animate-spin"></div>
+                <span className="font-medium">
+                  {isEvaluating ? 'Evaluating your interview performance...' : 'Preparing evaluation...'}
+                </span>
+              </div>
+              <p className="text-gray-300 text-sm mt-2">This may take a few moments</p>
+            </div>
+          )}
+
+          {/* Error Display */}
+          {error && (
+            <div className="mb-6 bg-red-900 border border-red-500 text-red-200 px-4 py-3 rounded-lg">
+              <div className="flex items-center space-x-2">
+                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                </svg>
+                <span>{error}</span>
+              </div>
+            </div>
+          )}
+
+        </div>
+      </div>
+    </div>
+  );
+}
