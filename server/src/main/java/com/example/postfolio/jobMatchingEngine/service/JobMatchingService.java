@@ -83,7 +83,7 @@ public class JobMatchingService {
         return stats;
     }
 
-    private String generateProfileHash(Profile profile) {
+    public String generateProfileHash(Profile profile) {
         try {
             MessageDigest digest = MessageDigest.getInstance("SHA-256");
 
@@ -115,7 +115,7 @@ public class JobMatchingService {
         }
     }
 
-    private String generateJobHash(Job job) {
+    public    String generateJobHash(Job job) {
         try {
             MessageDigest digest = MessageDigest.getInstance("SHA-256");
 
@@ -149,7 +149,7 @@ public class JobMatchingService {
         return hexString.toString();
     }
 
-    private ApplicantProfileDTO buildApplicantProfile(Profile applicant) {
+    public ApplicantProfileDTO buildApplicantProfile(Profile applicant) {
         // Get all CV entries for this profile
         List<CvEntry> cvEntries = cvEntryRepository.findByProfileId(applicant.getId());
 
@@ -197,7 +197,7 @@ public class JobMatchingService {
                 .build();
     }
 
-    private String buildScoringPrompt(Job job, ApplicantProfileDTO applicant) {
+   public String buildScoringPrompt(Job job, ApplicantProfileDTO applicant) {
         return String.format("""
                 You are an expert HR recruiter. Score this candidate for the job (0-100).
 
@@ -267,7 +267,7 @@ public class JobMatchingService {
                 String.join("\n- ", applicant.getAchievements()));
     }
 
-    private MatchingResult parseGeminiResponse(String response) {
+    public MatchingResult parseGeminiResponse(String response) {
         try {
             String jsonContent = extractJsonFromText(response);
             JsonObject result = JsonParser.parseString(jsonContent).getAsJsonObject();
@@ -344,7 +344,7 @@ public class JobMatchingService {
         throw new RuntimeException("Could not extract JSON from Gemini response: " + text);
     }
 
-    private MatchingResult createFallbackResult(String error) {
+    MatchingResult createFallbackResult(String error) {
         return MatchingResult.builder()
                 .totalScore(0)
                 .skillsScore(0)
