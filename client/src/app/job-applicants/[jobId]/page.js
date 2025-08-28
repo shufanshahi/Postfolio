@@ -1,4 +1,3 @@
-
 "use client";
 import { useEffect, useState, useCallback } from "react";
 import { Dialog } from "@headlessui/react";
@@ -423,71 +422,77 @@ export default function JobApplicants() {
               </div>
             ) : (
               <div className="space-y-3">
-                {applicantsWithDetails.map(({ applicantId, interview, profile }, index) => (
-                  <div 
-                    key={applicantId} 
-                    className="flex items-center justify-between p-4 bg-gray-700 rounded-lg border border-gray-600"
-                  >
-                    <div className="flex items-center space-x-3">
-                      <div className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center text-white font-semibold">
-                        {index + 1}
+                {applicantsWithDetails
+                  .filter(({ applicantId }) => {
+                    const selectedIds = job?.selectedApplicantIds || [];
+                    const rejectedIds = job?.rejectedApplicantIds || [];
+                    return !selectedIds.includes(applicantId) && !rejectedIds.includes(applicantId);
+                  })
+                  .map(({ applicantId, interview, profile }, index) => (
+                    <div 
+                      key={applicantId} 
+                      className="flex items-center justify-between p-4 bg-gray-700 rounded-lg border border-gray-600"
+                    >
+                      <div className="flex items-center space-x-3">
+                        <div className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center text-white font-semibold">
+                          {index + 1}
+                        </div>
+                        <div>
+                          <p className="text-white font-medium">
+                            {profile ? `${profile.name} ` : ``}
+                          </p>
+                          {profile?.email && (
+                            <p className="text-gray-400 text-sm">{profile.email}</p>
+                          )}
+                          {interview && (
+                            <p className="text-gray-400 text-sm">Interview Status: {interview.status}</p>
+                          )}
+                        </div>
                       </div>
-                      <div>
-                        <p className="text-white font-medium">
-                          {profile ? `${profile.name} ` : ``}
-                        </p>
-                        {profile?.email && (
-                          <p className="text-gray-400 text-sm">{profile.email}</p>
-                        )}
-                        {interview && (
-                          <p className="text-gray-400 text-sm">Interview Status: {interview.status}</p>
-                        )}
+                      <div className="flex space-x-2">
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => handleViewProfile(applicantId)}
+                          className="bg-gray-600 border-gray-500 text-white hover:bg-gray-500"
+                        >
+                          View Profile
+                        </Button>
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          className="bg-blue-700 border-blue-600 text-white hover:bg-blue-600"
+                          onClick={() => handleScheduleClick(applicantId)}
+                        >
+                          {interview ? "Reschedule" : "Schedule"}
+                        </Button>
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          className="bg-green-700 border-green-600 text-white hover:bg-green-600"
+                          onClick={() => handleSelectApplicant(applicantId)}
+                        >
+                          Select
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="bg-red-700 border-red-600 text-white hover:bg-red-800"
+                          onClick={() => handleRejectApplicant(applicantId)}
+                        >
+                          Reject
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="bg-yellow-600 border-yellow-500 text-white hover:bg-yellow-700"
+                          onClick={() => handleStartInterview(applicantId)}
+                        >
+                          Start Interview
+                        </Button>
                       </div>
                     </div>
-                    <div className="flex space-x-2">
-                      <Button 
-                        variant="outline" 
-                        size="sm"
-                        onClick={() => handleViewProfile(applicantId)}
-                        className="bg-gray-600 border-gray-500 text-white hover:bg-gray-500"
-                      >
-                        View Profile
-                      </Button>
-                      <Button 
-                        variant="outline" 
-                        size="sm"
-                        className="bg-blue-700 border-blue-600 text-white hover:bg-blue-600"
-                        onClick={() => handleScheduleClick(applicantId)}
-                      >
-                        {interview ? "Reschedule" : "Schedule"}
-                      </Button>
-                      <Button 
-                        variant="outline" 
-                        size="sm"
-                        className="bg-green-700 border-green-600 text-white hover:bg-green-600"
-                        onClick={() => handleSelectApplicant(applicantId)}
-                      >
-                        Select
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="bg-red-700 border-red-600 text-white hover:bg-red-800"
-                        onClick={() => handleRejectApplicant(applicantId)}
-                      >
-                        Reject
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="bg-yellow-600 border-yellow-500 text-white hover:bg-yellow-700"
-                        onClick={() => handleStartInterview(applicantId)}
-                      >
-                        Start Interview
-                      </Button>
-                    </div>
-                  </div>
-                ))}
+                  ))}
       {/* Schedule Modal */}
       {showSchedule && (
         <Dialog open={showSchedule} onClose={() => setShowSchedule(false)} className="fixed z-50 inset-0 overflow-y-auto">
