@@ -7,7 +7,8 @@ import {
   User, Users, FileText, Rss, LogOut, Bell, Search, Video, Briefcase,
   TrendingUp, Calendar, MessageSquare, Settings, ChevronRight, Plus,
   Activity, Target, Award, Clock, BarChart3, Loader2
-} from 'lucide-react';
+  } from 'lucide-react'; 
+  import { LaptopMinimal } from 'lucide-react';
 import {
   Card, CardHeader, CardTitle, CardDescription, CardContent
 } from '@/components/ui/card';
@@ -245,6 +246,16 @@ export default function FunctionalDashboard() {
         action: 'View Schedule',
         onClick: () => handleNavigation('/my-interviews')
       });
+      // Add Mock Interview card for User
+        cards.push({
+          title: 'Mock Interview',
+          description: 'Practice real interview scenarios',
+          icon: <LaptopMinimal className="h-6 w-6" />, // AI/robot-like icon
+          color: 'from-sky-300 to-sky-400',
+          iconBg: 'from-sky-300 to-sky-400',
+          action: 'Start Mock Interview',
+          onClick: () => handleNavigation('/mockInterview')
+        });
     }
 
     return cards;
