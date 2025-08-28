@@ -1,6 +1,5 @@
 package com.example.postfolio.jobMatchingEngine.service;
 
-
 import com.example.postfolio.cvInApp.entity.CvEntry;
 import com.example.postfolio.cvInApp.model.CvType;
 import com.example.postfolio.cvInApp.repository.CvEntryRepository;
@@ -9,7 +8,6 @@ import com.example.postfolio.jobMatchingEngine.client.GeminiClient;
 import com.example.postfolio.jobMatchingEngine.dto.ApplicantProfileDTO;
 import com.example.postfolio.jobMatchingEngine.dto.MatchingResult;
 import com.example.postfolio.profile.entity.Profile;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.gson.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -18,11 +16,10 @@ import org.springframework.stereotype.Service;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 @Service
@@ -32,54 +29,32 @@ public class JobMatchingService {
 
     private final GeminiClient geminiClient;
     private final CvEntryRepository cvEntryRepository;
-
-    // In-memory cache for job matching scores
-    private final Map<String, CachedScore> scoreCache = new ConcurrentHashMap<>();
-    
-    // Cache entry with timestamp for expiration
-    private static class CachedScore {
-        final MatchingResult result;
-        final LocalDateTime timestamp;
-        final String profileHash;
-        final String jobHash;
-        
-        CachedScore(MatchingResult result, String profileHash, String jobHash) {
-            this.result = result;
-            this.timestamp = LocalDateTime.now();
-            this.profileHash = profileHash;
-            this.jobHash = jobHash;
-        }
-        
-        boolean isExpired() {
-            // Cache expires after 24 hours
-            return LocalDateTime.now().isAfter(timestamp.plusHours(24));
-        }
-    }
+    private final JobMatchingCacheService cacheService;
 
     public MatchingResult scoreApplicant(Job job, Profile applicant) {
         try {
             // Generate cache key
             String profileHash = generateProfileHash(applicant);
             String jobHash = generateJobHash(job);
-            String cacheKey = profileHash + ":" + jobHash;
-            
-            // Check cache first
-            CachedScore cached = scoreCache.get(cacheKey);
-            if (cached != null && !cached.isExpired()) {
+            String cacheKey = cacheService.generateCacheKey(profileHash, jobHash);
+
+            // Check Redis cache first
+            MatchingResult cached = cacheService.getCachedResult(cacheKey);
+            if (cached != null) {
                 log.debug("Using cached score for job {} and profile {}", job.getJobId(), applicant.getId());
-                return cached.result;
+                return cached;
             }
-            
+
             // Calculate new score
             log.info("Calculating new score for job {} and profile {}", job.getJobId(), applicant.getId());
             ApplicantProfileDTO profileDTO = buildApplicantProfile(applicant);
             String prompt = buildScoringPrompt(job, profileDTO);
             String response = geminiClient.generateContent(prompt);
             MatchingResult result = parseGeminiResponse(response);
-            
-            // Cache the result
-            scoreCache.put(cacheKey, new CachedScore(result, profileHash, jobHash));
-            
+
+            // Cache the result in Redis
+            cacheService.cacheResult(cacheKey, result);
+
             return result;
         } catch (Exception e) {
             log.error("Job matching failed for job: {} and applicant: {}", job.getJobId(), applicant.getId(), e);
@@ -90,58 +65,48 @@ public class JobMatchingService {
     // Method to invalidate cache when profile or job changes
     public void invalidateProfileCache(Profile profile) {
         String profileHash = generateProfileHash(profile);
-        scoreCache.entrySet().removeIf(entry -> entry.getValue().profileHash.equals(profileHash));
+        cacheService.invalidateProfileCache(profileHash);
         log.info("Invalidated cache for profile {}", profile.getId());
     }
-    
+
     public void invalidateJobCache(Job job) {
         String jobHash = generateJobHash(job);
-        scoreCache.entrySet().removeIf(entry -> entry.getValue().jobHash.equals(jobHash));
+        cacheService.invalidateJobCache(jobHash);
         log.info("Invalidated cache for job {}", job.getJobId());
     }
-    
-    // Cleanup expired cache entries
-    public void cleanupExpiredCache() {
-        int beforeSize = scoreCache.size();
-        scoreCache.entrySet().removeIf(entry -> entry.getValue().isExpired());
-        int afterSize = scoreCache.size();
-        if (beforeSize != afterSize) {
-            log.info("Cleaned up {} expired cache entries", beforeSize - afterSize);
-        }
-    }
-    
+
     // Get cache statistics
     public Map<String, Object> getCacheStats() {
-        Map<String, Object> stats = new ConcurrentHashMap<>();
-        stats.put("totalEntries", scoreCache.size());
-        stats.put("expiredEntries", scoreCache.values().stream().filter(CachedScore::isExpired).count());
+        Map<String, Object> stats = new HashMap<>();
+        stats.put("totalEntries", cacheService.getCacheSize());
+        stats.put("cacheType", "Redis");
         return stats;
     }
 
     private String generateProfileHash(Profile profile) {
         try {
             MessageDigest digest = MessageDigest.getInstance("SHA-256");
-            
+
             StringBuilder profileData = new StringBuilder();
             profileData.append(profile.getBio()).append("|");
             profileData.append(profile.getPositionOrInstitue()).append("|");
-            
+
             // Add CV entries
             List<CvEntry> cvEntries = cvEntryRepository.findByProfileId(profile.getId());
             for (CvEntry entry : cvEntries) {
                 profileData.append(entry.getType()).append(":").append(entry.getContent()).append("|");
             }
-            
+
             // Add education data
             if (profile.getSchools() != null) {
-                profile.getSchools().forEach(school -> 
-                    profileData.append("SCHOOL:").append(school.getSchoolName()).append("|"));
+                profile.getSchools()
+                        .forEach(school -> profileData.append("SCHOOL:").append(school.getSchoolName()).append("|"));
             }
             if (profile.getUniversities() != null) {
-                profile.getUniversities().forEach(uni -> 
-                    profileData.append("UNI:").append(uni.getUniversityName()).append("|"));
+                profile.getUniversities()
+                        .forEach(uni -> profileData.append("UNI:").append(uni.getUniversityName()).append("|"));
             }
-            
+
             byte[] hash = digest.digest(profileData.toString().getBytes(StandardCharsets.UTF_8));
             return bytesToHex(hash);
         } catch (NoSuchAlgorithmException e) {
@@ -153,7 +118,7 @@ public class JobMatchingService {
     private String generateJobHash(Job job) {
         try {
             MessageDigest digest = MessageDigest.getInstance("SHA-256");
-            
+
             StringBuilder jobData = new StringBuilder();
             jobData.append(job.getTitle()).append("|");
             jobData.append(job.getPosition()).append("|");
@@ -163,7 +128,7 @@ public class JobMatchingService {
             jobData.append(job.getRequiredEducation()).append("|");
             jobData.append(job.getRequiredProject()).append("|");
             jobData.append(job.getStatus()).append("|");
-            
+
             byte[] hash = digest.digest(jobData.toString().getBytes(StandardCharsets.UTF_8));
             return bytesToHex(hash);
         } catch (NoSuchAlgorithmException e) {
@@ -192,8 +157,7 @@ public class JobMatchingService {
         Map<CvType, List<String>> groupedEntries = cvEntries.stream()
                 .collect(Collectors.groupingBy(
                         CvEntry::getType,
-                        Collectors.mapping(CvEntry::getContent, Collectors.toList())
-                ));
+                        Collectors.mapping(CvEntry::getContent, Collectors.toList())));
 
         // Build education list from profile
         List<String> education = new ArrayList<>();
@@ -235,59 +199,59 @@ public class JobMatchingService {
 
     private String buildScoringPrompt(Job job, ApplicantProfileDTO applicant) {
         return String.format("""
-            You are an expert HR recruiter. Score this candidate for the job (0-100).
-            
-            JOB REQUIREMENTS:
-            Position: %s
-            Description: %s
-            Required Skills: %s
-            Required Experience: %s
-            Required Education: %s
-            Required Projects: %s
-            
-            CANDIDATE PROFILE:
-            Bio: %s
-            Current Position: %s
-            
-            Education:
-            %s
-            
-            Work Experience:
-            %s
-            
-            Technical Skills:
-            %s
-            
-            Projects:
-            %s
-            
-            Achievements:
-            %s
-            
-            SCORING CRITERIA:
-            - Skills Match (0-35): How well candidate's skills align with job requirements
-            - Experience Match (0-30): Relevance and depth of work experience
-            - Education Match (0-20): Educational background alignment
-            - Additional Factors (0-15): Projects, achievements, career progression
-            
-            Return STRICT JSON format:
-            {
-                "totalScore": (0-100),
-                "skillsScore": (0-35),
-                "experienceScore": (0-30),
-                "educationScore": (0-20),
-                "additionalScore": (0-15),
-                "explanation": "brief reasoning for the total score",
-                "strengths": ["list of candidate's strengths for this role"],
-                "gaps": ["list of areas where candidate doesn't meet requirements"]
-            }
-            
-            Be objective and consider:
-            - Exact skill matches vs transferable skills
-            - Years of experience vs quality of experience
-            - Educational relevance vs practical experience
-            - Project complexity and relevance
-            """,
+                You are an expert HR recruiter. Score this candidate for the job (0-100).
+
+                JOB REQUIREMENTS:
+                Position: %s
+                Description: %s
+                Required Skills: %s
+                Required Experience: %s
+                Required Education: %s
+                Required Projects: %s
+
+                CANDIDATE PROFILE:
+                Bio: %s
+                Current Position: %s
+
+                Education:
+                %s
+
+                Work Experience:
+                %s
+
+                Technical Skills:
+                %s
+
+                Projects:
+                %s
+
+                Achievements:
+                %s
+
+                SCORING CRITERIA:
+                - Skills Match (0-35): How well candidate's skills align with job requirements
+                - Experience Match (0-30): Relevance and depth of work experience
+                - Education Match (0-20): Educational background alignment
+                - Additional Factors (0-15): Projects, achievements, career progression
+
+                Return STRICT JSON format:
+                {
+                    "totalScore": (0-100),
+                    "skillsScore": (0-35),
+                    "experienceScore": (0-30),
+                    "educationScore": (0-20),
+                    "additionalScore": (0-15),
+                    "explanation": "brief reasoning for the total score",
+                    "strengths": ["list of candidate's strengths for this role"],
+                    "gaps": ["list of areas where candidate doesn't meet requirements"]
+                }
+
+                Be objective and consider:
+                - Exact skill matches vs transferable skills
+                - Years of experience vs quality of experience
+                - Educational relevance vs practical experience
+                - Project complexity and relevance
+                """,
                 job.getPosition(),
                 job.getDescription(),
                 job.getRequiredSkills(),
@@ -300,8 +264,7 @@ public class JobMatchingService {
                 String.join("\n- ", applicant.getExperiences()),
                 String.join(", ", applicant.getSkills()),
                 String.join("\n- ", applicant.getProjects()),
-                String.join("\n- ", applicant.getAchievements())
-        );
+                String.join("\n- ", applicant.getAchievements()));
     }
 
     private MatchingResult parseGeminiResponse(String response) {
@@ -324,8 +287,8 @@ public class JobMatchingService {
             int additionalScore = result.get("additionalScore").getAsInt();
 
             // Parse explanation
-            String explanation = result.has("explanation") ?
-                    result.get("explanation").getAsString() : "No explanation provided";
+            String explanation = result.has("explanation") ? result.get("explanation").getAsString()
+                    : "No explanation provided";
 
             // Parse strengths
             List<String> strengths = new ArrayList<>();

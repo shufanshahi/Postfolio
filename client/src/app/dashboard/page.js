@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { apiFetch } from '@/lib/api';
-import { 
+import {
   User, Users, FileText, Rss, LogOut, Bell, Search, Video, Briefcase,
   TrendingUp, Calendar, MessageSquare, Settings, ChevronRight, Plus,
   Activity, Target, Award, Clock, BarChart3, Loader2
@@ -54,7 +54,7 @@ export default function FunctionalDashboard() {
       try {
         setLoading(true);
         const token = localStorage.getItem('token');
-        
+
         if (!token) {
           router.push('/login');
           return;
@@ -143,33 +143,33 @@ export default function FunctionalDashboard() {
   ];
 
   const quickActions = [
-    { 
-      label: 'Post Update', 
-      icon: <Rss className="h-4 w-4" />, 
+    {
+      label: 'Post Update',
+      icon: <Rss className="h-4 w-4" />,
       color: 'bg-sky-300 hover:bg-sky-400 text-sky-900',
       action: () => handleQuickAction('post')
     },
-    { 
-      label: 'Update CV', 
-      icon: <FileText className="h-4 w-4" />, 
+    {
+      label: 'Update CV',
+      icon: <FileText className="h-4 w-4" />,
       color: 'bg-emerald-300 hover:bg-emerald-400 text-emerald-900',
       action: () => handleQuickAction('cv')
     },
-    { 
-      label: 'Mock Interview', 
-      icon: <Video className="h-4 w-4" />, 
+    {
+      label: 'Mock Interview',
+      icon: <Video className="h-4 w-4" />,
       color: 'bg-purple-300 hover:bg-purple-400 text-purple-900',
       action: () => handleQuickAction('interview')
     },
-    { 
-      label: 'Take MCQ', 
-      icon: <BarChart3 className="h-4 w-4" />, 
+    {
+      label: 'Take MCQ',
+      icon: <BarChart3 className="h-4 w-4" />,
       color: 'bg-amber-300 hover:bg-amber-400 text-amber-900',
       action: () => handleQuickAction('mcq')
     },
-    { 
-      label: 'News System', 
-      icon: <Settings className="h-4 w-4" />, 
+    {
+      label: 'News System',
+      icon: <Settings className="h-4 w-4" />,
       color: 'bg-red-300 hover:bg-red-400 text-red-900',
       action: () => handleNavigation('/news-system')
     }
@@ -177,40 +177,40 @@ export default function FunctionalDashboard() {
 
   const getMainCards = () => {
     const cards = [
-      { 
-        title: 'My CV', 
+      {
+        title: 'My CV',
         description: 'Complete your professional profile',
-        icon: <FileText className="h-6 w-6" />, 
+        icon: <FileText className="h-6 w-6" />,
         color: 'from-sky-200 to-sky-300',
         iconBg: 'from-sky-300 to-sky-400',
         progress: userData?.profileCompletion || 0,
         action: 'Update Now',
         onClick: () => handleNavigation('/mycv')
       },
-      { 
-        title: 'Connections', 
+      {
+        title: 'Connections',
         description: 'Expand your professional network',
-        icon: <Users className="h-6 w-6" />, 
+        icon: <Users className="h-6 w-6" />,
         color: 'from-sky-300 to-sky-400',
         iconBg: 'from-sky-300 to-sky-400',
         count: userData?.connectionCount || '0',
         action: 'Find People',
         onClick: () => handleNavigation('/connections')
       },
-      { 
-        title: 'My Feed', 
+      {
+        title: 'My Feed',
         description: 'Latest posts and industry updates',
-        icon: <Rss className="h-6 w-6" />, 
+        icon: <Rss className="h-6 w-6" />,
         color: 'from-sky-300 to-sky-400',
         iconBg: 'from-sky-300 to-sky-400',
         count: userData?.unreadPosts ? `${userData.unreadPosts} new` : '0 new',
         action: 'View Feed',
         onClick: () => handleNavigation('/myfeed')
       },
-      { 
-        title: 'PREP MCQ', 
+      {
+        title: 'PREP MCQ',
         description: 'Practice and improve your skills',
-        icon: <Target className="h-6 w-6" />, 
+        icon: <Target className="h-6 w-6" />,
         color: 'from-sky-300 to-sky-400',
         iconBg: 'from-sky-300 to-sky-400',
         progress: userData?.skillScore || 0,
@@ -220,10 +220,10 @@ export default function FunctionalDashboard() {
     ];
 
     if (userData?.role === 'Employer') {
-      cards.push({ 
-        title: 'Job Postings', 
+      cards.push({
+        title: 'Job Postings',
         description: 'Manage your job listings',
-        icon: <Briefcase className="h-6 w-6" />, 
+        icon: <Briefcase className="h-6 w-6" />,
         color: 'from-sky-300 to-sky-400',
         iconBg: 'from-sky-300 to-sky-400',
         count: `${userData?.activeJobs || 0} active`,
@@ -231,20 +231,20 @@ export default function FunctionalDashboard() {
         onClick: () => handleNavigation('/job-postings')
       });
     } else if (userData?.role === 'User') {
-      cards.push({ 
-        title: 'Find Jobs', 
+      cards.push({
+        title: 'Find Jobs',
         description: 'Explore new opportunities',
-        icon: <Briefcase className="h-6 w-6" />, 
+        icon: <Briefcase className="h-6 w-6" />,
         color: 'from-sky-300 to-sky-400',
         iconBg: 'from-sky-300 to-sky-400',
         count: `${userData?.matchingJobs || 0} matches`,
         action: 'Browse Jobs',
         onClick: () => handleNavigation('/find-jobs')
       });
-      cards.push({ 
-        title: 'My Interviews', 
+      cards.push({
+        title: 'My Interviews',
         description: 'Track your interview schedule',
-        icon: <Video className="h-6 w-6" />, 
+        icon: <Video className="h-6 w-6" />,
         color: 'from-sky-300 to-sky-400',
         iconBg: 'from-sky-300 to-sky-400',
         count: `${userData?.upcomingInterviews || 0} upcoming`,
@@ -282,13 +282,13 @@ export default function FunctionalDashboard() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-stone-100">
       {/* Top Navigation */}
-      <Navbar/>
-     
-         
+      <Navbar />
+
+
 
       {/* Main Content */}
       <div className="max-w-7xl mx-auto py-8 px-6 space-y-8">
-        
+
         {/* Welcome Section */}
         <div className="flex items-center justify-between">
           <div>
@@ -326,14 +326,14 @@ export default function FunctionalDashboard() {
         </div> */}
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          
+
           {/* Main Feature Cards */}
           <div className="lg:col-span-2 space-y-6">
             <div className="flex items-center justify-between">
               <h3 className="text-xl font-semibold text-slate-800">Your Dashboard</h3>
-              <Button 
-                variant="outline" 
-                size="sm" 
+              <Button
+                variant="outline"
+                size="sm"
                 className="border-stone-300 text-slate-600 hover:bg-stone-50"
                 onClick={() => handleNavigation('/settings')}
               >
@@ -341,11 +341,11 @@ export default function FunctionalDashboard() {
                 Customize
               </Button>
             </div>
-            
+
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
               {getMainCards().map((card, i) => (
-                <Card 
-                  key={i} 
+                <Card
+                  key={i}
                   className="group hover:shadow-lg transition-all duration-300 hover:-translate-y-1 border-0 shadow-md overflow-hidden cursor-pointer bg-white/80"
                   onClick={card.onClick}
                 >
@@ -357,13 +357,13 @@ export default function FunctionalDashboard() {
                       </div>
                       <ChevronRight className="h-5 w-5 text-stone-400 group-hover:text-stone-600 transition-colors" />
                     </div>
-                    
+
                     <div className="space-y-3">
                       <div>
                         <h3 className="font-semibold text-slate-800 text-lg">{card.title}</h3>
                         <p className="text-slate-600 text-sm">{card.description}</p>
                       </div>
-                      
+
                       {card.progress !== undefined && (
                         <div className="space-y-2">
                           <div className="flex justify-between text-sm">
@@ -373,7 +373,7 @@ export default function FunctionalDashboard() {
                           <Progress value={card.progress} className="h-2" />
                         </div>
                       )}
-                      
+
                       {card.count && (
                         <div className="flex items-center justify-between">
                           <Badge variant="secondary" className="font-medium bg-stone-100 text-stone-700">
@@ -381,7 +381,7 @@ export default function FunctionalDashboard() {
                           </Badge>
                         </div>
                       )}
-                      
+
                       <Button className="w-full mt-4 bg-slate-700 hover:bg-slate-800 text-white transition-colors">
                         {card.action}
                       </Button>
@@ -394,7 +394,7 @@ export default function FunctionalDashboard() {
 
           {/* Sidebar */}
           <div className="space-y-6">
-            
+
             {/* Recent Activity */}
             <Card className="border-0 shadow-md bg-white/80">
               <CardHeader>
@@ -407,11 +407,10 @@ export default function FunctionalDashboard() {
                 {dashboardData.recentActivity.length > 0 ? (
                   dashboardData.recentActivity.map((activity, i) => (
                     <div key={i} className="flex items-start gap-3">
-                      <div className={`w-2 h-2 rounded-full mt-2 ${
-                        activity.type === 'view' ? 'bg-sky-400' :
-                        activity.type === 'connection' ? 'bg-emerald-400' :
-                        activity.type === 'interview' ? 'bg-purple-400' : 'bg-amber-400'
-                      }`} />
+                      <div className={`w-2 h-2 rounded-full mt-2 ${activity.type === 'view' ? 'bg-sky-400' :
+                          activity.type === 'connection' ? 'bg-emerald-400' :
+                            activity.type === 'interview' ? 'bg-purple-400' : 'bg-amber-400'
+                        }`} />
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-medium text-slate-800">{activity.action}</p>
                         <p className="text-xs text-slate-500 flex items-center gap-1">

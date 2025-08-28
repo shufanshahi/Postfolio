@@ -15,10 +15,9 @@ public class CacheConfig {
 
     private final JobMatchingService jobMatchingService;
 
-    // Clean up expired cache entries every hour
+    // Log cache statistics every hour (Redis handles expiration automatically)
     @Scheduled(fixedRate = 3600000) // 1 hour in milliseconds
-    public void cleanupExpiredCache() {
-        log.debug("Running scheduled cache cleanup");
-        jobMatchingService.cleanupExpiredCache();
+    public void logCacheStatistics() {
+        log.info("Cache statistics: {}", jobMatchingService.getCacheStats());
     }
-} 
+}

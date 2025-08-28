@@ -103,7 +103,8 @@ public class JobController {
                             .requiredEducation(job.getRequiredEducation())
                             .requiredSkills(job.getRequiredSkills())
                             .applicantIds(job.getApplicants().stream().map(Profile::getId).collect(Collectors.toList()))
-                            .selectedApplicantIds(job.getSelectedApplicants().stream().map(Profile::getId).collect(Collectors.toList()))
+                            .selectedApplicantIds(job.getSelectedApplicants().stream().map(Profile::getId)
+                                    .collect(Collectors.toList()))
                             .matchingScore(matchingResult)
                             .build();
 
@@ -124,7 +125,8 @@ public class JobController {
                             .requiredEducation(job.getRequiredEducation())
                             .requiredSkills(job.getRequiredSkills())
                             .applicantIds(job.getApplicants().stream().map(Profile::getId).collect(Collectors.toList()))
-                            .selectedApplicantIds(job.getSelectedApplicants().stream().map(Profile::getId).collect(Collectors.toList()))
+                            .selectedApplicantIds(job.getSelectedApplicants().stream().map(Profile::getId)
+                                    .collect(Collectors.toList()))
                             .matchingScore(createFallbackResult("Scoring failed"))
                             .build();
 
@@ -134,8 +136,7 @@ public class JobController {
 
             jobsWithScores.sort((a, b) -> Integer.compare(
                     b.getMatchingScore().getTotalScore(),
-                    a.getMatchingScore().getTotalScore()
-            ));
+                    a.getMatchingScore().getTotalScore()));
 
             return ResponseEntity.ok(jobsWithScores);
         } catch (Exception e) {
@@ -165,18 +166,6 @@ public class JobController {
             return ResponseEntity.ok(stats);
         } catch (Exception e) {
             log.error("Failed to get cache stats", e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
-        }
-    }
-
-    @PostMapping("/cache/cleanup")
-    public ResponseEntity<Map<String, Object>> cleanupCache() {
-        try {
-            jobMatchingService.cleanupExpiredCache();
-            Map<String, Object> stats = jobMatchingService.getCacheStats();
-            return ResponseEntity.ok(stats);
-        } catch (Exception e) {
-            log.error("Failed to cleanup cache", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
