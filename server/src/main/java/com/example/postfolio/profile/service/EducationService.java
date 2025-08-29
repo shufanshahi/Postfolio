@@ -13,6 +13,7 @@ import com.example.postfolio.profile.repository.SchoolRepository;
 import com.example.postfolio.profile.repository.UniversityRepository;
 import com.example.postfolio.profile.repository.WorkRepository;
 import com.example.postfolio.user.entity.User;
+import com.example.postfolio.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -27,6 +28,7 @@ public class EducationService {
         private final UniversityRepository universityRepository;
         private final WorkRepository workRepository;
         private final ProfileRepository profileRepository;
+        private final UserRepository userRepository;
 
         // School operations
         public SchoolDto createSchool(SchoolDto schoolDto, User user) {
@@ -176,6 +178,22 @@ public class EducationService {
 
         // Get complete education summary
         public EducationSummaryDto getEducationSummary(User user) {
+                List<SchoolDto> schools = getUserSchools(user);
+                List<UniversityDto> universities = getUserUniversities(user);
+                List<WorkDto> works = getUserWorks(user);
+
+                return EducationSummaryDto.builder()
+                                .schools(schools)
+                                .universities(universities)
+                                .works(works)
+                                .build();
+        }
+
+        // Get complete education summary by user ID for public viewing
+        public EducationSummaryDto getEducationSummaryByUserId(Long userId) {
+                User user = userRepository.findById(userId)
+                                .orElseThrow(() -> new RuntimeException("User not found with id: " + userId));
+
                 List<SchoolDto> schools = getUserSchools(user);
                 List<UniversityDto> universities = getUserUniversities(user);
                 List<WorkDto> works = getUserWorks(user);

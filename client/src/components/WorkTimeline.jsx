@@ -18,7 +18,16 @@ const WorkTimeline = ({ userId, onEdit, onDelete, compact = false }) => {
     const fetchWorks = async () => {
         try {
             const token = localStorage.getItem('token');
-            const response = await fetch('http://localhost:8080/api/work', {
+
+            // Use the new public endpoint if userId is provided
+            let url;
+            if (userId) {
+                url = `http://localhost:8080/api/work/${userId}`;
+            } else {
+                url = 'http://localhost:8080/api/work';
+            }
+
+            const response = await fetch(url, {
                 headers: {
                     'Authorization': `Bearer ${token}`
                 }

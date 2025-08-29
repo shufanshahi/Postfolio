@@ -317,7 +317,7 @@ export default function CvViewer({ profileId }) {
                                     </CardTitle>
                                 </CardHeader>
                                 <CardContent className="pt-2">
-                                    <EducationTimeline />
+                                    <EducationTimeline userId={profileId} />
                                 </CardContent>
                             </Card>
 

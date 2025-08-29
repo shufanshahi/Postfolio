@@ -17,8 +17,17 @@ const EducationTimeline = ({ userId, onEdit, onDelete }) => {
 
     const fetchEducationData = async () => {
         try {
-            const token = localStorage.getItem('token'); // or sessionStorage.getItem('token')
-            const response = await fetch(`http://localhost:8080/api/education/summary`, {
+            const token = localStorage.getItem('token');
+
+            // Use the new public endpoint if userId is provided
+            let url;
+            if (userId) {
+                url = `http://localhost:8080/api/education/summary/${userId}`;
+            } else {
+                url = `http://localhost:8080/api/education/summary`;
+            }
+
+            const response = await fetch(url, {
                 headers: {
                     'Authorization': `Bearer ${token}`,
                     'Content-Type': 'application/json'
@@ -33,6 +42,7 @@ const EducationTimeline = ({ userId, onEdit, onDelete }) => {
             setEducationData(data);
         } catch (error) {
             console.error('Error fetching education data:', error);
+            setEducationData(null);
         } finally {
             setLoading(false);
         }

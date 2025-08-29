@@ -6,6 +6,7 @@ import com.example.postfolio.profile.entity.Work;
 import com.example.postfolio.profile.repository.ProfileRepository;
 import com.example.postfolio.profile.repository.WorkRepository;
 import com.example.postfolio.user.entity.User;
+import com.example.postfolio.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -18,6 +19,7 @@ public class WorkService {
 
         private final WorkRepository workRepository;
         private final ProfileRepository profileRepository;
+        private final UserRepository userRepository;
 
         // Work operations
         public WorkDto createWork(WorkDto workDto, User user) {
@@ -38,6 +40,18 @@ public class WorkService {
         }
 
         public List<WorkDto> getUserWorks(User user) {
+                Profile profile = profileRepository.findByUser(user)
+                                .orElseThrow(() -> new RuntimeException("Profile not found for user"));
+                List<Work> works = workRepository.findByProfileOrderByStartDateDesc(profile);
+                return works.stream()
+                                .map(this::convertToDto)
+                                .collect(Collectors.toList());
+        }
+
+        // Get user works by user ID for public viewing
+        public List<WorkDto> getUserWorksByUserId(Long userId) {
+                User user = userRepository.findById(userId)
+                                .orElseThrow(() -> new RuntimeException("User not found with id: " + userId));
                 Profile profile = profileRepository.findByUser(user)
                                 .orElseThrow(() -> new RuntimeException("Profile not found for user"));
                 List<Work> works = workRepository.findByProfileOrderByStartDateDesc(profile);
