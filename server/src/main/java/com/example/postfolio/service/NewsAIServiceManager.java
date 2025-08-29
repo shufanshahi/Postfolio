@@ -24,7 +24,11 @@ public class NewsAIServiceManager {
             int maxLength, String tone,
             boolean includeEmojis, boolean includeCallToAction) {
         try {
-            log.info("Calling AI service for news summarization - target audience: {}", targetAudience);
+            log.info("🤖 AI SERVICE CALL: Requesting news summarization");
+            log.info("📊 Request parameters - audience: '{}', maxLength: {}, tone: '{}', emojis: {}, CTA: {}",
+                    targetAudience, maxLength, tone, includeEmojis, includeCallToAction);
+            log.info("📰 Input content length: {} characters", newsContent.length());
+            log.info("📰 Input preview: {}", newsContent.substring(0, Math.min(100, newsContent.length())) + "...");
 
             Map<String, Object> request = Map.of(
                     "newsContent", newsContent,
@@ -33,6 +37,8 @@ public class NewsAIServiceManager {
                     "tone", tone,
                     "includeEmojis", includeEmojis,
                     "includeCallToAction", includeCallToAction);
+
+            log.info("🚀 Sending request to AI service: {}/api/ai/summarize-news", aiServiceBaseUrl);
 
             Mono<Map<String, Object>> response = webClient.post()
                     .uri(aiServiceBaseUrl + "/api/ai/summarize-news")
@@ -43,11 +49,22 @@ public class NewsAIServiceManager {
 
             Map<String, Object> result = response.block();
 
-            if (result != null && result.containsKey("summary")) {
-                log.info("Successfully received news summary from AI service");
-                return result;
+            if (result != null && result.containsKey("summarizedContent")) {
+                String summary = (String) result.get("summarizedContent");
+                log.info("✅ AI SERVICE SUCCESS: Received summary from AI service");
+                log.info("🤖 AI GENERATED SUMMARY ({} chars): {}", summary.length(), summary);
+                log.info("📋 Full AI service response: {}", result);
+
+                // Return in the expected format with 'summary' key for backward compatibility
+                return Map.of(
+                        "summary", summary,
+                        "originalContent", result.getOrDefault("originalContent", ""),
+                        "originalLength", result.getOrDefault("originalLength", 0),
+                        "summarizedLength", result.getOrDefault("summarizedLength", 0),
+                        "success", result.getOrDefault("success", true));
             } else {
-                log.warn("Invalid response from AI service for news summarization");
+                log.warn("❌ AI SERVICE FAILED: Invalid response from AI service for news summarization");
+                log.warn("📋 Invalid AI response received: {}", result);
                 return Map.of(
                         "summary", "News summary unavailable",
                         "success", false,
@@ -55,7 +72,8 @@ public class NewsAIServiceManager {
             }
 
         } catch (Exception e) {
-            log.error("Error calling AI service for news summarization: {}", e.getMessage(), e);
+            log.error("❌ AI SERVICE ERROR: Failed to call AI service for news summarization: {}", e.getMessage(), e);
+            log.error("🔧 AI service URL: {}/api/ai/summarize-news", aiServiceBaseUrl);
             return Map.of(
                     "summary", "Error generating news summary",
                     "success", false,
