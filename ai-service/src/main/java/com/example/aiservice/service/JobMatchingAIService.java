@@ -8,10 +8,7 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonSyntaxException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
-
-import java.util.concurrent.CompletableFuture;
 
 @Service
 @RequiredArgsConstructor
@@ -21,43 +18,19 @@ public class JobMatchingAIService {
     private final GeminiClient geminiClient;
     private final Gson gson = new Gson();
 
-    @Async
-    public CompletableFuture<JobMatchingResponse> matchJobAsync(JobMatchingRequest request) {
+    public JobMatchingResponse matchJob(JobMatchingRequest request) {
         try {
             log.info("Starting job matching for job ID: {} and profile ID: {}",
                     request.getJobId(), request.getProfileId());
 
             String prompt = buildJobMatchingPrompt(request);
             String geminiResponse = geminiClient.generateContent(prompt);
-
             JobMatchingResponse response = parseJobMatchingResponse(geminiResponse, request);
 
-            log.info("Completed job matching for job ID: {} and profile ID: {} with score: {}",
-                    request.getJobId(), request.getProfileId(), response.getScore());
+            log.info("AI service returning score: {} for job: {} and profile: {}",
+                    response.getScore(), request.getJobId(), request.getProfileId());
 
-            return CompletableFuture.completedFuture(response);
-
-        } catch (Exception e) {
-            log.error("Error in job matching for job ID: {} and profile ID: {}",
-                    request.getJobId(), request.getProfileId(), e);
-
-            return CompletableFuture.completedFuture(
-                    JobMatchingResponse.builder()
-                            .jobId(request.getJobId())
-                            .profileId(request.getProfileId())
-                            .score(0.0)
-                            .success(false)
-                            .errorMessage("Job matching failed: " + e.getMessage())
-                            .explanation("Unable to calculate match score due to processing error")
-                            .build());
-        }
-    }
-
-    public JobMatchingResponse matchJob(JobMatchingRequest request) {
-        try {
-            String prompt = buildJobMatchingPrompt(request);
-            String geminiResponse = geminiClient.generateContent(prompt);
-            return parseJobMatchingResponse(geminiResponse, request);
+            return response;
         } catch (Exception e) {
             log.error("Error in job matching for job ID: {} and profile ID: {}",
                     request.getJobId(), request.getProfileId(), e);
@@ -93,16 +66,18 @@ public class JobMatchingAIService {
         promptBuilder.append("Work Experience: ").append(request.getProfileWorkExperience()).append("\n");
         promptBuilder.append("Location: ").append(request.getProfileLocation()).append("\n\n");
 
-        promptBuilder.append("Please provide analysis in this EXACT JSON format:\n");
+        promptBuilder
+                .append("Please analyze the job-candidate match and provide analysis in this EXACT JSON format:\n");
         promptBuilder.append("{\n");
-        promptBuilder.append("  \"score\": 0.85,\n");
+        promptBuilder.append("  \"score\": 75,\n");
         promptBuilder.append("  \"explanation\": \"Overall match analysis summary\",\n");
         promptBuilder.append("  \"strengths\": \"Key strengths and matching qualifications\",\n");
         promptBuilder.append("  \"gaps\": \"Areas where candidate falls short\",\n");
         promptBuilder.append("  \"recommendations\": \"Suggestions for improving match\"\n");
         promptBuilder.append("}\n\n");
+        promptBuilder.append("IMPORTANT: Replace the score with your calculated match percentage (0-100).\n");
         promptBuilder.append("Guidelines:\n");
-        promptBuilder.append("- Score should be between 0.0 and 1.0 (e.g., 0.75 for 75% match)\n");
+        promptBuilder.append("- Score should be between 0 and 100 (integer value)\n");
         promptBuilder.append("- Consider skills match, experience level, location compatibility\n");
         promptBuilder.append("- Provide specific, actionable insights\n");
         promptBuilder.append("- Only return the JSON, no additional text");
@@ -139,8 +114,8 @@ public class JobMatchingAIService {
                     ? jsonResponse.get("recommendations").getAsString()
                     : "No specific recommendations available";
 
-            // Ensure score is within valid range
-            score = Math.max(0.0, Math.min(1.0, score));
+            // Ensure score is within valid range (0-100)
+            score = Math.max(0.0, Math.min(100.0, score));
 
             return JobMatchingResponse.builder()
                     .jobId(request.getJobId())
@@ -201,6 +176,6 @@ public class JobMatchingAIService {
             }
         }
 
-        return totalCriteria > 0 ? Math.min(1.0, (double) matchCount / totalCriteria) : 0.5;
+        return totalCriteria > 0 ? Math.min(100.0, (double) matchCount / totalCriteria * 100) : 50.0;
     }
 }

@@ -50,25 +50,6 @@ public class AIServiceManager {
     }
 
     /**
-     * Match job asynchronously via RabbitMQ
-     */
-    @Async
-    public CompletableFuture<Void> matchJobAsync(JobMatchingRequest request) {
-        try {
-            log.info("Sending job matching request via RabbitMQ for job ID: {} and profile ID: {}",
-                    request.getJobId(), request.getProfileId());
-            rabbitTemplate.convertAndSend(RabbitMQConfig.AI_EXCHANGE, "ai.job.match", request);
-            log.debug("Successfully sent job matching request for job ID: {} and profile ID: {}",
-                    request.getJobId(), request.getProfileId());
-            return CompletableFuture.completedFuture(null);
-        } catch (Exception e) {
-            log.error("Failed to send job matching request for job ID: {} and profile ID: {}",
-                    request.getJobId(), request.getProfileId(), e);
-            return CompletableFuture.failedFuture(e);
-        }
-    }
-
-    /**
      * Generate MCQ asynchronously via RabbitMQ
      */
     @Async

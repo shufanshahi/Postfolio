@@ -41,14 +41,6 @@ public class AIProcessingController {
         return ResponseEntity.ok(response);
     }
 
-    @PostMapping("/match-job-async")
-    public ResponseEntity<String> matchJobAsync(@RequestBody JobMatchingRequest request) {
-        log.info("Starting async job matching for job {} and profile {}",
-                request.getJobId(), request.getProfileId());
-        jobMatchingAIService.matchJobAsync(request);
-        return ResponseEntity.ok("Job matching started");
-    }
-
     @PostMapping("/generate-mcq")
     public ResponseEntity<MCQGenerationResponse> generateMCQ(@RequestBody MCQGenerationRequest request) {
         log.info("Generating MCQ for user {} on topic: {}", request.getUserId(), request.getTopic());

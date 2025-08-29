@@ -1,14 +1,15 @@
 package com.example.postfolio.jobMatchingEngine.service;
 
+import com.example.postfolio.aiservice.dto.JobMatchingRequest;
+import com.example.postfolio.aiservice.dto.JobMatchingResponse;
+import com.example.postfolio.aiservice.service.JobMatchingAIServiceManager;
 import com.example.postfolio.cvInApp.entity.CvEntry;
 import com.example.postfolio.cvInApp.model.CvType;
 import com.example.postfolio.cvInApp.repository.CvEntryRepository;
 import com.example.postfolio.job.entity.Job;
-import com.example.postfolio.jobMatchingEngine.client.GeminiClient;
 import com.example.postfolio.jobMatchingEngine.dto.ApplicantProfileDTO;
 import com.example.postfolio.jobMatchingEngine.dto.MatchingResult;
 import com.example.postfolio.profile.entity.Profile;
-import com.google.gson.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -27,7 +28,7 @@ import java.util.stream.Collectors;
 @Slf4j
 public class JobMatchingService {
 
-    private final GeminiClient geminiClient;
+    private final JobMatchingAIServiceManager jobMatchingAIServiceManager;
     private final CvEntryRepository cvEntryRepository;
     private final JobMatchingCacheService cacheService;
 
@@ -45,17 +46,37 @@ public class JobMatchingService {
                 return cached;
             }
 
-            // Calculate new score
+            // Calculate new score using AI microservice
             log.info("Calculating new score for job {} and profile {}", job.getJobId(), applicant.getId());
             ApplicantProfileDTO profileDTO = buildApplicantProfile(applicant);
-            String prompt = buildScoringPrompt(job, profileDTO);
-            String response = geminiClient.generateContent(prompt);
-            MatchingResult result = parseGeminiResponse(response);
+
+            // Create request for AI service
+            JobMatchingRequest aiRequest = JobMatchingRequest.builder()
+                    .jobId(job.getJobId())
+                    .profileId(applicant.getId())
+                    .jobTitle(job.getTitle())
+                    .jobDescription(job.getDescription())
+                    .jobRequirements(job.getDescription()) // Extract from description
+                    .profileBio(applicant.getBio())
+                    .profilePosition(applicant.getPositionOrInstitue())
+                    .profileSkills(String.join(", ", profileDTO.getSkills()))
+                    .profileEducation(String.join("; ", profileDTO.getEducation()))
+                    .profileWorkExperience(String.join("; ", profileDTO.getExperiences()))
+                    .build();
+
+            // Call AI microservice
+            JobMatchingResponse aiResponse = jobMatchingAIServiceManager.matchJobSync(aiRequest);
+
+            // Convert AI response to MatchingResult
+            MatchingResult result = MatchingResult.builder()
+                    .totalScore((int) aiResponse.getScore())
+                    .explanation(aiResponse.getExplanation())
+                    .build();
 
             // Cache the result in Redis
             cacheService.cacheResult(cacheKey, result);
-
             return result;
+
         } catch (Exception e) {
             log.error("Job matching failed for job: {} and applicant: {}", job.getJobId(), applicant.getId(), e);
             return createFallbackResult(e.getMessage());
@@ -99,19 +120,34 @@ public class JobMatchingService {
 
             // Add education data
             if (profile.getSchools() != null) {
-                profile.getSchools()
-                        .forEach(school -> profileData.append("SCHOOL:").append(school.getSchoolName()).append("|"));
-            }
-            if (profile.getUniversities() != null) {
-                profile.getUniversities()
-                        .forEach(uni -> profileData.append("UNI:").append(uni.getUniversityName()).append("|"));
+                for (var school : profile.getSchools()) {
+                    profileData.append("SCHOOL:").append(school.getSchoolName())
+                            .append(":").append(school.getResult()).append("|");
+                }
             }
 
-            byte[] hash = digest.digest(profileData.toString().getBytes(StandardCharsets.UTF_8));
-            return bytesToHex(hash);
+            if (profile.getUniversities() != null) {
+                for (var uni : profile.getUniversities()) {
+                    profileData.append("UNI:").append(uni.getUniversityName())
+                            .append(":").append(uni.getDegreeName())
+                            .append(":").append(uni.getSemesterResult()).append("|");
+                }
+            }
+
+            byte[] hashBytes = digest.digest(profileData.toString().getBytes(StandardCharsets.UTF_8));
+            StringBuilder hexString = new StringBuilder();
+            for (byte b : hashBytes) {
+                String hex = Integer.toHexString(0xff & b);
+                if (hex.length() == 1) {
+                    hexString.append('0');
+                }
+                hexString.append(hex);
+            }
+            return hexString.toString();
+
         } catch (NoSuchAlgorithmException e) {
             log.error("Failed to generate profile hash", e);
-            return String.valueOf(System.currentTimeMillis()); // Fallback
+            return String.valueOf(profile.getId().hashCode());
         }
     }
 
@@ -121,32 +157,26 @@ public class JobMatchingService {
 
             StringBuilder jobData = new StringBuilder();
             jobData.append(job.getTitle()).append("|");
-            jobData.append(job.getPosition()).append("|");
             jobData.append(job.getDescription()).append("|");
-            jobData.append(job.getRequiredSkills()).append("|");
-            jobData.append(job.getRequiredExperience()).append("|");
-            jobData.append(job.getRequiredEducation()).append("|");
-            jobData.append(job.getRequiredProject()).append("|");
-            jobData.append(job.getStatus()).append("|");
+            jobData.append(job.getPosition()).append("|");
+            jobData.append(job.getMinSalary()).append("|");
+            jobData.append(job.getMaxSalary()).append("|");
 
-            byte[] hash = digest.digest(jobData.toString().getBytes(StandardCharsets.UTF_8));
-            return bytesToHex(hash);
+            byte[] hashBytes = digest.digest(jobData.toString().getBytes(StandardCharsets.UTF_8));
+            StringBuilder hexString = new StringBuilder();
+            for (byte b : hashBytes) {
+                String hex = Integer.toHexString(0xff & b);
+                if (hex.length() == 1) {
+                    hexString.append('0');
+                }
+                hexString.append(hex);
+            }
+            return hexString.toString();
+
         } catch (NoSuchAlgorithmException e) {
             log.error("Failed to generate job hash", e);
-            return String.valueOf(System.currentTimeMillis()); // Fallback
+            return String.valueOf(job.getJobId().hashCode());
         }
-    }
-
-    private String bytesToHex(byte[] hash) {
-        StringBuilder hexString = new StringBuilder();
-        for (byte b : hash) {
-            String hex = Integer.toHexString(0xff & b);
-            if (hex.length() == 1) {
-                hexString.append('0');
-            }
-            hexString.append(hex);
-        }
-        return hexString.toString();
     }
 
     public ApplicantProfileDTO buildApplicantProfile(Profile applicant) {
@@ -197,163 +227,16 @@ public class JobMatchingService {
                 .build();
     }
 
-    public String buildScoringPrompt(Job job, ApplicantProfileDTO applicant) {
-        return String.format("""
-                You are an expert HR recruiter. Score this candidate for the job (0-100).
-
-                JOB REQUIREMENTS:
-                Position: %s
-                Description: %s
-                Required Skills: %s
-                Required Experience: %s
-                Required Education: %s
-                Required Projects: %s
-
-                CANDIDATE PROFILE:
-                Bio: %s
-                Current Position: %s
-
-                Education:
-                %s
-
-                Work Experience:
-                %s
-
-                Technical Skills:
-                %s
-
-                Projects:
-                %s
-
-                Achievements:
-                %s
-
-                SCORING CRITERIA:
-                - Skills Match (0-35): How well candidate's skills align with job requirements
-                - Experience Match (0-30): Relevance and depth of work experience
-                - Education Match (0-20): Educational background alignment
-                - Additional Factors (0-15): Projects, achievements, career progression
-
-                Return STRICT JSON format:
-                {
-                    "totalScore": (0-100),
-                    "skillsScore": (0-35),
-                    "experienceScore": (0-30),
-                    "educationScore": (0-20),
-                    "additionalScore": (0-15),
-                    "explanation": "brief reasoning for the total score",
-                    "strengths": ["list of candidate's strengths for this role"],
-                    "gaps": ["list of areas where candidate doesn't meet requirements"]
-                }
-
-                Be objective and consider:
-                - Exact skill matches vs transferable skills
-                - Years of experience vs quality of experience
-                - Educational relevance vs practical experience
-                - Project complexity and relevance
-                """,
-                job.getPosition(),
-                job.getDescription(),
-                job.getRequiredSkills(),
-                job.getRequiredExperience(),
-                job.getRequiredEducation(),
-                job.getRequiredProject(),
-                applicant.getBio(),
-                applicant.getPositionOrInstitute(),
-                String.join("\n- ", applicant.getEducation()),
-                String.join("\n- ", applicant.getExperiences()),
-                String.join(", ", applicant.getSkills()),
-                String.join("\n- ", applicant.getProjects()),
-                String.join("\n- ", applicant.getAchievements()));
-    }
-
-    public MatchingResult parseGeminiResponse(String response) {
-        try {
-            String jsonContent = extractJsonFromText(response);
-            JsonObject result = JsonParser.parseString(jsonContent).getAsJsonObject();
-
-            // Validate response structure
-            if (!result.has("totalScore") || !result.has("skillsScore") ||
-                    !result.has("experienceScore") || !result.has("educationScore") ||
-                    !result.has("additionalScore")) {
-                throw new RuntimeException("Invalid Gemini response format - missing score fields");
-            }
-
-            // Parse scores
-            int totalScore = result.get("totalScore").getAsInt();
-            int skillsScore = result.get("skillsScore").getAsInt();
-            int experienceScore = result.get("experienceScore").getAsInt();
-            int educationScore = result.get("educationScore").getAsInt();
-            int additionalScore = result.get("additionalScore").getAsInt();
-
-            // Parse explanation
-            String explanation = result.has("explanation") ? result.get("explanation").getAsString()
-                    : "No explanation provided";
-
-            // Parse strengths
-            List<String> strengths = new ArrayList<>();
-            if (result.has("strengths") && result.get("strengths").isJsonArray()) {
-                JsonArray strengthsArray = result.getAsJsonArray("strengths");
-                for (JsonElement element : strengthsArray) {
-                    strengths.add(element.getAsString());
-                }
-            }
-
-            // Parse gaps
-            List<String> gaps = new ArrayList<>();
-            if (result.has("gaps") && result.get("gaps").isJsonArray()) {
-                JsonArray gapsArray = result.getAsJsonArray("gaps");
-                for (JsonElement element : gapsArray) {
-                    gaps.add(element.getAsString());
-                }
-            }
-
-            return MatchingResult.builder()
-                    .totalScore(totalScore)
-                    .skillsScore(skillsScore)
-                    .experienceScore(experienceScore)
-                    .educationScore(educationScore)
-                    .additionalScore(additionalScore)
-                    .explanation(explanation)
-                    .strengths(strengths)
-                    .gaps(gaps)
-                    .build();
-
-        } catch (JsonSyntaxException e) {
-            log.error("Invalid JSON response from Gemini: {}", response);
-            throw new RuntimeException("Malformed JSON response from Gemini");
-        } catch (Exception e) {
-            log.error("Failed to parse Gemini response: {}", response, e);
-            throw new RuntimeException("Failed to parse Gemini response: " + e.getMessage());
-        }
-    }
-
-    private String extractJsonFromText(String text) {
-        // If the response is wrapped in markdown code blocks
-        if (text.trim().startsWith("```json")) {
-            int start = text.indexOf("{");
-            int end = text.lastIndexOf("}");
-            if (start >= 0 && end > start) {
-                return text.substring(start, end + 1);
-            }
-        }
-        // If the response is just the JSON
-        else if (text.trim().startsWith("{")) {
-            return text;
-        }
-        throw new RuntimeException("Could not extract JSON from Gemini response: " + text);
-    }
-
-    MatchingResult createFallbackResult(String error) {
+    private MatchingResult createFallbackResult(String errorMessage) {
         return MatchingResult.builder()
                 .totalScore(0)
                 .skillsScore(0)
                 .experienceScore(0)
                 .educationScore(0)
                 .additionalScore(0)
-                .explanation("Error occurred during scoring: " + error)
-                .strengths(List.of())
-                .gaps(List.of("Manual review required"))
+                .explanation("Job matching service unavailable: " + errorMessage)
+                .strengths(new ArrayList<>())
+                .gaps(List.of("Service temporarily unavailable"))
                 .build();
     }
 }
