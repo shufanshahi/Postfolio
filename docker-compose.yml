@@ -1,0 +1,119 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:13
+    container_name: postfolio-postgres
+    environment:
+      POSTGRES_DB: postfolio
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - postfolio-network
+
+  # Redis Cache
+  redis:
+    image: redis:7-alpine
+    container_name: postfolio-redis
+    ports:
+      - "6379:6379"
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
+    networks:
+      - postfolio-network
+
+  # RabbitMQ Message Queue
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: postfolio-rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: admin
+      RABBITMQ_DEFAULT_PASS: admin123
+    ports:
+      - "5672:5672"   # AMQP port
+      - "15672:15672" # Management UI
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    networks:
+      - postfolio-network
+
+  # AI Microservice
+  ai-service:
+    build: ./ai-service
+    container_name: postfolio-ai-service
+    ports:
+      - "8081:8081"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/postfolio
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: password
+      SPRING_REDIS_HOST: redis
+      SPRING_REDIS_PORT: 6379
+      SPRING_RABBITMQ_HOST: rabbitmq
+      SPRING_RABBITMQ_PORT: 5672
+      SPRING_RABBITMQ_USERNAME: admin
+      SPRING_RABBITMQ_PASSWORD: admin123
+      GEMINI_API_KEY: AIzaSyDyu3V1zVQxZYZb-MMnP0UJMIT2WXRI-KY
+    depends_on:
+      - postgres
+      - redis
+      - rabbitmq
+    networks:
+      - postfolio-network
+    restart: unless-stopped
+
+  # Main Spring Boot Application
+  postfolio-api:
+    build: ./server
+    container_name: postfolio-main-api
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/postfolio
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: password
+      SPRING_REDIS_HOST: redis
+      SPRING_REDIS_PORT: 6379
+      SPRING_RABBITMQ_HOST: rabbitmq
+      SPRING_RABBITMQ_PORT: 5672
+      SPRING_RABBITMQ_USERNAME: admin
+      SPRING_RABBITMQ_PASSWORD: admin123
+      AI_SERVICE_URL: http://ai-service:8081
+      GEMINI_API_KEY: AIzaSyDyu3V1zVQxZYZb-MMnP0UJMIT2WXRI-KY
+    depends_on:
+      - postgres
+      - redis
+      - rabbitmq
+      - ai-service
+    networks:
+      - postfolio-network
+    restart: unless-stopped
+
+  # Next.js Frontend (Optional)
+  postfolio-frontend:
+    build: ./client
+    container_name: postfolio-frontend
+    ports:
+      - "3000:3000"
+    environment:
+      NEXT_PUBLIC_API_BASE_URL: http://localhost:8080
+    depends_on:
+      - postfolio-api
+    networks:
+      - postfolio-network
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+  redis_data:
+  rabbitmq_data:
+
+networks:
+  postfolio-network:
+    driver: bridge

@@ -1,5 +1,7 @@
 package com.example.postfolio.post.service;
 
+import com.example.postfolio.aiservice.dto.PostProcessingRequest;
+import com.example.postfolio.aiservice.service.AIServiceManager;
 import com.example.postfolio.cvInApp.service.CvUpdateService;
 import com.example.postfolio.notification.service.NotificationService;
 import com.example.postfolio.post.entity.Post;
@@ -39,7 +41,7 @@ public class PostService {
     private final UserRepository userRepository;
     private final ReactionRepository reactionRepository;
     private final NotificationService notificationService;
-    private final AsyncPostProcessingService asyncPostProcessingService;
+    private final AIServiceManager aiServiceManager;
 
     @Transactional
     public Post createPost(Long profileId, String content, List<String> images) {
@@ -62,7 +64,14 @@ public class PostService {
                 List.of(), "Processing...", false, images);
 
         // Trigger async AI processing in background (2-5s)
-        asyncPostProcessingService.processPostAsync(savedPost.getId(), content, profile);
+        PostProcessingRequest request = PostProcessingRequest.builder()
+                .postId(savedPost.getId())
+                .content(content)
+                .profileId(profile.getId())
+                .profileBio(profile.getBio())
+                .profilePosition(profile.getPositionOrInstitue())
+                .build();
+        aiServiceManager.processPostAsync(request);
 
         return savedPost;
     }
@@ -80,7 +89,14 @@ public class PostService {
         Post savedPost = postRepository.save(post);
 
         // Trigger async reprocessing
-        asyncPostProcessingService.reprocessPostAsync(postId, profile);
+        PostProcessingRequest request = PostProcessingRequest.builder()
+                .postId(postId)
+                .content(post.getContent())
+                .profileId(profile.getId())
+                .profileBio(profile.getBio())
+                .profilePosition(profile.getPositionOrInstitue())
+                .build();
+        aiServiceManager.processPostAsync(request);
 
         return savedPost;
     }
@@ -114,7 +130,14 @@ public class PostService {
         Post savedPost = postRepository.save(post);
 
         // Trigger async reprocessing with new content
-        asyncPostProcessingService.reprocessPostAsync(postId, profile);
+        PostProcessingRequest request = PostProcessingRequest.builder()
+                .postId(postId)
+                .content(newContent)
+                .profileId(profile.getId())
+                .profileBio(profile.getBio())
+                .profilePosition(profile.getPositionOrInstitue())
+                .build();
+        aiServiceManager.processPostAsync(request);
 
         return savedPost;
     }

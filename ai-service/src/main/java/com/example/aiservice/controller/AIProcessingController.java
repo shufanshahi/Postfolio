@@ -1,0 +1,88 @@
+package com.example.aiservice.controller;
+
+import com.example.aiservice.dto.*;
+import com.example.aiservice.service.*;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.concurrent.CompletableFuture;
+
+@RestController
+@RequestMapping("/api/ai")
+@RequiredArgsConstructor
+@Slf4j
+public class AIProcessingController {
+
+    private final PostAIService postAIService;
+    private final JobMatchingAIService jobMatchingAIService;
+    private final MCQGenerationAIService mcqGenerationAIService;
+    private final InterviewGenerationAIService interviewGenerationAIService;
+
+    @PostMapping("/process-post")
+    public ResponseEntity<PostProcessingResponse> processPost(@RequestBody PostProcessingRequest request) {
+        log.info("Processing post with AI: {}", request.getPostId());
+        PostProcessingResponse response = postAIService.processPost(request);
+        return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/process-post-async")
+    public ResponseEntity<String> processPostAsync(@RequestBody PostProcessingRequest request) {
+        log.info("Starting async processing for post: {}", request.getPostId());
+        postAIService.processPostAsync(request);
+        return ResponseEntity.ok("Post processing started");
+    }
+
+    @PostMapping("/match-job")
+    public ResponseEntity<JobMatchingResponse> matchJob(@RequestBody JobMatchingRequest request) {
+        log.info("Matching job {} for profile {}", request.getJobId(), request.getProfileId());
+        JobMatchingResponse response = jobMatchingAIService.matchJob(request);
+        return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/match-job-async")
+    public ResponseEntity<String> matchJobAsync(@RequestBody JobMatchingRequest request) {
+        log.info("Starting async job matching for job {} and profile {}",
+                request.getJobId(), request.getProfileId());
+        jobMatchingAIService.matchJobAsync(request);
+        return ResponseEntity.ok("Job matching started");
+    }
+
+    @PostMapping("/generate-mcq")
+    public ResponseEntity<MCQGenerationResponse> generateMCQ(@RequestBody MCQGenerationRequest request) {
+        log.info("Generating MCQ for user {} on topic: {}", request.getUserId(), request.getTopic());
+        MCQGenerationResponse response = mcqGenerationAIService.generateMCQ(request);
+        return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/generate-mcq-async")
+    public ResponseEntity<String> generateMCQAsync(@RequestBody MCQGenerationRequest request) {
+        log.info("Starting async MCQ generation for user {} on topic: {}",
+                request.getUserId(), request.getTopic());
+        mcqGenerationAIService.generateMCQAsync(request);
+        return ResponseEntity.ok("MCQ generation started");
+    }
+
+    @PostMapping("/generate-interview")
+    public ResponseEntity<InterviewGenerationResponse> generateInterview(
+            @RequestBody InterviewGenerationRequest request) {
+        log.info("Generating interview questions for user {} for role: {}",
+                request.getUserId(), request.getJobRole());
+        InterviewGenerationResponse response = interviewGenerationAIService.generateInterview(request);
+        return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/generate-interview-async")
+    public ResponseEntity<String> generateInterviewAsync(@RequestBody InterviewGenerationRequest request) {
+        log.info("Starting async interview generation for user {} for role: {}",
+                request.getUserId(), request.getJobRole());
+        interviewGenerationAIService.generateInterviewAsync(request);
+        return ResponseEntity.ok("Interview generation started");
+    }
+
+    @GetMapping("/health")
+    public ResponseEntity<String> health() {
+        return ResponseEntity.ok("AI Service is running");
+    }
+}
