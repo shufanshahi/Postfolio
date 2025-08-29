@@ -21,6 +21,7 @@ public class JobResponse {
     private Long employerId;
     private Long minSalary;
     private Long maxSalary;
+    private String location;
     private List<Long> applicantIds;
     private List<Long> selectedApplicantIds;
     private  List<Long> rejectedApplicantIds;

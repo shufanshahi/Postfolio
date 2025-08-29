@@ -47,6 +47,7 @@ public class JobServiceImpl implements JobService {
         .requiredSkills(request.getRequiredSkills())
         .requiredEducation(request.getRequiredEducation())
         .requiredExperience(request.getRequiredExperience())
+        .location(request.getLocation())
         .status(JobStatus.OPEN)
         .employer(employer)
         .maxSalary(request.getMaxSalary())
@@ -193,6 +194,7 @@ public class JobServiceImpl implements JobService {
         res.setRequiredSkills(job.getRequiredSkills());
         res.setRequiredEducation(job.getRequiredEducation());
         res.setRequiredExperience(job.getRequiredExperience());
+        res.setLocation(job.getLocation());
         res.setStatus(job.getStatus());
         res.setEmployerId(job.getEmployer() != null ? job.getEmployer().getId() : null);
         res.setMinSalary(job.getMinSalary());
@@ -215,6 +217,7 @@ public class JobServiceImpl implements JobService {
         res.setRequiredSkills(job.getRequiredSkills());
         res.setRequiredEducation(job.getRequiredEducation());
         res.setRequiredExperience(job.getRequiredExperience());
+        res.setLocation(job.getLocation());
         res.setStatus(job.getStatus());
         res.setEmployerId(job.getEmployer() != null ? job.getEmployer().getId() : null);
         res.setMinSalary(job.getMinSalary());

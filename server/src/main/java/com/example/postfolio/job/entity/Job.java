@@ -66,4 +66,5 @@ public class Job {
     private String requiredExperience;
     private String requiredEducation;
     private String requiredSkills;
+    private String location;
 }
