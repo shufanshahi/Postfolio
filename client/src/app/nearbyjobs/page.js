@@ -43,6 +43,8 @@ export default function NearbyJobs() {
   const [userLocation, setUserLocation] = useState(null);
   const [mapCenter, setMapCenter] = useState([23.8103, 90.4125]); // Default: Dhaka, Bangladesh
   const [selectedJob, setSelectedJob] = useState(null);
+  const [userProfile, setUserProfile] = useState(null);
+  const [applying, setApplying] = useState(false);
 
   // Parse location string to get coordinates
   const parseLocation = (locationString) => {
@@ -72,35 +74,102 @@ export default function NearbyJobs() {
     return null;
   };
 
-  // Get user's current location
-  const getCurrentLocation = () => {
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          const { latitude, longitude } = position.coords;
-          const location = { lat: latitude, lng: longitude };
-          setUserLocation(location);
-          setMapCenter([latitude, longitude]);
-        },
-        (error) => {
-          console.error("Error getting location:", error);
-          // Use default location (Dhaka) if geolocation fails
-        }
-      );
-    }
-  };
-
-  // Fetch jobs from API
-  const fetchJobs = async () => {
-    try {
-      setLoading(true);
-      const token = localStorage.getItem("token");
-      
-      if (!token) {
-        setError("Please login to view nearby jobs");
-        router.push("/login");
-        return;
+  useEffect(() => {
+    // Get user's current location
+    const getCurrentLocation = () => {
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+          (position) => {
+            const { latitude, longitude } = position.coords;
+            const location = { lat: latitude, lng: longitude };
+            setUserLocation(location);
+            setMapCenter([latitude, longitude]);
+          },
+          (error) => {
+            console.error("Error getting location:", error);
+            // Use default location (Dhaka) if geolocation fails
+          },
+          {
+            enableHighAccuracy: true,
+            timeout: 10000,
+            maximumAge: 60000
+          }
+        );
       }
+    };
+
+    // Fetch user profile
+    const fetchUserProfile = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        if (!token) return;
+
+        const response = await fetch("http://localhost:8080/api/profile/me", {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+
+        if (response.ok) {
+          const profile = await response.json();
+          setUserProfile(profile);
+        }
+      } catch (err) {
+        console.error("Error fetching user profile:", err);
+      }
+    };
+
+    // Fetch jobs from API
+    const fetchJobs = async () => {
+      try {
+        setLoading(true);
+        const token = localStorage.getItem("token");
+        
+        if (!token) {
+          setError("Please login to view nearby jobs");
+          router.push("/login");
+          return;
+        }
+
+        const response = await fetch("http://localhost:8080/api/jobs", {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to fetch jobs');
+        }
+
+        const jobsData = await response.json();
+        
+        // Filter jobs that have valid location data
+        const jobsWithLocation = jobsData.filter(job => {
+          const coords = parseLocation(job.location);
+          return coords !== null;
+        });
+
+        setJobs(jobsWithLocation);
+      } catch (err) {
+        setError(err.message);
+        console.error("Error fetching jobs:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    getCurrentLocation();
+    fetchUserProfile();
+    fetchJobs();
+  }, [router]);
+
+  // Separate fetchJobs function for refreshing after apply
+  const refreshJobs = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) return;
 
       const response = await fetch("http://localhost:8080/api/jobs", {
         headers: {
@@ -109,35 +178,50 @@ export default function NearbyJobs() {
         }
       });
 
-      if (!response.ok) {
-        throw new Error('Failed to fetch jobs');
+      if (response.ok) {
+        const jobsData = await response.json();
+        const jobsWithLocation = jobsData.filter(job => {
+          const coords = parseLocation(job.location);
+          return coords !== null;
+        });
+        setJobs(jobsWithLocation);
       }
-
-      const jobsData = await response.json();
-      
-      // Filter jobs that have valid location data
-      const jobsWithLocation = jobsData.filter(job => {
-        const coords = parseLocation(job.location);
-        return coords !== null;
-      });
-
-      setJobs(jobsWithLocation);
     } catch (err) {
-      setError(err.message);
-      console.error("Error fetching jobs:", err);
-    } finally {
-      setLoading(false);
+      console.error("Error refreshing jobs:", err);
     }
   };
 
-  useEffect(() => {
-    getCurrentLocation();
-    fetchJobs();
-  }, []);
+  const handleApplyJob = async (jobId) => {
+    if (!userProfile?.id) {
+      alert("Unable to get user profile. Please refresh the page.");
+      return;
+    }
 
-  const handleApplyJob = (jobId) => {
-    // Navigate to job application or details page
-    router.push(`/job-details/${jobId}`);
+    setApplying(true);
+    try {
+      const token = localStorage.getItem("token");
+      const response = await fetch(`http://localhost:8080/api/jobs/${jobId}/apply/${userProfile.id}`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (response.ok) {
+        alert("Application submitted successfully!");
+        // Refresh jobs to update applicant status
+        refreshJobs();
+      } else {
+        const errorText = await response.text();
+        alert(`Failed to apply for job: ${errorText}`);
+      }
+    } catch (err) {
+      console.error("Error applying for job:", err);
+      alert("Failed to apply for job. Please try again.");
+    } finally {
+      setApplying(false);
+    }
   };
 
   if (loading) {
@@ -173,9 +257,10 @@ export default function NearbyJobs() {
               <CardContent className="p-0 h-full">
                 <div className="h-full rounded-lg overflow-hidden">
                   <MapContainer
-                    center={mapCenter}
-                    zoom={12}
+                    center={userLocation ? [userLocation.lat, userLocation.lng] : mapCenter}
+                    zoom={userLocation ? 15 : 12}
                     style={{ height: '100%', width: '100%' }}
+                    key={userLocation ? `${userLocation.lat}-${userLocation.lng}` : 'default'}
                   >
                     <TileLayer
                       attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
@@ -250,7 +335,7 @@ export default function NearbyJobs() {
                   {selectedJob ? 'Job Details' : 'Select a job on the map'}
                 </CardTitle>
               </CardHeader>
-              <CardContent className="overflow-y-auto">
+              <CardContent className="overflow-y-auto max-h-[calc(100vh-300px)]">
                 {selectedJob ? (
                   <div className="space-y-4 text-gray-300">
                     <div>
@@ -315,12 +400,22 @@ export default function NearbyJobs() {
                       </span>
                     </div>
 
+                    <div>
+                      <h4 className="font-semibold text-white mb-1">Applicants</h4>
+                      <p className="text-sm">
+                        {selectedJob.applicantIds?.length || 0} people have applied
+                      </p>
+                    </div>
+
                     <Button 
                       onClick={() => handleApplyJob(selectedJob.jobId)}
                       className="w-full mt-4"
-                      disabled={selectedJob.status !== 'OPEN'}
+                      disabled={selectedJob.status !== 'OPEN' || applying || 
+                        (userProfile && selectedJob.applicantIds?.includes(userProfile.id))}
                     >
-                      {selectedJob.status === 'OPEN' ? 'Apply for Job' : 'Job Closed'}
+                      {applying ? 'Applying...' : 
+                       userProfile && selectedJob.applicantIds?.includes(userProfile.id) ? 'Already Applied' :
+                       selectedJob.status === 'OPEN' ? 'Apply for Job' : 'Job Closed'}
                     </Button>
                   </div>
                 ) : (
