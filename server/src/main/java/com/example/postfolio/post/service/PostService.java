@@ -68,16 +68,16 @@ public class PostService {
 
         try {
             GeminiService.GeminiResponse analysis = geminiService.analyzePost(content);
-            
+
             // Handle EXPERIENCE type specially
             if (analysis.getPostType() == PostType.EXPERIENCE) {
                 // Create work entry from tags
                 createWorkFromExperiencePost(analysis);
-                
+
                 // Save post as GENERAL to not show in CV
                 Post savedPost = savePost(content, profile, PostType.GENERAL,
                         List.of(), analysis.getSummary(), true, images);
-                
+
                 return savedPost;
             } else {
                 // Normal flow for other post types
@@ -107,22 +107,22 @@ public class PostService {
 
         try {
             GeminiService.GeminiResponse analysis = geminiService.analyzePost(post.getContent());
-            
+
             // Handle EXPERIENCE type specially
             if (analysis.getPostType() == PostType.EXPERIENCE) {
                 // Create work entry from tags
                 createWorkFromExperiencePost(analysis);
-                
+
                 // Update post as GENERAL to not show in CV
                 post.setType(PostType.GENERAL);
                 post.setTags(List.of());
                 post.setCvHeading(analysis.getSummary());
                 post.setAutoTagged(true);
                 post.setUpdatedAt(LocalDateTime.now());
-                
+
                 // Remove from CV if it was there
                 cvUpdateService.removeCvEntriesByPostId(postId);
-                
+
                 return postRepository.save(post);
             } else {
                 // Normal flow for other post types
@@ -175,24 +175,24 @@ public class PostService {
 
         try {
             GeminiService.GeminiResponse analysis = geminiService.analyzePost(newContent);
-            
+
             // Handle EXPERIENCE type specially
             if (analysis.getPostType() == PostType.EXPERIENCE) {
                 // Create work entry from tags
                 createWorkFromExperiencePost(analysis);
-                
+
                 // Update post as GENERAL to not show in CV
                 post.setType(PostType.GENERAL);
                 post.setTags(List.of());
                 post.setCvHeading(analysis.getSummary());
                 post.setUpdatedAt(LocalDateTime.now());
                 post.setAutoTagged(false);
-                
+
                 // Remove from CV if it was there
                 if (previousType != PostType.GENERAL) {
                     cvUpdateService.removeCvEntriesByPostId(postId);
                 }
-                
+
                 return postRepository.save(post);
             } else {
                 // Normal flow for other post types
@@ -249,7 +249,7 @@ public class PostService {
             // Parse tags - expecting format: "Company Name,Position,Date"
             String tagString = tags.get(0); // Take first tag which should contain all info
             String[] parts = tagString.split(",");
-            
+
             if (parts.length < 2) {
                 log.warn("Invalid tag format for EXPERIENCE post: {}", tagString);
                 return;
@@ -258,7 +258,7 @@ public class PostService {
             String companyName = parts[0].trim();
             String position = parts[1].trim();
             String dateString = parts.length > 2 ? parts[2].trim() : "none";
-            
+
             LocalDate startDate;
             if ("none".equals(dateString) || dateString.isEmpty()) {
                 // Use current date if no date provided
@@ -269,7 +269,7 @@ public class PostService {
 
             // Get current user
             User currentUser = getCurrentUser();
-            
+
             // Create WorkDto
             WorkDto workDto = WorkDto.builder()
                     .companyName(companyName)
@@ -278,11 +278,11 @@ public class PostService {
                     .endDate(null) // No end date as it's a new position
                     .isCurrent(true) // Assume it's current position
                     .build();
-            
+
             // Create work entry
             workService.createWork(workDto, currentUser);
             log.info("Created work entry: {} at {}", position, companyName);
-            
+
         } catch (Exception e) {
             log.error("Failed to create work entry from EXPERIENCE post: {}", e.getMessage());
         }
@@ -293,14 +293,14 @@ public class PostService {
      */
     private LocalDate parseDateString(String dateString) {
         DateTimeFormatter[] formatters = {
-            DateTimeFormatter.ofPattern("d MMMM yyyy"),
-            DateTimeFormatter.ofPattern("d MMMM"),
-            DateTimeFormatter.ofPattern("MMMM yyyy"), 
-            DateTimeFormatter.ofPattern("yyyy-MM-dd"),
-            DateTimeFormatter.ofPattern("dd/MM/yyyy"),
-            DateTimeFormatter.ofPattern("MM/dd/yyyy")
+                DateTimeFormatter.ofPattern("d MMMM yyyy"),
+                DateTimeFormatter.ofPattern("d MMMM"),
+                DateTimeFormatter.ofPattern("MMMM yyyy"),
+                DateTimeFormatter.ofPattern("yyyy-MM-dd"),
+                DateTimeFormatter.ofPattern("dd/MM/yyyy"),
+                DateTimeFormatter.ofPattern("MM/dd/yyyy")
         };
-        
+
         for (DateTimeFormatter formatter : formatters) {
             try {
                 if (dateString.matches("\\d{1,2} \\w+$")) {
@@ -312,14 +312,14 @@ public class PostService {
                 // Try next formatter
             }
         }
-        
+
         // If all parsing fails, return current date
         log.warn("Could not parse date: {}, using current date", dateString);
         return LocalDate.now();
     }
 
     // ... (rest of the existing methods remain unchanged)
-    
+
     @Transactional(readOnly = true)
     public List<String> getProfileSkills(Long profileId) {
         Profile profile = profileService.getProfileById(profileId);
@@ -469,8 +469,8 @@ public class PostService {
     }
 
     private Post savePost(String content, Profile profile, PostType type,
-            List<String> tags, String cvHeading, boolean autoTagged,
-            List<String> images) {
+                          List<String> tags, String cvHeading, boolean autoTagged,
+                          List<String> images) {
         return postRepository.save(Post.builder()
                 .content(content)
                 .type(type)
