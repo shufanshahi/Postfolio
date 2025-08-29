@@ -7,12 +7,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import LocationMap from "@/components/LocationMap";
 
 export default function JobPostings() {
   const router = useRouter();
   const [jobs, setJobs] = useState([]);
   const [filteredJobs, setFilteredJobs] = useState([]);
   const [showNewJob, setShowNewJob] = useState(false);
+  const [showLocationMap, setShowLocationMap] = useState(false);
   const [searchTitle, setSearchTitle] = useState("");
   const [statusFilter, setStatusFilter] = useState("ALL");
   const [form, setForm] = useState({
@@ -26,6 +28,7 @@ export default function JobPostings() {
     requiredSkills: "",
     requiredEducation: "",
     endDate: "",
+    location: "",
   });
   const [loading, setLoading] = useState(false);
   const [profileInfo, setProfileInfo] = useState(null);
@@ -103,6 +106,13 @@ export default function JobPostings() {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
+  const handleLocationSelect = (locationData) => {
+    setForm({ 
+      ...form, 
+      location: locationData.address 
+    });
+  };
+
   const handleViewApplicants = (jobId) => {
     // Navigate to applicants page or show applicants modal
     router.push(`/job-applicants/${jobId}`);
@@ -140,7 +150,7 @@ export default function JobPostings() {
     });
     if (res.ok) {
       setShowNewJob(false);
-  setForm({ title: "", position: "", description: "", minSalary: "", maxSalary: "", requiredProject: "", requiredExperience: "", requiredSkills: "", requiredEducation: "", endDate: "" });
+  setForm({ title: "", position: "", description: "", minSalary: "", maxSalary: "", requiredProject: "", requiredExperience: "", requiredSkills: "", requiredEducation: "", endDate: "", location: "" });
       fetchJobs();
     }
     setLoading(false);
@@ -362,6 +372,26 @@ export default function JobPostings() {
                     className="bg-gray-700 text-white"
                   />
                 </div>
+                <div>
+                  <label className="block text-gray-300 mb-1">Location</label>
+                  <div className="flex gap-2">
+                    <Input
+                      name="location"
+                      value={form.location}
+                      onChange={handleInputChange}
+                      placeholder="Click 'Select on Map' to choose location"
+                      className="bg-gray-700 text-white flex-1"
+                      readOnly
+                    />
+                    <Button
+                      type="button"
+                      onClick={() => setShowLocationMap(true)}
+                      className="bg-blue-600 hover:bg-blue-700"
+                    >
+                      Select on Map
+                    </Button>
+                  </div>
+                </div>
                 <Button type="submit" disabled={loading}>
                   {loading ? "Posting..." : "Post Job"}
                 </Button>
@@ -439,6 +469,11 @@ export default function JobPostings() {
                 <div className="mt-2">
                   <span className="font-semibold">Required Education:</span> {job.requiredEducation}
                 </div>
+                {job.location && (
+                  <div className="mt-2">
+                    <span className="font-semibold">Location:</span> {job.location}
+                  </div>
+                )}
                 <div className="mt-2">
                   <span className="font-semibold">Status:</span> {job.status}
                 </div>
@@ -453,6 +488,12 @@ export default function JobPostings() {
           ))}
         </div>
       </div>
+      
+      <LocationMap
+        isOpen={showLocationMap}
+        onClose={() => setShowLocationMap(false)}
+        onLocationSelect={handleLocationSelect}
+      />
     </div>
   );
 }
