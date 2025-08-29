@@ -59,23 +59,24 @@ public class NewsController {
         }
     }
 
-    @PostMapping("/test-auto-post")
-    public ResponseEntity<?> testAutomatedNewsPosting() {
-        log.info("Manual test automated news posting endpoint called");
+
+    @PostMapping("/test-ai-service")
+    public ResponseEntity<?> testNewsAIService() {
+        log.info("Testing news AI service integration");
 
         try {
-            CompletableFuture<String> result = automatedNewsService.testNewsPosting();
-            String message = result.get(); // Get the result synchronously for simpler response
+            String result = automatedNewsService.testAIServiceIntegration();
 
             return ResponseEntity.ok(Map.of(
                     "success", true,
-                    "message", message,
+                    "message", "AI service test completed successfully",
+                    "result", result,
                     "timestamp", System.currentTimeMillis()));
 
         } catch (Exception e) {
             return ResponseEntity.ok(Map.of(
                     "success", false,
-                    "message", "Failed to post automated news: " + e.getMessage(),
+                    "message", "AI service test failed: " + e.getMessage(),
                     "timestamp", System.currentTimeMillis()));
         }
     }

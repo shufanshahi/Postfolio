@@ -7,8 +7,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.concurrent.CompletableFuture;
-
 @RestController
 @RequestMapping("/api/ai")
 @RequiredArgsConstructor
@@ -19,6 +17,7 @@ public class AIProcessingController {
     private final JobMatchingAIService jobMatchingAIService;
     private final MCQGenerationAIService mcqGenerationAIService;
     private final InterviewGenerationAIService interviewGenerationAIService;
+    private final NewsSummarizationAIService newsSummarizationAIService;
 
     @PostMapping("/process-post")
     public ResponseEntity<PostProcessingResponse> processPost(@RequestBody PostProcessingRequest request) {
@@ -71,6 +70,13 @@ public class AIProcessingController {
                 request.getUserId(), request.getJobRole());
         interviewGenerationAIService.generateInterviewAsync(request);
         return ResponseEntity.ok("Interview generation started");
+    }
+
+    @PostMapping("/summarize-news")
+    public ResponseEntity<NewsSummarizationResponse> summarizeNews(@RequestBody NewsSummarizationRequest request) {
+        log.info("Summarizing news content with target audience: {}", request.getTargetAudience());
+        NewsSummarizationResponse response = newsSummarizationAIService.summarizeNews(request);
+        return ResponseEntity.ok(response);
     }
 
     @GetMapping("/health")

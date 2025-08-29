@@ -1,6 +1,7 @@
 package com.example.postfolio.news.service;
 
 import com.example.postfolio.post.service.PostService;
+import com.example.postfolio.service.NewsAIServiceManager;
 import com.example.postfolio.user.entity.User;
 import com.google.gson.*;
 import lombok.RequiredArgsConstructor;
@@ -14,6 +15,7 @@ import org.springframework.web.client.RestTemplate;
 
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
@@ -25,15 +27,12 @@ public class AutomatedNewsService {
     private final RestTemplate restTemplate;
     private final PostService postService;
     private final NewsAccountService newsAccountService;
+    private final NewsAIServiceManager newsAIServiceManager;
 
     @Value("${news.api.key}")
     private String newsApiKey;
 
-    @Value("${gemini.api.key}")
-    private String geminiApiKey;
-
     private static final String NEWS_API_URL = "https://newsapi.org/v2/everything";
-    private static final String GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent";
 
     // Job market related keywords for better news filtering
     private static final String[] JOB_KEYWORDS = {
@@ -184,70 +183,30 @@ public class AutomatedNewsService {
 
     private String generateNewsSummary(String newsContent) {
         try {
-            String prompt = String.format("""
-                    Transform this job market news into an engaging professional social media post:
+            log.info("Generating news summary using AI service");
 
-                    Requirements:
-                    - Keep it under 300 characters
-                    - Make it engaging and actionable for job seekers and professionals
-                    - Include relevant emojis
-                    - Focus on opportunities and career insights
-                    - Add a motivational or forward-looking perspective
-                    - End with an encouraging call-to-action
+            Map<String, Object> aiResponse = newsAIServiceManager.summarizeNews(
+                    newsContent,
+                    "job seekers and professionals",
+                    300,
+                    "engaging",
+                    true,
+                    true);
 
-                    News Content: %s
-
-                    Return only the processed post content, no additional formatting.
-                    """, newsContent);
-
-            JsonObject requestBody = new JsonObject();
-            JsonArray contents = new JsonArray();
-            JsonObject content = new JsonObject();
-            JsonArray parts = new JsonArray();
-            JsonObject part = new JsonObject();
-
-            part.addProperty("text", prompt);
-            parts.add(part);
-            content.add("parts", parts);
-            contents.add(content);
-            requestBody.add("contents", contents);
-
-            JsonObject generationConfig = new JsonObject();
-            generationConfig.addProperty("temperature", 0.7);
-            generationConfig.addProperty("maxOutputTokens", 250);
-            requestBody.add("generationConfig", generationConfig);
-
-            HttpHeaders headers = new HttpHeaders();
-            headers.set("Content-Type", "application/json");
-            headers.set("x-goog-api-key", geminiApiKey);
-
-            HttpEntity<String> request = new HttpEntity<>(
-                    new Gson().toJson(requestBody),
-                    headers);
-
-            ResponseEntity<String> response = restTemplate.postForEntity(
-                    GEMINI_API_URL,
-                    request,
-                    String.class);
-
-            if (response.getStatusCode().is2xxSuccessful()) {
-                JsonObject responseObj = JsonParser.parseString(response.getBody()).getAsJsonObject();
-                String generatedText = responseObj.getAsJsonArray("candidates")
-                        .get(0).getAsJsonObject()
-                        .getAsJsonObject("content")
-                        .getAsJsonArray("parts")
-                        .get(0).getAsJsonObject()
-                        .get("text").getAsString();
-
-                return generatedText.trim();
+            if (aiResponse.containsKey("summary")) {
+                String summary = (String) aiResponse.get("summary");
+                log.info("Successfully generated news summary via AI service");
+                return summary;
+            } else {
+                log.warn("AI service returned invalid response, using fallback");
+                return newsContent.length() > 300 ? newsContent.substring(0, 297) + "..." : newsContent;
             }
 
         } catch (Exception e) {
-            log.error("Failed to generate news summary with Gemini", e);
+            log.error("Failed to generate news summary with AI service: {}", e.getMessage());
+            // Fallback to truncated original content
+            return newsContent.length() > 300 ? newsContent.substring(0, 297) + "..." : newsContent;
         }
-
-        // Fallback to original content if Gemini fails
-        return newsContent.length() > 300 ? newsContent.substring(0, 297) + "..." : newsContent;
     }
 
     private void postFallbackContent() {
@@ -291,6 +250,56 @@ public class AutomatedNewsService {
         } catch (Exception e) {
             log.error("Failed to post as news account", e);
             throw e;
+        }
+    }
+
+    // Test method specifically for AI service integration
+    public String testAIServiceIntegration() {
+        try {
+            log.info("Testing AI service integration with real news data");
+
+            // Step 1: Fetch real news from news API
+            String realNewsContent = fetchJobMarketNews();
+
+            if (realNewsContent == null || realNewsContent.isEmpty()) {
+                return "❌ AI Service Integration Test FAILED: Could not fetch real news data from API\n\n" +
+                        "Please check your news API configuration and internet connection.";
+            }
+
+            log.info("✅ Successfully fetched real news data ({} characters), now testing AI summarization",
+                    realNewsContent.length());
+
+            // Step 2: Test AI service with real news content
+            Map<String, Object> aiResponse = newsAIServiceManager.summarizeNews(
+                    realNewsContent,
+                    "job seekers and professionals",
+                    280,
+                    "engaging",
+                    true,
+                    true);
+
+            if (aiResponse.containsKey("summary")) {
+                String summary = (String) aiResponse.get("summary");
+                log.info("✅ AI service integration test successful with real news");
+                return "✅ AI Service Integration Test PASSED!\n\n" +
+                        "📰 Real News Fetched: " + realNewsContent.length() + " characters\n" +
+                        "📰 First 200 chars: " + realNewsContent.substring(0, Math.min(200, realNewsContent.length()))
+                        + "...\n\n" +
+                        "🤖 AI Generated Summary (" + summary.length() + " chars): " + summary + "\n\n" +
+                        "✅ Both News API and AI Service are working correctly!";
+            } else {
+                String errorMsg = "❌ AI service returned invalid response structure";
+                log.error(errorMsg);
+                return errorMsg + "\n\n" +
+                        "✅ News API worked (fetched " + realNewsContent.length() + " chars)\n" +
+                        "❌ AI Service failed\n" +
+                        "Response: " + aiResponse.toString();
+            }
+
+        } catch (Exception e) {
+            String errorMsg = "❌ AI Service Integration Test FAILED: " + e.getMessage();
+            log.error(errorMsg, e);
+            return errorMsg;
         }
     }
 }
