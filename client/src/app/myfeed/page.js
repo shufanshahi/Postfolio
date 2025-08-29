@@ -1,6 +1,9 @@
 "use client"
 import Navbar from '@/components/Navbar';
 import React, { useState, useEffect, useRef } from 'react';
+// Reuse design tokens from dashboard for consistent theming
+const gradientPanel = 'bg-gradient-to-br from-teal-50/70 via-white/50 to-indigo-50/70 dark:from-slate-800/60 dark:via-slate-800/50 dark:to-slate-800/60 backdrop-blur-xl border border-white/40 dark:border-slate-700/50 shadow-sm';
+const subtleCard = 'bg-gradient-to-br from-teal-50/65 via-white/55 to-indigo-50/60 dark:from-slate-800/70 dark:via-slate-800/60 dark:to-slate-800/70 backdrop-blur-md border border-teal-900/5 dark:border-slate-700/60 hover:border-teal-500/30 dark:hover:border-teal-400/30 transition-colors';
 
 export default function MyFeedPage() {
     const [posts, setPosts] = useState([]);
@@ -45,17 +48,16 @@ export default function MyFeedPage() {
     const Bell = ({ className }) => <div className={className}>🔔</div>;
     const Search = ({ className }) => <div className={className}>🔍</div>;
 
-   
+
 
     const MobileNavItem = ({ icon, label, isActive, onClick }) => {
         return (
             <button
                 onClick={onClick}
-                className={`flex flex-col items-center px-2 py-2 text-xs font-medium w-16 ${
-                    isActive 
-                    ? 'text-sky-600' 
-                    : 'text-slate-600 hover:text-slate-800'
-                }`}
+                className={`flex flex-col items-center px-2 py-2 text-xs font-medium w-16 ${isActive
+                        ? 'text-sky-600'
+                        : 'text-slate-600 hover:text-slate-800'
+                    }`}
             >
                 {icon}
                 <span className="mt-1">{label}</span>
@@ -232,11 +234,16 @@ export default function MyFeedPage() {
 
     if (loading) {
         return (
-            <div className="min-h-screen bg-gradient-to-br from-slate-50 to-stone-100">
+            <div className="min-h-screen relative overflow-hidden">
+                <div className="pointer-events-none select-none absolute inset-0 -z-10">
+                    <div className="absolute -top-24 -left-10 h-[34rem] w-[34rem] bg-gradient-to-br from-teal-200 via-teal-100 to-white dark:from-teal-600/30 dark:via-indigo-600/20 dark:to-transparent blur-3xl opacity-70" />
+                    <div className="absolute top-1/3 -right-32 h-[32rem] w-[32rem] bg-gradient-to-tr from-indigo-200 via-white to-amber-100 dark:from-indigo-700/30 dark:via-transparent dark:to-teal-700/20 blur-3xl opacity-60" />
+                </div>
                 <Navbar />
-                <div className="max-w-2xl mx-auto p-4">
-                    <div className="flex items-center justify-center h-64">
-                        <Loader className="h-8 w-8 text-slate-600" />
+                <div className="max-w-3xl mx-auto px-6 py-24">
+                    <div className="flex flex-col items-center justify-center gap-4">
+                        <Loader className="h-8 w-8 text-teal-600" />
+                        <p className="text-sm font-medium text-slate-600 dark:text-slate-300 tracking-wide">Loading your personalized feed...</p>
                     </div>
                 </div>
             </div>
@@ -244,49 +251,52 @@ export default function MyFeedPage() {
     }
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-slate-50 to-stone-100">
-            <Navbar/>
-            <div className="max-w-2xl mx-auto p-4">
+        <div className="min-h-screen relative overflow-hidden">
+            <div className="pointer-events-none select-none absolute inset-0 -z-10">
+                <div className="absolute -top-24 -left-10 h-[38rem] w-[38rem] bg-gradient-to-br from-teal-200 via-teal-100 to-white dark:from-teal-600/30 dark:via-indigo-600/20 dark:to-transparent blur-3xl opacity-70" />
+                <div className="absolute top-1/3 -right-32 h-[34rem] w-[34rem] bg-gradient-to-tr from-indigo-200 via-white to-amber-100 dark:from-indigo-700/30 dark:via-transparent dark:to-teal-700/20 blur-3xl opacity-60" />
+            </div>
+            <Navbar />
+            <div className="max-w-3xl mx-auto px-6 py-10">
                 {/* Header */}
-                <div className="mb-6">
-                    <div className="flex items-center justify-between mb-4">
-                        <div className="flex items-center space-x-3">
-                            <div className="p-2 bg-white rounded-xl shadow-sm border border-slate-200">
-                                <Home className="h-6 w-6 text-slate-700" />
+                <div className="mb-10">
+                    <div className="flex items-center justify-between mb-6">
+                        <div className="flex items-center gap-3">
+                            <div className="h-11 w-11 rounded-xl bg-gradient-to-br from-teal-500 via-indigo-500 to-amber-400 flex items-center justify-center text-white shadow-sm text-sm font-semibold ring-1 ring-white/40">
+                                <Home className="h-5 w-5" />
                             </div>
-                            <h1 className="text-2xl font-bold text-slate-800">
-                                My Feed
-                            </h1>
+                            <div>
+                                <h1 className="text-3xl font-semibold tracking-tight text-slate-800 dark:text-slate-100">My Feed</h1>
+                                <p className="text-sm text-slate-600 dark:text-slate-400">Latest updates from your network</p>
+                            </div>
                         </div>
                         <button
                             onClick={() => setShowCreatePost(!showCreatePost)}
-                            className="px-4 py-2 bg-slate-800 hover:bg-slate-900 text-white rounded-xl font-medium shadow-sm transform transition-all duration-200 flex items-center space-x-2"
+                            className="h-11 px-6 rounded-full bg-teal-600 hover:bg-teal-700 dark:bg-teal-500 dark:hover:bg-teal-400 text-white font-medium shadow-sm text-sm flex items-center gap-2 transition-colors"
                         >
                             <Plus className="h-4 w-4" />
-                            <span>New Post</span>
+                            {showCreatePost ? 'Close' : 'New Post'}
                         </button>
                     </div>
 
                     {/* Filter Tabs */}
-                    <div className="flex space-x-2 mb-6 bg-white backdrop-blur-lg rounded-xl p-1 border border-slate-200 shadow-sm">
+                    <div className="flex gap-2 mb-6 rounded-2xl p-1 bg-gradient-to-r from-teal-50/70 via-white/70 to-indigo-50/70 dark:from-slate-800/60 dark:via-slate-800/50 dark:to-slate-800/60 backdrop-blur border border-teal-900/10 dark:border-slate-700/60 shadow-sm">
                         <button
                             onClick={() => setFilter('friends')}
-                            className={`flex-1 px-4 py-2 rounded-lg font-medium transition-all duration-300 flex items-center justify-center space-x-2 ${
-                                filter === 'friends'
-                                    ? 'bg-slate-100 text-slate-800 shadow-sm'
-                                    : 'text-slate-600 hover:bg-slate-50'
-                            }`}
+                            className={`flex-1 px-5 py-2 rounded-xl text-sm font-medium transition-all duration-300 flex items-center justify-center gap-2 ring-1 ring-transparent ${filter === 'friends'
+                                    ? 'bg-white/70 dark:bg-slate-900/50 text-teal-700 dark:text-teal-300 shadow-sm ring-teal-500/30'
+                                    : 'text-slate-600 dark:text-slate-400 hover:bg-white/50 dark:hover:bg-slate-900/30'
+                                }`}
                         >
                             <Users className="h-4 w-4" />
-                            <span>Friends & Me</span>
+                            <span>Network</span>
                         </button>
                         <button
                             onClick={() => setFilter('me')}
-                            className={`flex-1 px-4 py-2 rounded-lg font-medium transition-all duration-300 flex items-center justify-center space-x-2 ${
-                                filter === 'me'
-                                    ? 'bg-slate-100 text-slate-800 shadow-sm'
-                                    : 'text-slate-600 hover:bg-slate-50'
-                            }`}
+                            className={`flex-1 px-5 py-2 rounded-xl text-sm font-medium transition-all duration-300 flex items-center justify-center gap-2 ring-1 ring-transparent ${filter === 'me'
+                                    ? 'bg-white/70 dark:bg-slate-900/50 text-teal-700 dark:text-teal-300 shadow-sm ring-teal-500/30'
+                                    : 'text-slate-600 dark:text-slate-400 hover:bg-white/50 dark:hover:bg-slate-900/30'
+                                }`}
                         >
                             <User className="h-4 w-4" />
                             <span>My Posts</span>
@@ -295,9 +305,9 @@ export default function MyFeedPage() {
 
                     {/* Create Post Section */}
                     {showCreatePost && (
-                        <div className="mb-6 bg-white border border-slate-200 rounded-xl p-4 shadow-sm">
+                        <div className={`mb-8 rounded-2xl p-6 ${subtleCard} shadow-sm`}>
                             <div className="flex items-start space-x-4">
-                                <div className="w-10 h-10 bg-gradient-to-br from-sky-400 to-sky-600 rounded-full flex items-center justify-center text-white font-bold text-sm">
+                                <div className="w-12 h-12 bg-gradient-to-br from-teal-500 via-indigo-500 to-amber-500 rounded-xl flex items-center justify-center text-white font-bold text-sm ring-2 ring-white/60 dark:ring-slate-800/60 shadow">
                                     {getInitials('User')}
                                 </div>
                                 <div className="flex-1">
@@ -305,7 +315,7 @@ export default function MyFeedPage() {
                                         placeholder="What's on your mind?"
                                         value={newPostContent}
                                         onChange={(e) => setNewPostContent(e.target.value)}
-                                        className="w-full min-h-[100px] bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-transparent resize-none"
+                                        className="w-full min-h-[120px] bg-white/60 dark:bg-slate-900/40 border border-teal-900/10 dark:border-slate-700/60 rounded-xl px-4 py-3 text-slate-800 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-teal-500/50 focus:border-transparent resize-none backdrop-blur"
                                     />
 
                                     {/* Image Upload Section */}
@@ -320,7 +330,7 @@ export default function MyFeedPage() {
                                         />
                                         <button
                                             onClick={() => fileInputRef.current?.click()}
-                                            className="flex items-center space-x-2 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 rounded-lg text-slate-600 transition-colors text-sm"
+                                            className="flex items-center gap-2 px-3 py-1.5 bg-white/60 dark:bg-slate-900/40 border border-teal-900/10 dark:border-slate-700/60 hover:border-teal-500/30 dark:hover:border-teal-400/30 rounded-lg text-slate-600 dark:text-slate-300 transition-colors text-xs font-medium"
                                             disabled={selectedImages.length >= 4}
                                         >
                                             <ImageIcon className="h-4 w-4" />
@@ -330,17 +340,17 @@ export default function MyFeedPage() {
 
                                     {/* Image Previews */}
                                     {selectedImages.length > 0 && (
-                                        <div className="mt-4 grid grid-cols-2 gap-2">
+                                        <div className="mt-4 grid grid-cols-2 gap-3">
                                             {selectedImages.map((image, index) => (
                                                 <div key={index} className="relative group">
                                                     <img
                                                         src={image}
                                                         alt={`Preview ${index + 1}`}
-                                                        className="w-full h-32 object-cover rounded-lg border border-slate-200"
+                                                        className="w-full h-36 object-cover rounded-xl border border-teal-900/10 dark:border-slate-700/60 shadow-sm"
                                                     />
                                                     <button
                                                         onClick={() => removeImage(index)}
-                                                        className="absolute top-2 right-2 p-1 bg-red-500 hover:bg-red-600 rounded-full text-white opacity-0 group-hover:opacity-100 transition-opacity"
+                                                        className="absolute top-2 right-2 p-1 bg-rose-500/90 hover:bg-rose-600 rounded-full text-white opacity-0 group-hover:opacity-100 transition-opacity shadow"
                                                     >
                                                         <X className="h-3 w-3" />
                                                     </button>
@@ -349,23 +359,17 @@ export default function MyFeedPage() {
                                         </div>
                                     )}
 
-                                    <div className="flex justify-between items-center mt-4">
-                                        <div className="flex space-x-2">
-                                            <span className="px-2 py-1 bg-sky-100 text-sky-700 border border-sky-200 rounded-full text-xs">
-                                                Auto-tagged
-                                            </span>
+                                    <div className="flex justify-between items-center mt-6">
+                                        <div className="flex gap-2 flex-wrap">
+                                            <span className="px-2.5 py-1 bg-teal-600/10 text-teal-700 dark:bg-teal-400/15 dark:text-teal-300 border border-teal-600/20 dark:border-teal-400/30 rounded-full text-[10px] font-medium tracking-wide">Auto-tagged</span>
                                         </div>
                                         <button
                                             onClick={createPost}
                                             disabled={posting || (!newPostContent.trim() && selectedImages.length === 0)}
-                                            className="px-4 py-2 bg-slate-800 hover:bg-slate-900 text-white rounded-lg font-medium disabled:opacity-50 disabled:cursor-not-allowed transform transition-all duration-200 flex items-center space-x-2 text-sm"
+                                            className="h-10 px-5 rounded-full bg-teal-600 hover:bg-teal-700 dark:bg-teal-500 dark:hover:bg-teal-400 text-white font-medium text-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 shadow-sm transition-colors"
                                         >
-                                            {posting ? (
-                                                <Loader className="h-4 w-4" />
-                                            ) : (
-                                                <Send className="h-4 w-4" />
-                                            )}
-                                            <span>{posting ? 'Posting...' : 'Post'}</span>
+                                            {posting ? <Loader className="h-4 w-4" /> : <Send className="h-4 w-4" />}
+                                            {posting ? 'Posting...' : 'Post'}
                                         </button>
                                     </div>
                                 </div>
@@ -376,42 +380,42 @@ export default function MyFeedPage() {
 
                 {/* Error Display */}
                 {error && (
-                    <div className="mb-6 bg-red-50 border border-red-200 rounded-xl p-4">
-                        <div className="flex items-center space-x-2 text-red-700">
+                    <div className="mb-8 rounded-2xl p-4 bg-rose-50/80 dark:bg-rose-500/10 border border-rose-200/70 dark:border-rose-500/30 text-rose-700 dark:text-rose-300 backdrop-blur">
+                        <div className="flex items-center gap-2 text-sm font-medium">
                             <AlertCircle className="h-4 w-4" />
-                            <span className="text-sm">{error}</span>
+                            {error}
                         </div>
                     </div>
                 )}
 
                 {/* Posts Feed */}
-                <div className="space-y-4">
+                <div className="space-y-6">
                     {posts.length === 0 ? (
-                        <div className="bg-white border border-slate-200 rounded-xl p-6 text-center">
-                            <div className="text-slate-500 mb-4">
-                                <MessageSquare className="h-12 w-12 mx-auto mb-4 text-slate-400" />
-                                <h3 className="text-lg font-semibold text-slate-800 mb-2">No posts yet</h3>
-                                <p className="text-slate-500 text-sm">
-                                    {filter === 'friends' ? 'Connect with people to see their posts in your feed!' : 'Create your first post to get started!'}
+                        <div className={`rounded-2xl p-10 text-center ${subtleCard}`}>
+                            <div className="mb-5">
+                                <MessageSquare className="h-14 w-14 mx-auto mb-5 text-teal-500/70" />
+                                <h3 className="text-xl font-semibold text-slate-800 dark:text-slate-100 mb-2">No posts yet</h3>
+                                <p className="text-slate-600 dark:text-slate-400 text-sm max-w-sm mx-auto leading-relaxed">
+                                    {filter === 'friends' ? 'Connect with people to see their posts in your feed.' : 'Share your first update and start building your presence.'}
                                 </p>
                             </div>
                             {filter === 'me' && (
                                 <button
                                     onClick={() => setShowCreatePost(true)}
-                                    className="px-4 py-2 bg-slate-800 hover:bg-slate-900 text-white rounded-lg font-medium transform transition-all duration-200 flex items-center space-x-2 mx-auto text-sm"
+                                    className="h-10 px-6 rounded-full bg-teal-600 hover:bg-teal-700 dark:bg-teal-500 dark:hover:bg-teal-400 text-white font-medium text-sm flex items-center gap-2 mx-auto shadow-sm"
                                 >
                                     <Plus className="h-4 w-4" />
-                                    <span>Create First Post</span>
+                                    Create First Post
                                 </button>
                             )}
                         </div>
                     ) : (
                         posts.map((post) => (
-                            <div key={post.id} className="bg-white border border-slate-200 hover:border-slate-300 rounded-xl overflow-hidden shadow-sm transition-all duration-300">
-                                <div className="p-4">
+                            <div key={post.id} className={`group rounded-2xl overflow-hidden ${subtleCard} shadow-sm hover:shadow-md transition-all duration-300 hover:-translate-y-0.5`}>
+                                <div className="p-6">
                                     <div className="flex items-start space-x-3">
                                         {/* User Avatar */}
-                                        <div className="w-10 h-10 rounded-full overflow-hidden border border-slate-200">
+                                        <div className="w-12 h-12 rounded-xl overflow-hidden ring-2 ring-white/60 dark:ring-slate-800/60 shadow">
                                             {post.profilePictureBase64 ? (
                                                 <img
                                                     src={`data:image/jpeg;base64,${post.profilePictureBase64}`}
@@ -419,7 +423,7 @@ export default function MyFeedPage() {
                                                     className="w-full h-full object-cover"
                                                 />
                                             ) : (
-                                                <div className="w-full h-full bg-gradient-to-br from-sky-400 to-sky-600 flex items-center justify-center text-white font-bold text-sm">
+                                                <div className="w-full h-full bg-gradient-to-br from-teal-500 via-indigo-500 to-amber-500 flex items-center justify-center text-white font-bold text-sm">
                                                     {getInitials(post.profileName)}
                                                 </div>
                                             )}
@@ -427,12 +431,12 @@ export default function MyFeedPage() {
 
                                         <div className="flex-1 min-w-0">
                                             {/* User Info and Time */}
-                                            <div className="flex items-center justify-between mb-2">
+                                            <div className="flex items-center justify-between mb-3">
                                                 <div>
-                                                    <h3 className="font-semibold text-slate-800 text-sm">
+                                                    <h3 className="font-semibold text-slate-800 dark:text-slate-100 text-sm">
                                                         {post.profileName || 'Anonymous'}
                                                     </h3>
-                                                    <p className="text-slate-500 text-xs">{formatDate(post.createdAt)}</p>
+                                                    <p className="text-slate-500 dark:text-slate-400 text-xs">{formatDate(post.createdAt)}</p>
                                                 </div>
                                                 <div className="flex items-center space-x-1">
                                                     {getAchievementIcon(post)}
@@ -443,32 +447,30 @@ export default function MyFeedPage() {
                                             </div>
 
                                             {/* Post Content */}
-                                            <p className="text-slate-700 mb-3 leading-relaxed text-sm">
+                                            <p className="text-slate-700 dark:text-slate-200 mb-4 leading-relaxed text-sm">
                                                 {post.content}
                                             </p>
 
                                             {/* Post Images */}
                                             {post.hasImages && post.images && post.images.length > 0 && (
-                                                <div className={`mb-3 grid gap-2 rounded-lg overflow-hidden ${
-                                                    post.images.length === 1 ? 'grid-cols-1' :
+                                                <div className={`mb-4 grid gap-3 rounded-xl overflow-hidden ${post.images.length === 1 ? 'grid-cols-1' :
                                                         post.images.length === 2 ? 'grid-cols-2' :
                                                             post.images.length === 3 ? 'grid-cols-2' :
                                                                 'grid-cols-2'
-                                                }`}>
+                                                    }`}>
                                                     {post.images.map((image, index) => (
                                                         <div
                                                             key={index}
-                                                            className={`relative cursor-pointer group ${
-                                                                post.images.length === 3 && index === 0 ? 'col-span-2' : ''
-                                                            }`}
+                                                            className={`relative cursor-pointer group/image ${post.images.length === 3 && index === 0 ? 'col-span-2' : ''
+                                                                }`}
                                                             onClick={() => openImagePreview(image)}
                                                         >
                                                             <img
                                                                 src={image}
                                                                 alt={`Post image ${index + 1}`}
-                                                                className="w-full h-48 object-cover transition-transform duration-300 group-hover:scale-105"
+                                                                className="w-full h-56 object-cover transition-transform duration-300 group-hover/image:scale-[1.03] rounded-xl border border-teal-900/10 dark:border-slate-700/60"
                                                             />
-                                                            <div className="absolute inset-0 bg-black/10 group-hover:bg-black/20 transition-colors duration-300 rounded-lg"></div>
+                                                            <div className="absolute inset-0 bg-black/10 group-hover/image:bg-black/20 transition-colors duration-300 rounded-xl"></div>
                                                         </div>
                                                     ))}
                                                 </div>
@@ -476,11 +478,11 @@ export default function MyFeedPage() {
 
                                             {/* Tags */}
                                             {post.tags && post.tags.length > 0 && (
-                                                <div className="flex flex-wrap gap-1 mb-3">
+                                                <div className="flex flex-wrap gap-2 mb-4">
                                                     {post.tags.map((tag, index) => (
                                                         <span
                                                             key={index}
-                                                            className="px-2 py-0.5 bg-slate-100 text-slate-600 border border-slate-200 rounded-full text-xs font-medium"
+                                                            className="px-2.5 py-1 bg-teal-600/10 text-teal-700 dark:bg-teal-400/15 dark:text-teal-300 border border-teal-600/20 dark:border-teal-400/30 rounded-full text-[10px] font-medium tracking-wide"
                                                         >
                                                             #{tag}
                                                         </span>
@@ -489,60 +491,58 @@ export default function MyFeedPage() {
                                             )}
 
                                             {/* Engagement Bar */}
-                                            <div className="flex items-center justify-between pt-3 border-t border-slate-100">
+                                            <div className="flex items-center justify-between pt-4 border-t border-teal-900/10 dark:border-slate-700/60">
                                                 <button
                                                     onClick={() => handleCelebrate(post.id)}
-                                                    className="flex items-center space-x-1 text-slate-500 hover:text-sky-600 text-xs font-medium"
+                                                    className="flex items-center gap-1 text-slate-500 dark:text-slate-400 hover:text-teal-600 dark:hover:text-teal-400 text-[11px] font-medium tracking-wide"
                                                 >
                                                     <PartyPopper className="h-4 w-4" />
-                                                    <span>Celebrate</span>
+                                                    Celebrate
                                                 </button>
-                                                
-                                                <button className="flex items-center space-x-1 text-slate-500 hover:text-slate-700 text-xs">
+
+                                                <button className="flex items-center gap-1 text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300 text-[11px] font-medium tracking-wide">
                                                     <MessageSquare className="h-4 w-4" />
-                                                    <span>Comment</span>
+                                                    Comment
                                                 </button>
-                                                
-                                                <button className="flex items-center space-x-1 text-slate-500 hover:text-slate-700 text-xs">
+
+                                                <button className="flex items-center gap-1 text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300 text-[11px] font-medium tracking-wide">
                                                     <Share className="h-4 w-4" />
-                                                    <span>Share</span>
+                                                    Share
                                                 </button>
-                                                
-                                                <button className="flex items-center space-x-1 text-slate-500 hover:text-slate-700 text-xs">
+
+                                                <button className="flex items-center gap-1 text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300 text-[11px] font-medium tracking-wide">
                                                     <Bookmark className="h-4 w-4" />
-                                                    <span>Save</span>
+                                                    Save
                                                 </button>
                                             </div>
 
                                             {/* Reaction Count */}
                                             {(post.reactions?.length > 0) && (
-                                                <div className="flex items-center justify-between mt-3 pt-3 border-t border-slate-100">
+                                                <div className="flex items-center justify-between mt-4 pt-4 border-t border-teal-900/10 dark:border-slate-700/60">
                                                     <button
                                                         onClick={() => toggleReactions(post.id)}
-                                                        className="flex items-center space-x-1 text-slate-500 text-xs"
+                                                        className="flex items-center gap-1 text-slate-500 dark:text-slate-400 text-[11px] font-medium tracking-wide"
                                                     >
                                                         <div className="flex items-center space-x-0.5">
                                                             <PartyPopper className="h-3 w-3 text-amber-500" />
                                                             <Sparkles className="h-3 w-3 text-purple-500" />
                                                         </div>
-                                                        <span className="font-medium">
-                                                            {post.reactions.length} celebrations
-                                                        </span>
+                                                        {post.reactions.length} celebrations
                                                     </button>
                                                 </div>
                                             )}
 
                                             {/* Reactions List */}
                                             {showReactions[post.id] && post.reactions && post.reactions.length > 0 && (
-                                                <div className="mt-3 pt-3 border-t border-slate-100">
-                                                    <h4 className="text-xs font-medium text-slate-600 mb-2">Celebrated by:</h4>
+                                                <div className="mt-4 pt-4 border-t border-teal-900/10 dark:border-slate-700/60">
+                                                    <h4 className="text-[11px] font-semibold tracking-wide text-slate-600 dark:text-slate-400 mb-3 uppercase">Celebrated by</h4>
                                                     <div className="space-y-2">
                                                         {post.reactions.map((reaction, index) => (
-                                                            <div key={index} className="flex items-center space-x-2 p-2 bg-slate-50 rounded-lg">
-                                                                <div className="w-6 h-6 bg-gradient-to-br from-sky-400 to-sky-600 rounded-full flex items-center justify-center text-white font-bold text-xs">
+                                                            <div key={index} className="flex items-center gap-2 p-2 rounded-xl bg-white/60 dark:bg-slate-900/40 border border-teal-900/10 dark:border-slate-700/60 text-slate-700 dark:text-slate-300">
+                                                                <div className="w-7 h-7 bg-gradient-to-br from-teal-500 via-indigo-500 to-amber-500 rounded-lg flex items-center justify-center text-white font-bold text-[10px] ring-1 ring-white/40 dark:ring-slate-800/50">
                                                                     {getInitials(reaction.userName)}
                                                                 </div>
-                                                                <span className="text-xs text-slate-700 font-medium">{reaction.userName}</span>
+                                                                <span className="text-[11px] font-medium">{reaction.userName}</span>
                                                                 <PartyPopper className="h-3 w-3 text-amber-500 ml-auto" />
                                                             </div>
                                                         ))}
@@ -551,15 +551,15 @@ export default function MyFeedPage() {
                                             )}
 
                                             {/* Comment Input */}
-                                            <div className="mt-3 pt-3 border-t border-slate-100">
-                                                <div className="flex items-center space-x-2">
-                                                    <div className="w-8 h-8 bg-gradient-to-br from-sky-400 to-sky-600 rounded-full flex items-center justify-center text-white font-bold text-xs">
+                                            <div className="mt-5 pt-4 border-t border-teal-900/10 dark:border-slate-700/60">
+                                                <div className="flex items-center gap-3">
+                                                    <div className="w-9 h-9 bg-gradient-to-br from-teal-500 via-indigo-500 to-amber-500 rounded-xl flex items-center justify-center text-white font-bold text-[11px] ring-1 ring-white/40 dark:ring-slate-800/50">
                                                         {getInitials('You')}
                                                     </div>
                                                     <input
                                                         type="text"
                                                         placeholder="Add a comment..."
-                                                        className="flex-1 bg-slate-100 border border-slate-200 rounded-xl px-3 py-2 text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-sky-500 focus:border-transparent text-xs"
+                                                        className="flex-1 bg-white/60 dark:bg-slate-900/40 border border-teal-900/10 dark:border-slate-700/60 rounded-xl px-3 py-2 text-slate-700 dark:text-slate-200 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-teal-500/40 focus:border-transparent text-xs backdrop-blur"
                                                     />
                                                 </div>
                                             </div>
@@ -574,19 +574,20 @@ export default function MyFeedPage() {
                 {/* Image Preview Modal */}
                 {imagePreviewModal.show && (
                     <div
-                        className="fixed inset-0 bg-black/90 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+                        className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-6"
                         onClick={() => setImagePreviewModal({ show: false, image: null })}
                     >
-                        <div className="relative max-w-4xl max-h-full">
+                        <div className="relative max-w-5xl w-full max-h-full">
+                            <div className="absolute inset-0 -z-10 bg-gradient-to-br from-teal-500/10 via-indigo-500/10 to-amber-500/10 rounded-2xl blur-xl" />
                             <img
                                 src={imagePreviewModal.image}
                                 alt="Preview"
-                                className="max-w-full max-h-full object-contain rounded-lg"
+                                className="max-w-full max-h-[80vh] w-full object-contain rounded-2xl shadow-2xl ring-1 ring-white/10"
                                 onClick={(e) => e.stopPropagation()}
                             />
                             <button
                                 onClick={() => setImagePreviewModal({ show: false, image: null })}
-                                className="absolute top-4 right-4 p-2 bg-black/50 hover:bg-black/70 rounded-full text-white transition-colors"
+                                className="absolute top-4 right-4 p-2.5 bg-white/10 hover:bg-white/20 backdrop-blur rounded-full text-white transition-colors shadow"
                             >
                                 <X className="h-5 w-5" />
                             </button>
