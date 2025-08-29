@@ -102,7 +102,7 @@ export default function NearbyJobs() {
     const fetchUserProfile = async () => {
       try {
         const token = localStorage.getItem("token");
-        if (!token) return;
+        if (!token) return null;
 
         const response = await fetch("http://localhost:8080/api/profile/me", {
           headers: {
@@ -114,14 +114,17 @@ export default function NearbyJobs() {
         if (response.ok) {
           const profile = await response.json();
           setUserProfile(profile);
+          return profile;
         }
+        return null;
       } catch (err) {
         console.error("Error fetching user profile:", err);
+        return null;
       }
     };
 
     // Fetch jobs from API
-    const fetchJobs = async () => {
+    const fetchJobs = async (profile) => {
       try {
         setLoading(true);
         const token = localStorage.getItem("token");
@@ -145,10 +148,15 @@ export default function NearbyJobs() {
 
         const jobsData = await response.json();
         
-        // Filter jobs that have valid location data
+        // Filter jobs that have valid location data and user hasn't applied to
         const jobsWithLocation = jobsData.filter(job => {
           const coords = parseLocation(job.location);
-          return coords !== null;
+          const hasValidLocation = coords !== null;
+          
+          // Don't show jobs the user has already applied to
+          const hasNotApplied = !job.applicantIds?.includes(profile?.id);
+          
+          return hasValidLocation && hasNotApplied;
         });
 
         setJobs(jobsWithLocation);
@@ -160,9 +168,13 @@ export default function NearbyJobs() {
       }
     };
 
-    getCurrentLocation();
-    fetchUserProfile();
-    fetchJobs();
+    const initializeData = async () => {
+      getCurrentLocation();
+      const profile = await fetchUserProfile();
+      await fetchJobs(profile);
+    };
+
+    initializeData();
   }, [router]);
 
   // Separate fetchJobs function for refreshing after apply
@@ -182,7 +194,12 @@ export default function NearbyJobs() {
         const jobsData = await response.json();
         const jobsWithLocation = jobsData.filter(job => {
           const coords = parseLocation(job.location);
-          return coords !== null;
+          const hasValidLocation = coords !== null;
+          
+          // Don't show jobs the user has already applied to
+          const hasNotApplied = !job.applicantIds?.includes(userProfile?.id);
+          
+          return hasValidLocation && hasNotApplied;
         });
         setJobs(jobsWithLocation);
       }
