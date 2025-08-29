@@ -59,21 +59,35 @@ public class PostService {
             images = validateAndCleanImages(images);
         }
 
-        // Save post immediately with default values for fast response (200ms)
-        Post savedPost = savePost(content, profile, PostType.GENERAL,
-                List.of(), "Processing...", false, images);
+        // Check if user is an EMPLOYER - if so, skip AI processing
+        boolean isEmployer = profile.getUser().getRole().name().equals("Employer");
 
-        // Trigger async AI processing in background (2-5s)
-        PostProcessingRequest request = PostProcessingRequest.builder()
-                .postId(savedPost.getId())
-                .content(content)
-                .profileId(profile.getId())
-                .profileBio(profile.getBio())
-                .profilePosition(profile.getPositionOrInstitue())
-                .build();
-        aiServiceManager.processPostAsync(request);
+        if (isEmployer) {
+            // For EMPLOYER users: directly create post as GENERAL type without AI
+            // processing
+            log.info("Creating post for EMPLOYER user - skipping AI analysis and setting as GENERAL type");
+            Post savedPost = savePost(content, profile, PostType.GENERAL,
+                    List.of(), "General Post", true, images);
+            log.info("EMPLOYER post created with ID: {} - no AI processing required", savedPost.getId());
+            return savedPost;
+        } else {
+            // For regular users: Save post immediately with default values for fast
+            // response (200ms)
+            Post savedPost = savePost(content, profile, PostType.GENERAL,
+                    List.of(), "Processing...", false, images);
 
-        return savedPost;
+            // Trigger async AI processing in background (2-5s)
+            PostProcessingRequest request = PostProcessingRequest.builder()
+                    .postId(savedPost.getId())
+                    .content(content)
+                    .profileId(profile.getId())
+                    .profileBio(profile.getBio())
+                    .profilePosition(profile.getPositionOrInstitue())
+                    .build();
+            aiServiceManager.processPostAsync(request);
+
+            return savedPost;
+        }
     }
 
     @Transactional
@@ -82,23 +96,38 @@ public class PostService {
         validatePostOwnership(post, profileId);
         Profile profile = post.getProfile();
 
-        // Update post status to indicate reprocessing
-        post.setCvHeading("Reprocessing...");
-        post.setAutoTagged(false);
-        post.setUpdatedAt(LocalDateTime.now());
-        Post savedPost = postRepository.save(post);
+        // Check if user is an EMPLOYER - if so, skip AI processing
+        boolean isEmployer = profile.getUser().getRole().name().equals("Employer");
 
-        // Trigger async reprocessing
-        PostProcessingRequest request = PostProcessingRequest.builder()
-                .postId(postId)
-                .content(post.getContent())
-                .profileId(profile.getId())
-                .profileBio(profile.getBio())
-                .profilePosition(profile.getPositionOrInstitue())
-                .build();
-        aiServiceManager.processPostAsync(request);
+        if (isEmployer) {
+            // For EMPLOYER users: directly set as GENERAL type without AI processing
+            log.info("Reprocessing post for EMPLOYER user - skipping AI analysis and setting as GENERAL type");
+            post.setCvHeading("General Post");
+            post.setAutoTagged(true);
+            post.setType(PostType.GENERAL);
+            post.setUpdatedAt(LocalDateTime.now());
+            Post savedPost = postRepository.save(post);
+            log.info("EMPLOYER post reprocessed with ID: {} - no AI processing required", savedPost.getId());
+            return savedPost;
+        } else {
+            // Update post status to indicate reprocessing
+            post.setCvHeading("Reprocessing...");
+            post.setAutoTagged(false);
+            post.setUpdatedAt(LocalDateTime.now());
+            Post savedPost = postRepository.save(post);
 
-        return savedPost;
+            // Trigger async reprocessing
+            PostProcessingRequest request = PostProcessingRequest.builder()
+                    .postId(postId)
+                    .content(post.getContent())
+                    .profileId(profile.getId())
+                    .profileBio(profile.getBio())
+                    .profilePosition(profile.getPositionOrInstitue())
+                    .build();
+            aiServiceManager.processPostAsync(request);
+
+            return savedPost;
+        }
     }
 
     @Transactional
@@ -119,27 +148,43 @@ public class PostService {
             images = validateAndCleanImages(images);
         }
 
+        // Check if user is an EMPLOYER - if so, skip AI processing
+        boolean isEmployer = profile.getUser().getRole().name().equals("Employer");
+
         // Update post content and images immediately
         post.setContent(newContent);
         post.setImages(images != null ? new ArrayList<>(images) : new ArrayList<>());
-        post.setCvHeading("Processing...");
-        post.setAutoTagged(false);
         post.setUpdatedAt(LocalDateTime.now());
 
-        // Save immediately for fast response
-        Post savedPost = postRepository.save(post);
+        if (isEmployer) {
+            // For EMPLOYER users: directly set as GENERAL type without AI processing
+            log.info("Updating post for EMPLOYER user - skipping AI analysis and setting as GENERAL type");
+            post.setCvHeading("General Post");
+            post.setAutoTagged(true);
+            post.setType(PostType.GENERAL);
+            Post savedPost = postRepository.save(post);
+            log.info("EMPLOYER post updated with ID: {} - no AI processing required", savedPost.getId());
+            return savedPost;
+        } else {
+            // For regular users: trigger AI reprocessing
+            post.setCvHeading("Processing...");
+            post.setAutoTagged(false);
 
-        // Trigger async reprocessing with new content
-        PostProcessingRequest request = PostProcessingRequest.builder()
-                .postId(postId)
-                .content(newContent)
-                .profileId(profile.getId())
-                .profileBio(profile.getBio())
-                .profilePosition(profile.getPositionOrInstitue())
-                .build();
-        aiServiceManager.processPostAsync(request);
+            // Save immediately for fast response
+            Post savedPost = postRepository.save(post);
 
-        return savedPost;
+            // Trigger async reprocessing with new content
+            PostProcessingRequest request = PostProcessingRequest.builder()
+                    .postId(postId)
+                    .content(newContent)
+                    .profileId(profile.getId())
+                    .profileBio(profile.getBio())
+                    .profilePosition(profile.getPositionOrInstitue())
+                    .build();
+            aiServiceManager.processPostAsync(request);
+
+            return savedPost;
+        }
     }
 
     // ... (rest of the existing methods remain unchanged)
