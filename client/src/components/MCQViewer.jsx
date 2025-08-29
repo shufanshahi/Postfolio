@@ -14,6 +14,8 @@ const MCQViewer = ({ mcqSet, onBack }) => {
   };
 
   const calculateScore = () => {
+    if (!mcqSet || !mcqSet.questions) return 0;
+
     let correct = 0;
     mcqSet.questions.forEach((question, index) => {
       if (selectedAnswers[index] === question.correctAnswer) {
@@ -25,35 +27,34 @@ const MCQViewer = ({ mcqSet, onBack }) => {
 
   if (showResults) {
     const score = calculateScore();
-    const percentage = Math.round((score / mcqSet.questions.length) * 100);
+    const totalQuestions = mcqSet?.questions?.length || 0;
+    const percentage = totalQuestions > 0 ? Math.round((score / totalQuestions) * 100) : 0;
 
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 p-6">
         <div className="max-w-4xl mx-auto">
           <div className="bg-white rounded-xl shadow-lg p-8">
             <div className="text-center mb-8">
-              <div className={`inline-flex items-center justify-center w-20 h-20 rounded-full mb-4 ${
-                percentage >= 70 ? 'bg-green-100 text-green-600' : 
-                percentage >= 50 ? 'bg-yellow-100 text-yellow-600' : 'bg-red-100 text-red-600'
-              }`}>
+              <div className={`inline-flex items-center justify-center w-20 h-20 rounded-full mb-4 ${percentage >= 70 ? 'bg-green-100 text-green-600' :
+                  percentage >= 50 ? 'bg-yellow-100 text-yellow-600' : 'bg-red-100 text-red-600'
+                }`}>
                 <span className="text-2xl font-bold">{percentage}%</span>
               </div>
               <h2 className="text-2xl font-bold text-gray-800 mb-2">Quiz Complete!</h2>
-              <p className="text-gray-600">You scored {score} out of {mcqSet.questions.length} questions</p>
+              <p className="text-gray-600">You scored {score} out of {totalQuestions} questions</p>
             </div>
 
             <div className="space-y-6 mb-8">
-              {mcqSet.questions.map((question, index) => (
+              {mcqSet?.questions?.map((question, index) => (
                 <div key={`question-${index}`} className="border rounded-lg p-6">
                   <div className="flex items-start justify-between mb-4">
                     <h3 className="font-medium text-gray-800 flex-1">
                       {index + 1}. {question.question}
                     </h3>
-                    <div className={`ml-4 px-2 py-1 rounded text-sm font-medium ${
-                      selectedAnswers[index] === question.correctAnswer 
-                        ? 'bg-green-100 text-green-800' 
+                    <div className={`ml-4 px-2 py-1 rounded text-sm font-medium ${selectedAnswers[index] === question.correctAnswer
+                        ? 'bg-green-100 text-green-800'
                         : 'bg-red-100 text-red-800'
-                    }`}>
+                      }`}>
                       {selectedAnswers[index] === question.correctAnswer ? 'Correct' : 'Wrong'}
                     </div>
                   </div>
@@ -62,13 +63,12 @@ const MCQViewer = ({ mcqSet, onBack }) => {
                     {['A', 'B', 'C', 'D'].map(option => (
                       <div
                         key={`option-${index}-${option}`}
-                        className={`p-3 rounded-lg border ${
-                          option === question.correctAnswer
+                        className={`p-3 rounded-lg border ${option === question.correctAnswer
                             ? 'bg-green-50 border-green-200'
                             : selectedAnswers[index] === option && option !== question.correctAnswer
-                            ? 'bg-red-50 border-red-200'
-                            : 'bg-gray-50 border-gray-200'
-                        }`}
+                              ? 'bg-red-50 border-red-200'
+                              : 'bg-gray-50 border-gray-200'
+                          }`}
                       >
                         <span className="font-medium">{option}. </span>
                         {question[`option${option}`]}
@@ -106,7 +106,51 @@ const MCQViewer = ({ mcqSet, onBack }) => {
     );
   }
 
+  // Add null checks for mcqSet and questions
+  if (!mcqSet || !mcqSet.questions || mcqSet.questions.length === 0) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 p-6">
+        <div className="max-w-4xl mx-auto">
+          <div className="bg-white rounded-xl shadow-lg p-8">
+            <div className="text-center">
+              <h2 className="text-2xl font-bold text-gray-800 mb-4">No Questions Available</h2>
+              <p className="text-gray-600 mb-6">There are no questions to display in this MCQ set.</p>
+              <button
+                onClick={onBack}
+                className="bg-blue-600 text-white py-3 px-6 rounded-lg hover:bg-blue-700 transition-colors"
+              >
+                Back to Preparation Hub
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   const question = mcqSet.questions[currentQuestion];
+
+  // Additional check for current question
+  if (!question) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 p-6">
+        <div className="max-w-4xl mx-auto">
+          <div className="bg-white rounded-xl shadow-lg p-8">
+            <div className="text-center">
+              <h2 className="text-2xl font-bold text-gray-800 mb-4">Question Not Found</h2>
+              <p className="text-gray-600 mb-6">The current question could not be loaded.</p>
+              <button
+                onClick={onBack}
+                className="bg-blue-600 text-white py-3 px-6 rounded-lg hover:bg-blue-700 transition-colors"
+              >
+                Back to Preparation Hub
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 p-6">
@@ -122,11 +166,11 @@ const MCQViewer = ({ mcqSet, onBack }) => {
                 Back
               </button>
               <div className="text-right">
-                <p className="text-sm text-gray-500">Question {currentQuestion + 1} of {mcqSet.questions.length}</p>
+                <p className="text-sm text-gray-500">Question {currentQuestion + 1} of {mcqSet?.questions?.length || 0}</p>
                 <div className="w-64 bg-gray-200 rounded-full h-2 mt-1">
-                  <div 
-                    className="bg-indigo-600 h-2 rounded-full transition-all duration-300" 
-                    style={{width: `${((currentQuestion + 1) / mcqSet.questions.length) * 100}%`}}
+                  <div
+                    className="bg-indigo-600 h-2 rounded-full transition-all duration-300"
+                    style={{ width: `${((currentQuestion + 1) / (mcqSet?.questions?.length || 1)) * 100}%` }}
                   ></div>
                 </div>
               </div>
@@ -144,11 +188,10 @@ const MCQViewer = ({ mcqSet, onBack }) => {
                 <button
                   key={`current-${option}`}
                   onClick={() => handleAnswerSelect(currentQuestion, option)}
-                  className={`w-full text-left p-4 rounded-lg border transition-colors ${
-                    selectedAnswers[currentQuestion] === option
+                  className={`w-full text-left p-4 rounded-lg border transition-colors ${selectedAnswers[currentQuestion] === option
                       ? 'bg-indigo-50 border-indigo-300 text-indigo-800'
                       : 'bg-gray-50 border-gray-200 hover:bg-gray-100'
-                  }`}
+                    }`}
                 >
                   <span className="font-medium">{option}. </span>
                   {question[`option${option}`]}
@@ -165,7 +208,7 @@ const MCQViewer = ({ mcqSet, onBack }) => {
                 Previous
               </button>
 
-              {currentQuestion < mcqSet.questions.length - 1 ? (
+              {currentQuestion < (mcqSet?.questions?.length || 0) - 1 ? (
                 <button
                   onClick={() => setCurrentQuestion(currentQuestion + 1)}
                   className="px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"

@@ -48,8 +48,8 @@ const PreparationPage = () => {
       return false;
     }
     if (activeTab === 'text' && (!textContent.trim() || !documentName.trim())) {
-      setError(activeTab === 'text' && !documentName.trim() 
-        ? 'Please enter a document name' 
+      setError(activeTab === 'text' && !documentName.trim()
+        ? 'Please enter a document name'
         : 'Please enter some text content');
       return false;
     }
@@ -68,7 +68,8 @@ const PreparationPage = () => {
       if (activeTab === 'upload') {
         const formData = new FormData();
         formData.append('document', selectedFile);
-        response = await fetch('http://localhost:8080/api/preparation/generate-mcq', {
+        // Use synchronous endpoint for immediate results
+        response = await fetch('http://localhost:8080/api/preparation/generate-mcq-sync', {
           method: 'POST',
           body: formData,
           headers: {
@@ -92,9 +93,15 @@ const PreparationPage = () => {
       if (!response.ok) throw new Error('Failed to generate MCQs');
 
       const data = await response.json();
-      setCurrentMCQSet(data);
-      setSuccess('MCQs generated successfully!');
-      
+
+      // Only set currentMCQSet if we have questions
+      if (data.success && data.questions && data.questions.length > 0) {
+        setCurrentMCQSet(data);
+        setSuccess('MCQs generated successfully!');
+      } else {
+        setError('No questions were generated. Please try again with different content.');
+      }
+
       // Reset form
       if (activeTab === 'upload') {
         setSelectedFile(null);
@@ -103,7 +110,7 @@ const PreparationPage = () => {
         setTextContent('');
         setDocumentName('');
       }
-      
+
       await loadMCQSets();
     } catch (err) {
       setError(err.message || 'An error occurred. Please try again.');
@@ -180,11 +187,10 @@ const PreparationPage = () => {
                 <div className="flex">
                   <button
                     onClick={() => setActiveTab('upload')}
-                    className={`flex-1 py-3 md:py-4 px-4 md:px-6 text-center font-medium transition-colors ${
-                      activeTab === 'upload'
+                    className={`flex-1 py-3 md:py-4 px-4 md:px-6 text-center font-medium transition-colors ${activeTab === 'upload'
                         ? 'bg-indigo-50 text-indigo-600 border-b-2 border-indigo-600'
                         : 'text-gray-500 hover:text-gray-700'
-                    }`}
+                      }`}
                   >
                     <FileUp className="h-5 w-5 inline mr-2" />
                     <span className="hidden sm:inline">Upload Document</span>
@@ -192,11 +198,10 @@ const PreparationPage = () => {
                   </button>
                   <button
                     onClick={() => setActiveTab('text')}
-                    className={`flex-1 py-3 md:py-4 px-4 md:px-6 text-center font-medium transition-colors ${
-                      activeTab === 'text'
+                    className={`flex-1 py-3 md:py-4 px-4 md:px-6 text-center font-medium transition-colors ${activeTab === 'text'
                         ? 'bg-indigo-50 text-indigo-600 border-b-2 border-indigo-600'
                         : 'text-gray-500 hover:text-gray-700'
-                    }`}
+                      }`}
                   >
                     <FileText className="h-5 w-5 inline mr-2" />
                     <span className="hidden sm:inline">Paste Text</span>
@@ -297,7 +302,7 @@ const PreparationPage = () => {
                         <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                         <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                       </svg>
-                      Generating...
+                      Generating MCQs... This may take up to 30 seconds
                     </span>
                   ) : (
                     'Generate 25 MCQs'

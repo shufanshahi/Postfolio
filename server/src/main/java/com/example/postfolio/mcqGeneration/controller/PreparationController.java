@@ -23,6 +23,9 @@ public class PreparationController {
     @PostMapping("/generate-mcq")
     public ResponseEntity<MCQSetResponse> generateMCQFromDocument(
             @RequestParam("document") MultipartFile file,
+            @RequestParam(value = "topic", required = false) String topic,
+            @RequestParam(value = "questionCount", defaultValue = "5") int questionCount,
+            @RequestParam(value = "difficulty", defaultValue = "Medium") String difficulty,
             Authentication authentication) {
 
         try {
@@ -32,18 +35,60 @@ public class PreparationController {
             // Read file content
             String documentContent = new String(file.getBytes(), StandardCharsets.UTF_8);
 
-            // Create request
-            MCQGenerationRequest request = new MCQGenerationRequest();
-            request.setDocumentContent(documentContent);
-            request.setDocumentName(file.getOriginalFilename());
+            // Create request with all parameters
+            MCQGenerationRequest request = MCQGenerationRequest.builder()
+                    .documentContent(documentContent)
+                    .documentName(file.getOriginalFilename())
+                    .topic(topic)
+                    .questionCount(questionCount)
+                    .difficulty(difficulty)
+                    .build();
 
-            // Generate MCQs
-            MCQSetResponse response = mcqService.generateMCQsFromDocument(request, userId);
+            // Generate MCQs using AI microservice (async)
+            MCQSetResponse response = mcqService.generateMCQsWithAI(request, userId);
 
             return ResponseEntity.ok(response);
 
         } catch (IOException e) {
             return ResponseEntity.badRequest().build();
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().build();
+        }
+    }
+
+    @PostMapping("/generate-mcq-sync")
+    public ResponseEntity<MCQSetResponse> generateMCQFromDocumentSync(
+            @RequestParam("document") MultipartFile file,
+            @RequestParam(value = "topic", required = false) String topic,
+            @RequestParam(value = "questionCount", defaultValue = "5") int questionCount,
+            @RequestParam(value = "difficulty", defaultValue = "Medium") String difficulty,
+            Authentication authentication) {
+
+        try {
+            // Get user ID from authentication
+            Long userId = getUserIdFromAuth(authentication);
+
+            // Read file content
+            String documentContent = new String(file.getBytes(), StandardCharsets.UTF_8);
+
+            // Create request with all parameters
+            MCQGenerationRequest request = MCQGenerationRequest.builder()
+                    .documentContent(documentContent)
+                    .documentName(file.getOriginalFilename())
+                    .topic(topic)
+                    .questionCount(questionCount)
+                    .difficulty(difficulty)
+                    .build();
+
+            // Generate MCQs using AI microservice (sync)
+            MCQSetResponse response = mcqService.generateMCQsWithAISync(request, userId);
+
+            return ResponseEntity.ok(response);
+
+        } catch (IOException e) {
+            return ResponseEntity.badRequest().build();
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().build();
         }
     }
 
@@ -53,7 +98,7 @@ public class PreparationController {
             Authentication authentication) {
 
         Long userId = getUserIdFromAuth(authentication);
-        MCQSetResponse response = mcqService.generateMCQsFromDocument(request, userId);
+        MCQSetResponse response = mcqService.generateMCQsWithAISync(request, userId);
 
         return ResponseEntity.ok(response);
     }
