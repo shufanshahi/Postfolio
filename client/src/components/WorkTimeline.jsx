@@ -4,7 +4,7 @@ import { Button } from './ui/button';
 import { Badge } from './ui/badge';
 import { Edit, Trash2, Building, Calendar, Loader2, Clock, MapPin, ExternalLink, Briefcase } from 'lucide-react';
 
-const WorkTimeline = ({ userId, onEdit, onDelete }) => {
+const WorkTimeline = ({ userId, onEdit, onDelete, compact = false }) => {
     const [works, setWorks] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -133,9 +133,9 @@ const WorkTimeline = ({ userId, onEdit, onDelete }) => {
 
     if (loading) {
         return (
-            <div className="rounded-2xl border border-teal-900/10 dark:border-slate-700/60 bg-gradient-to-br from-white/80 to-white/60 dark:from-slate-900/60 dark:to-slate-900/50 backdrop-blur-xl shadow-md p-8">
+            <div className={compact ? 'p-4 flex items-center justify-center text-sm text-slate-500' : 'rounded-2xl border border-teal-900/10 dark:border-slate-700/60 bg-gradient-to-br from-white/80 to-white/60 dark:from-slate-900/60 dark:to-slate-900/50 backdrop-blur-xl shadow-md p-8'}>
                 <div className="flex items-center justify-center">
-                    <Loader2 className="h-8 w-8 animate-spin text-sky-400" />
+                    <Loader2 className={`animate-spin ${compact ? 'h-5 w-5' : 'h-8 w-8'} text-sky-400`} />
                     <span className="ml-3 text-slate-600 dark:text-slate-300">Loading work experience...</span>
                 </div>
             </div>
@@ -144,7 +144,7 @@ const WorkTimeline = ({ userId, onEdit, onDelete }) => {
 
     if (error) {
         return (
-            <div className="rounded-2xl border border-teal-900/10 dark:border-slate-700/60 bg-gradient-to-br from-white/80 to-white/60 dark:from-slate-900/60 dark:to-slate-900/50 backdrop-blur-xl shadow-md p-8">
+            <div className={compact ? 'p-4 text-center text-red-500 dark:text-red-400 text-sm' : 'rounded-2xl border border-teal-900/10 dark:border-slate-700/60 bg-gradient-to-br from-white/80 to-white/60 dark:from-slate-900/60 dark:to-slate-900/50 backdrop-blur-xl shadow-md p-8'}>
                 <div className="text-center text-red-500 dark:text-red-400">
                     <p>Error loading work experience: {error}</p>
                 </div>
@@ -154,49 +154,51 @@ const WorkTimeline = ({ userId, onEdit, onDelete }) => {
 
     if (works.length === 0) {
         return (
-            <div className="rounded-2xl border border-teal-900/10 dark:border-slate-700/60 bg-gradient-to-br from-white/80 to-white/60 dark:from-slate-900/60 dark:to-slate-900/50 backdrop-blur-xl shadow-md p-12">
+            <div className={compact ? 'p-4 text-center text-slate-500 dark:text-slate-400 text-sm' : 'rounded-2xl border border-teal-900/10 dark:border-slate-700/60 bg-gradient-to-br from-white/80 to-white/60 dark:from-slate-900/60 dark:to-slate-900/50 backdrop-blur-xl shadow-md p-12'}>
                 <div className="text-center">
-                    <div className="w-16 h-16 mx-auto mb-4 rounded-full flex items-center justify-center bg-gradient-to-br from-sky-300 to-sky-400 dark:from-sky-400 dark:to-sky-500 text-white shadow">
-                        <Briefcase className="h-8 w-8" />
-                    </div>
-                    <h3 className="text-lg font-semibold text-slate-800 dark:text-slate-100 mb-2">No Work Experience</h3>
-                    <p className="text-slate-600 dark:text-slate-400">Start building your professional journey by adding your work experience.</p>
+                    {!compact && (
+                        <div className="w-16 h-16 mx-auto mb-4 rounded-full flex items-center justify-center bg-gradient-to-br from-sky-300 to-sky-400 dark:from-sky-400 dark:to-sky-500 text-white shadow">
+                            <Briefcase className="h-8 w-8" />
+                        </div>
+                    )}
+                    <h3 className={`font-semibold ${compact ? 'text-sm' : 'text-lg'} text-slate-800 dark:text-slate-100 mb-1`}>No Work Experience</h3>
+                    <p className="text-slate-600 dark:text-slate-400 text-xs">Add your first role to showcase experience.</p>
                 </div>
             </div>
         );
     }
 
     return (
-        <div className="space-y-4">
+        <div className={`space-y-${compact ? '3' : '4'}`}>
             {works.map((work, index) => (
                 <div key={work.id} className="group relative">
                     {/* Timeline connector */}
-                    {index < works.length - 1 && (
+                    {index < works.length - 1 && !compact && (
                         <div className="absolute left-8 top-20 w-0.5 h-6 bg-gradient-to-b from-sky-300 to-sky-400 dark:from-sky-400 dark:to-sky-500"></div>
                     )}
 
-                    <div className="rounded-2xl border border-teal-900/10 dark:border-slate-700/60 bg-gradient-to-br from-white/80 to-white/60 dark:from-slate-900/60 dark:to-slate-900/50 backdrop-blur-xl shadow-md hover:shadow-lg transition-all duration-300 p-6">
+                    <div className={`${compact ? 'rounded-xl p-4 bg-white/60 dark:bg-slate-800/50 border border-white/50 dark:border-slate-700/50' : 'rounded-2xl border border-teal-900/10 dark:border-slate-700/60 bg-gradient-to-br from-white/80 to-white/60 dark:from-slate-900/60 dark:to-slate-900/50 backdrop-blur-xl shadow-md hover:shadow-lg'} transition-all duration-300 ${compact ? '' : 'p-6'}`}>
                         <div className="flex gap-4">
                             {/* Company Logo/Initial */}
                             <div className="shrink-0">
-                                <div className="w-16 h-16 rounded-xl bg-gradient-to-br from-sky-300 to-sky-400 dark:from-sky-400 dark:to-sky-500 flex items-center justify-center text-white font-bold text-lg shadow-sm ring-1 ring-white/40 dark:ring-white/10">
+                                <div className={`${compact ? 'w-12 h-12 text-sm rounded-lg' : 'w-16 h-16 rounded-xl text-lg'} bg-gradient-to-br from-sky-300 to-sky-400 dark:from-sky-400 dark:to-sky-500 flex items-center justify-center text-white font-bold shadow-sm ring-1 ring-white/40 dark:ring-white/10`}>
                                     {getCompanyInitials(work.companyName)}
                                 </div>
                             </div>
 
                             {/* Content */}
                             <div className="flex-1 min-w-0">
-                                <div className="flex items-start justify-between mb-3">
+                                <div className={`flex items-start justify-between ${compact ? 'mb-2' : 'mb-3'}`}>
                                     <div className="flex-1">
-                                        <h3 className="text-lg font-semibold text-slate-800 dark:text-slate-100 leading-tight">
+                                        <h3 className={`${compact ? 'text-sm' : 'text-lg'} font-semibold text-slate-800 dark:text-slate-100 leading-tight`}>
                                             {work.position}
                                         </h3>
                                         <div className="flex items-center gap-2 mt-1">
-                                            <p className="text-base font-medium text-slate-700 dark:text-slate-200">
+                                            <p className={`${compact ? 'text-sm' : 'text-base'} font-medium text-slate-700 dark:text-slate-200`}>
                                                 {work.companyName}
                                             </p>
                                             {work.isCurrent && (
-                                                <Badge className="bg-emerald-500/15 text-emerald-700 dark:bg-emerald-400/15 dark:text-emerald-300 rounded-full px-2 py-0.5 text-xs font-medium">
+                                                <Badge className="bg-emerald-500/15 text-emerald-700 dark:bg-emerald-400/15 dark:text-emerald-300 rounded-full px-2 py-0.5 text-[10px] font-medium">
                                                     Current
                                                 </Badge>
                                             )}
@@ -248,7 +250,7 @@ const WorkTimeline = ({ userId, onEdit, onDelete }) => {
                                 </div>
 
                                 {/* Date and Duration */}
-                                <div className="flex items-center gap-4 text-sm text-slate-500 dark:text-slate-400 mb-3">
+                                <div className={`flex flex-wrap items-center gap-x-4 gap-y-1 ${compact ? 'text-xs mb-2' : 'text-sm mb-3'} text-slate-500 dark:text-slate-400`}>
                                     <div className="flex items-center gap-1">
                                         <Calendar className="h-4 w-4" />
                                         <span>{work.displayDateRange}</span>
@@ -261,14 +263,12 @@ const WorkTimeline = ({ userId, onEdit, onDelete }) => {
 
                                 {/* Description if available */}
                                 {work.description && (
-                                    <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed mb-3">
-                                        {work.description}
-                                    </p>
+                                    <p className={`${compact ? 'text-xs line-clamp-2' : 'text-sm'} text-slate-600 dark:text-slate-300 leading-relaxed mb-2`}>{work.description}</p>
                                 )}
 
                                 {/* Location if available */}
                                 {work.location && (
-                                    <div className="flex items-center gap-1 text-sm text-slate-500 dark:text-slate-400">
+                                    <div className={`flex items-center gap-1 ${compact ? 'text-xs' : 'text-sm'} text-slate-500 dark:text-slate-400`}>
                                         <MapPin className="h-4 w-4" />
                                         <span>{work.location}</span>
                                     </div>
