@@ -2,16 +2,11 @@ package com.example.postfolio.post.service;
 
 import com.example.postfolio.cvInApp.service.CvUpdateService;
 import com.example.postfolio.notification.service.NotificationService;
-import com.example.postfolio.post.dto.CreatePostDTO;
-import com.example.postfolio.post.dto.PostResponseDTO;
-import com.example.postfolio.post.dto.UpdatePostDTO;
 import com.example.postfolio.post.entity.Post;
 import com.example.postfolio.post.models.PostType;
 import com.example.postfolio.post.repository.PostRepository;
 import com.example.postfolio.profile.entity.Profile;
 import com.example.postfolio.profile.service.ProfileService;
-import com.example.postfolio.profile.service.WorkService;
-import com.example.postfolio.profile.dto.WorkDto;
 import com.example.postfolio.user.entity.User;
 import com.example.postfolio.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -24,10 +19,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
-import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -43,12 +35,11 @@ public class PostService {
 
     private final PostRepository postRepository;
     private final ProfileService profileService;
-    private final GeminiService geminiService;
     private final CvUpdateService cvUpdateService;
     private final UserRepository userRepository;
     private final ReactionRepository reactionRepository;
     private final NotificationService notificationService;
-    private final WorkService workService;
+    private final AsyncPostProcessingService asyncPostProcessingService;
 
     @Transactional
     public Post createPost(Long profileId, String content, List<String> images) {
@@ -66,97 +57,39 @@ public class PostService {
             images = validateAndCleanImages(images);
         }
 
-        try {
-            GeminiService.GeminiResponse analysis = geminiService.analyzePost(content);
+        // Save post immediately with default values for fast response (200ms)
+        Post savedPost = savePost(content, profile, PostType.GENERAL,
+                List.of(), "Processing...", false, images);
 
-            // Handle EXPERIENCE type specially
-            if (analysis.getPostType() == PostType.EXPERIENCE) {
-                // Create work entry from tags
-                createWorkFromExperiencePost(analysis);
+        // Trigger async AI processing in background (2-5s)
+        asyncPostProcessingService.processPostAsync(savedPost.getId(), content, profile);
 
-                // Save post as GENERAL to not show in CV
-                Post savedPost = savePost(content, profile, PostType.GENERAL,
-                        List.of(), analysis.getSummary(), true, images);
-
-                return savedPost;
-            } else {
-                // Normal flow for other post types
-                Post savedPost = savePost(content, profile, analysis.getPostType(),
-                        analysis.getTags(), analysis.getSummary(), true, images);
-
-                // Only update CV if the post is CV-relevant (not GENERAL)
-                if (analysis.isCvRelevant()) {
-                    cvUpdateService.updateCvFromPost(savedPost);
-                }
-
-                return savedPost;
-            }
-        } catch (Exception e) {
-            log.error("Failed to generate CV heading for post, using fallback", e);
-            Post savedPost = savePost(content, profile, PostType.GENERAL,
-                    List.of(), generateFallbackCvHeading(content), false, images);
-
-            return savedPost;
-        }
+        return savedPost;
     }
 
     @Transactional
     public Post reprocessPostWithAI(Long postId, Long profileId) {
         Post post = getPostById(postId);
         validatePostOwnership(post, profileId);
+        Profile profile = post.getProfile();
 
-        try {
-            GeminiService.GeminiResponse analysis = geminiService.analyzePost(post.getContent());
+        // Update post status to indicate reprocessing
+        post.setCvHeading("Reprocessing...");
+        post.setAutoTagged(false);
+        post.setUpdatedAt(LocalDateTime.now());
+        Post savedPost = postRepository.save(post);
 
-            // Handle EXPERIENCE type specially
-            if (analysis.getPostType() == PostType.EXPERIENCE) {
-                // Create work entry from tags
-                createWorkFromExperiencePost(analysis);
+        // Trigger async reprocessing
+        asyncPostProcessingService.reprocessPostAsync(postId, profile);
 
-                // Update post as GENERAL to not show in CV
-                post.setType(PostType.GENERAL);
-                post.setTags(List.of());
-                post.setCvHeading(analysis.getSummary());
-                post.setAutoTagged(true);
-                post.setUpdatedAt(LocalDateTime.now());
-
-                // Remove from CV if it was there
-                cvUpdateService.removeCvEntriesByPostId(postId);
-
-                return postRepository.save(post);
-            } else {
-                // Normal flow for other post types
-                post.setType(analysis.getPostType());
-                post.setTags(analysis.getTags());
-                post.setCvHeading(analysis.getSummary());
-                post.setAutoTagged(true);
-                post.setUpdatedAt(LocalDateTime.now());
-                Post savedPost = postRepository.save(post);
-
-                // Only update CV if the post is CV-relevant
-                if (analysis.isCvRelevant()) {
-                    cvUpdateService.updateCvFromPost(savedPost);
-                } else {
-                    // If post was previously CV-relevant but now classified as GENERAL,
-                    // remove it from CV
-                    cvUpdateService.removeCvEntriesByPostId(postId);
-                }
-
-                return savedPost;
-            }
-        } catch (Exception e) {
-            log.error("Failed to reprocess post {} with AI: {}", postId, e.getMessage());
-            throw new ResponseStatusException(
-                    HttpStatus.INTERNAL_SERVER_ERROR,
-                    "Failed to reprocess post with AI");
-        }
+        return savedPost;
     }
 
     @Transactional
     public Post updatePost(Long postId, Long profileId, String newContent, List<String> images) {
         Post post = getPostById(postId);
         validatePostOwnership(post, profileId);
-        PostType previousType = post.getType();
+        Profile profile = post.getProfile();
 
         // Validate image count
         if (images != null && images.size() > 4) {
@@ -170,152 +103,20 @@ public class PostService {
             images = validateAndCleanImages(images);
         }
 
+        // Update post content and images immediately
         post.setContent(newContent);
         post.setImages(images != null ? new ArrayList<>(images) : new ArrayList<>());
+        post.setCvHeading("Processing...");
+        post.setAutoTagged(false);
+        post.setUpdatedAt(LocalDateTime.now());
 
-        try {
-            GeminiService.GeminiResponse analysis = geminiService.analyzePost(newContent);
+        // Save immediately for fast response
+        Post savedPost = postRepository.save(post);
 
-            // Handle EXPERIENCE type specially
-            if (analysis.getPostType() == PostType.EXPERIENCE) {
-                // Create work entry from tags
-                createWorkFromExperiencePost(analysis);
+        // Trigger async reprocessing with new content
+        asyncPostProcessingService.reprocessPostAsync(postId, profile);
 
-                // Update post as GENERAL to not show in CV
-                post.setType(PostType.GENERAL);
-                post.setTags(List.of());
-                post.setCvHeading(analysis.getSummary());
-                post.setUpdatedAt(LocalDateTime.now());
-                post.setAutoTagged(false);
-
-                // Remove from CV if it was there
-                if (previousType != PostType.GENERAL) {
-                    cvUpdateService.removeCvEntriesByPostId(postId);
-                }
-
-                return postRepository.save(post);
-            } else {
-                // Normal flow for other post types
-                post.setCvHeading(analysis.getSummary());
-                post.setType(analysis.getPostType());
-                post.setTags(analysis.getTags());
-                post.setUpdatedAt(LocalDateTime.now());
-                post.setAutoTagged(false);
-
-                Post savedPost = postRepository.save(post);
-
-                // Handle CV updates based on post type changes
-                if (analysis.isCvRelevant()) {
-                    cvUpdateService.updateCvFromPost(savedPost);
-                } else if (previousType != PostType.GENERAL) {
-                    // Post was CV-relevant before but now is GENERAL, remove from CV
-                    cvUpdateService.removeCvEntriesByPostId(postId);
-                }
-
-                return savedPost;
-            }
-        } catch (Exception e) {
-            log.error("Failed to generate CV heading for updated post, using fallback", e);
-            post.setCvHeading(generateFallbackCvHeading(newContent));
-            post.setType(PostType.GENERAL); // Fallback to GENERAL
-            post.setTags(List.of());
-
-            post.setUpdatedAt(LocalDateTime.now());
-            post.setAutoTagged(false);
-
-            Post savedPost = postRepository.save(post);
-
-            // Remove from CV since we're treating it as GENERAL
-            if (previousType != PostType.GENERAL) {
-                cvUpdateService.removeCvEntriesByPostId(postId);
-            }
-
-            return savedPost;
-        }
-    }
-
-    /**
-     * Creates a Work entry from EXPERIENCE post analysis
-     * Expected tags format: "Company Name,Position,Date" or "Company Name,Position,none"
-     */
-    private void createWorkFromExperiencePost(GeminiService.GeminiResponse analysis) {
-        try {
-            List<String> tags = analysis.getTags();
-            if (tags.isEmpty()) {
-                log.warn("No tags found for EXPERIENCE post, skipping work creation");
-                return;
-            }
-
-            // Parse tags - expecting format: "Company Name,Position,Date"
-            String tagString = tags.get(0); // Take first tag which should contain all info
-            String[] parts = tagString.split(",");
-
-            if (parts.length < 2) {
-                log.warn("Invalid tag format for EXPERIENCE post: {}", tagString);
-                return;
-            }
-
-            String companyName = parts[0].trim();
-            String position = parts[1].trim();
-            String dateString = parts.length > 2 ? parts[2].trim() : "none";
-
-            LocalDate startDate;
-            if ("none".equals(dateString) || dateString.isEmpty()) {
-                // Use current date if no date provided
-                startDate = LocalDate.now();
-            } else {
-                startDate = parseDateString(dateString);
-            }
-
-            // Get current user
-            User currentUser = getCurrentUser();
-
-            // Create WorkDto
-            WorkDto workDto = WorkDto.builder()
-                    .companyName(companyName)
-                    .position(position)
-                    .startDate(startDate)
-                    .endDate(null) // No end date as it's a new position
-                    .isCurrent(true) // Assume it's current position
-                    .build();
-
-            // Create work entry
-            workService.createWork(workDto, currentUser);
-            log.info("Created work entry: {} at {}", position, companyName);
-
-        } catch (Exception e) {
-            log.error("Failed to create work entry from EXPERIENCE post: {}", e.getMessage());
-        }
-    }
-
-    /**
-     * Parses date string from various formats
-     */
-    private LocalDate parseDateString(String dateString) {
-        DateTimeFormatter[] formatters = {
-                DateTimeFormatter.ofPattern("d MMMM yyyy"),
-                DateTimeFormatter.ofPattern("d MMMM"),
-                DateTimeFormatter.ofPattern("MMMM yyyy"),
-                DateTimeFormatter.ofPattern("yyyy-MM-dd"),
-                DateTimeFormatter.ofPattern("dd/MM/yyyy"),
-                DateTimeFormatter.ofPattern("MM/dd/yyyy")
-        };
-
-        for (DateTimeFormatter formatter : formatters) {
-            try {
-                if (dateString.matches("\\d{1,2} \\w+$")) {
-                    // Format like "21 January" - add current year
-                    dateString += " " + LocalDate.now().getYear();
-                }
-                return LocalDate.parse(dateString, formatter);
-            } catch (DateTimeParseException e) {
-                // Try next formatter
-            }
-        }
-
-        // If all parsing fails, return current date
-        log.warn("Could not parse date: {}, using current date", dateString);
-        return LocalDate.now();
+        return savedPost;
     }
 
     // ... (rest of the existing methods remain unchanged)
@@ -469,8 +270,8 @@ public class PostService {
     }
 
     private Post savePost(String content, Profile profile, PostType type,
-                          List<String> tags, String cvHeading, boolean autoTagged,
-                          List<String> images) {
+            List<String> tags, String cvHeading, boolean autoTagged,
+            List<String> images) {
         return postRepository.save(Post.builder()
                 .content(content)
                 .type(type)
@@ -490,10 +291,6 @@ public class PostService {
                     HttpStatus.FORBIDDEN,
                     "You can only modify your own posts");
         }
-    }
-
-    private String generateFallbackCvHeading(String content) {
-        return content.length() > 50 ? content.substring(0, 50) + "..." : content;
     }
 
     private User getCurrentUser() {

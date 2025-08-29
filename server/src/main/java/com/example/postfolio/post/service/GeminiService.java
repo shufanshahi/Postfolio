@@ -15,7 +15,7 @@ import java.util.*;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-class GeminiService {
+public class GeminiService {
     private final RestTemplate restTemplate;
 
     private String apiKey = "AIzaSyDyu3V1zVQxZYZb-MMnP0UJMIT2WXRI-KY";
