@@ -2,11 +2,10 @@
 import { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
-import { Download, AlertCircle, CheckCircle2, FileText, Info, Loader2 } from 'lucide-react';
+import { Download, AlertCircle, CheckCircle2, FileText, Loader2 } from 'lucide-react';
 import CvViewer from "@/component/CvViewer";
-import EducationManagement from "@/components/EducationManagement";
+import Navbar from '@/components/Navbar';
 
 export default function CvDownloadButton() {
     const [loading, setLoading] = useState(false);
@@ -71,84 +70,76 @@ export default function CvDownloadButton() {
     };
 
     return (
-        <div className="min-h-screen w-full bg-gradient-to-br from-slate-50 to-stone-100">
-            {/* Header with professional theme - Full Width */}
-            <div className="bg-white/80 backdrop-blur-sm border-b border-slate-200/50 sticky top-0 z-10 w-full shadow-sm">
-                <div className="w-full px-4 sm:px-6 lg:px-8 py-4">
-                    <div className="flex justify-between items-center">
-                        <h1 className="text-2xl font-bold text-slate-800">My Professional Profile</h1>
-                        <Button
-                            onClick={downloadCv}
-                            disabled={loading || !profileId}
-                            className="gap-2 bg-gradient-to-r from-sky-500 to-purple-500 hover:from-sky-600 hover:to-purple-600 text-white border-0 shadow-lg"
-                            size="lg"
-                        >
-                            {loading ? (
-                                <>
-                                    <Loader2 className="h-4 w-4 animate-spin" />
-                                    Generating CV...
-                                </>
-                            ) : (
-                                <>
-                                    <Download className="h-4 w-4" />
-                                    Download CV
-                                </>
-                            )}
-                        </Button>
-                    </div>
-                </div>
+        <div className="min-h-screen w-full relative overflow-x-hidden">
+            <div className="pointer-events-none absolute inset-0 -z-10">
+                <div className="absolute -top-32 -left-10 h-[38rem] w-[38rem] bg-gradient-to-br from-teal-200 via-teal-50 to-white dark:from-teal-600/30 dark:via-indigo-700/10 dark:to-transparent blur-3xl opacity-70" />
+                <div className="absolute top-1/2 -right-40 h-[36rem] w-[36rem] bg-gradient-to-tr from-indigo-200 via-white to-amber-100 dark:from-indigo-700/30 dark:via-transparent dark:to-teal-700/20 blur-3xl opacity-60" />
+            </div>
+            <Navbar />
+
+            {/* Floating download action */}
+            <div className="fixed bottom-6 right-6 z-40">
+                <Button
+                    onClick={downloadCv}
+                    disabled={loading || !profileId}
+                    className="gap-2 rounded-full bg-teal-600 hover:bg-teal-700 dark:bg-teal-500 dark:hover:bg-teal-400 shadow-lg shadow-teal-500/25"
+                    size="lg"
+                >
+                    {loading ? (
+                        <>
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                            Generating...
+                        </>
+                    ) : (
+                        <>
+                            <Download className="h-4 w-4" />
+                            Download CV
+                        </>
+                    )}
+                </Button>
             </div>
 
-            {/* Error and Success Alerts - Full Width */}
-            {error && (
-                <div className="w-full px-4 sm:px-6 lg:px-8 pt-4">
-                    <Alert variant="destructive" className="mb-6 bg-red-50 border-red-200 text-red-700">
+            {/* Alerts */}
+            <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 space-y-4">
+                {error && (
+                    <Alert variant="destructive" className="bg-rose-50 border-rose-200 text-rose-700">
                         <AlertCircle className="h-4 w-4" />
                         <AlertTitle>Error</AlertTitle>
                         <AlertDescription>{error}</AlertDescription>
                     </Alert>
-                </div>
-            )}
-
-            {success && (
-                <div className="w-full px-4 sm:px-6 lg:px-8 pt-4">
-                    <Alert className="mb-6 bg-emerald-50 border-emerald-200 text-emerald-700">
+                )}
+                {success && (
+                    <Alert className="bg-emerald-50 border-emerald-200 text-emerald-700">
                         <CheckCircle2 className="h-4 w-4" />
                         <AlertTitle>Success!</AlertTitle>
                         <AlertDescription>CV downloaded successfully.</AlertDescription>
                     </Alert>
-                </div>
-            )}
-            
+                )}
+            </div>
 
-            {/* Main Content - Full Width */}
+            {/* Main Content */}
             <div className="w-full">
                 {!profileId ? (
-                    <div className="h-screen flex items-center justify-center">
+                    <div className="h-[70vh] flex items-center justify-center">
                         <div className="space-y-4 text-center">
                             <div className="relative">
-                                <div className="w-16 h-16 border-4 border-sky-400 border-t-transparent rounded-full animate-spin mx-auto"></div>
-                                <div className="absolute inset-0 rounded-full border-2 border-sky-200/20 animate-pulse"></div>
+                                <div className="w-16 h-16 border-4 border-teal-400 border-t-transparent rounded-full animate-spin mx-auto"></div>
+                                <div className="absolute inset-0 rounded-full border-2 border-teal-200/30 animate-pulse"></div>
                             </div>
-                            <p className="text-sky-600 font-medium text-lg">Loading your profile...</p>
+                            <p className="text-teal-600 dark:text-teal-300 font-medium text-lg">Loading your profile...</p>
                         </div>
                     </div>
                 ) : (
-                    <div className="w-full px-4 sm:px-6 lg:px-8 py-6">
-                        {/* Centered CV Viewer */}
+                    <div className="w-full px-4 sm:px-6 lg:px-8 py-10">
                         <div className="flex justify-center">
-                            <div className="w-full max-w-4xl"> {/* Adjust max-width as needed */}
-                                <Card className="bg-white border-slate-200 shadow-lg">
-                                    <CardHeader>
-                                        <CardTitle className="text-slate-800 flex items-center gap-2">
-                                            <FileText className="h-5 w-5 text-sky-500" />
-                                            CV Map & Preview
-                                        </CardTitle>
-                                    </CardHeader>
-                                    <CardContent className="p-0">
-                                        <CvViewer profileId={profileId} />
-                                    </CardContent>
-                                </Card>
+                            <div className="w-full max-w-5xl">
+                                <div className="mb-6 flex items-center gap-3">
+                                    <div className="h-9 w-9 rounded-lg bg-gradient-to-br from-teal-500 via-indigo-500 to-amber-400 flex items-center justify-center text-white shadow-sm text-sm font-semibold">CV</div>
+                                    <h1 className="text-xl font-semibold tracking-tight text-slate-800 dark:text-slate-100">Resume Designer</h1>
+                                </div>
+                                <div className="rounded-2xl border border-teal-900/10 dark:border-slate-700/60 bg-gradient-to-br from-white/80 to-white/60 dark:from-slate-900/60 dark:to-slate-900/40 backdrop-blur-xl shadow-xl overflow-hidden">
+                                    <CvViewer profileId={profileId} />
+                                </div>
                             </div>
                         </div>
                     </div>
