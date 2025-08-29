@@ -165,8 +165,8 @@ export default function CvViewer({ profileId }) {
 
             {profile && (
                 <div className="relative grid md:grid-cols-3 gap-8 lg:gap-12 mb-10">
-                    {/* Left Sidebar */}
-                    <div className={`relative rounded-2xl overflow-hidden ${gradientPanel} px-7 py-8 flex flex-col items-center text-center md:sticky md:top-6 h-fit`}>
+                    {/* Left Sidebar (stretched full height of CV viewer) */}
+                    <div className={`relative rounded-2xl overflow-hidden ${gradientPanel} px-7 py-8 flex flex-col items-center text-center md:self-stretch`}>
                         <div className="absolute inset-0 pointer-events-none">
                             <div className="absolute -top-10 -left-10 w-40 h-40 bg-teal-300/25 dark:bg-teal-500/10 blur-3xl" />
                             <div className="absolute bottom-0 right-0 w-56 h-56 bg-indigo-300/20 dark:bg-indigo-500/10 blur-3xl" />
