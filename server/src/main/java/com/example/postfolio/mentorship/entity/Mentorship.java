@@ -47,6 +47,6 @@ public class Mentorship {
     private List<Long> enrolledIds = new ArrayList<>();
     
     public enum MentorshipStatus {
-        ACTIVE, INACTIVE, PAUSED
+        ACTIVE, INACTIVE
     }
 }
