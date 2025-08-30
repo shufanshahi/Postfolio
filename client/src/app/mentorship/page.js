@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from 'react';
+import StripePayment from '../../components/StripePayment';
 
 const cardGradient = 'linear-gradient(135deg, #f8fafc 0%, #e0e7ff 100%)';
 const accentColor = '#6366f1';
@@ -25,6 +26,8 @@ const MentorshipPage = () => {
   const [error, setError] = useState(null);
   const [menuOpen, setMenuOpen] = useState(false);
   const [showCreate, setShowCreate] = useState(false);
+  const [showPayment, setShowPayment] = useState(false);
+  const [selectedMentorship, setSelectedMentorship] = useState(null);
   const [form, setForm] = useState({
     name: '',
     specialization: '',
@@ -114,6 +117,19 @@ const MentorshipPage = () => {
   };
 
   const handleBuy = async (mentorshipId) => {
+    // Find the selected mentorship
+    const mentorship = mentorships.find(m => m.id === mentorshipId);
+    if (!mentorship) {
+      alert('Mentorship not found');
+      return;
+    }
+    
+    // Set selected mentorship and show payment modal
+    setSelectedMentorship(mentorship);
+    setShowPayment(true);
+  };
+
+  const handlePaymentSuccess = async (mentorshipId) => {
     try {
       const token = localStorage.getItem("token");
       // 1. Fetch profile
@@ -123,12 +139,14 @@ const MentorshipPage = () => {
       if (!profileRes.ok) throw new Error('Failed to fetch profile');
       const profile = await profileRes.json();
       const profileId = profile.id;
+      
       // 2. Enroll in mentorship
       const enrollRes = await fetch(`http://localhost:8080/api/mentorships/enroll?mentorshipId=${mentorshipId}&profileId=${profileId}`, {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${token}` }
       });
       if (!enrollRes.ok) throw new Error('Failed to enroll in mentorship');
+      
       // 3. Create enrollment record
       const enrollmentRes = await fetch('http://localhost:8080/api/mentorship-enrollments', {
         method: 'POST',
@@ -143,11 +161,27 @@ const MentorshipPage = () => {
         })
       });
       if (!enrollmentRes.ok) throw new Error('Failed to create enrollment record');
+      
+      // Close payment modal and refresh mentorships
+      setShowPayment(false);
+      setSelectedMentorship(null);
       fetchMentorships();
       alert('Successfully purchased mentorship!');
     } catch (err) {
-      alert(err.message);
+      alert('Purchase failed: ' + err.message);
+      setShowPayment(false);
+      setSelectedMentorship(null);
     }
+  };
+
+  const handlePaymentError = (error) => {
+    console.error('Payment failed:', error);
+    alert('Payment failed. Please try again.');
+  };
+
+  const handlePaymentClose = () => {
+    setShowPayment(false);
+    setSelectedMentorship(null);
   };
 
   if (loading) return <div className="mentorship-loading">Loading mentorships...</div>;
@@ -445,11 +479,21 @@ const MentorshipPage = () => {
                   }}
                   onClick={() => handleBuy(m.id)}
                 >
-                  Buy
+                  Buy with Stripe
                 </button>
               </div>
             ))}
           </div>
+        )}
+
+        {/* Stripe Payment Modal */}
+        {showPayment && selectedMentorship && (
+          <StripePayment
+            mentorship={selectedMentorship}
+            onPaymentSuccess={handlePaymentSuccess}
+            onPaymentError={handlePaymentError}
+            onClose={handlePaymentClose}
+          />
         )}
       </div>
     </div>
