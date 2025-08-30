@@ -38,18 +38,31 @@ public class MentorshipService {
         .collect(Collectors.toList());
     }
 
+    public MentorshipDto enrollProfile(Long mentorshipId, Long profileId) {
+        Mentorship mentorship = mentorshipRepository.findById(mentorshipId)
+            .orElseThrow(() -> new RuntimeException("Mentorship not found"));
+        List<Long> enrolled = mentorship.getEnrolledIds();
+        if (!enrolled.contains(profileId)) {
+            enrolled.add(profileId);
+            mentorship.setTotalEnrolled(enrolled.size());
+            mentorship.setEnrolledIds(enrolled);
+            mentorshipRepository.save(mentorship);
+        }
+        return convertToDto(mentorship);
+    }
+
     private MentorshipDto convertToDto(Mentorship mentorship) {
-    return new MentorshipDto(
-        mentorship.getId(),
-        mentorship.getName(),
-        mentorship.getSpecialization(),
-        mentorship.getStatus(),
-        mentorship.getPrice(),
-        mentorship.getTotalEnrolled(),
-        mentorship.getRating(),
-        mentorship.getProfileId(),
-        mentorship.getEnrolledIds()
-    );
+        return new MentorshipDto(
+            mentorship.getId(),
+            mentorship.getName(),
+            mentorship.getSpecialization(),
+            mentorship.getStatus(),
+            mentorship.getPrice(),
+            mentorship.getTotalEnrolled(),
+            mentorship.getRating(),
+            mentorship.getProfileId(),
+            mentorship.getEnrolledIds()
+        );
     }
     
     private Mentorship convertToEntity(MentorshipDto mentorshipDto) {

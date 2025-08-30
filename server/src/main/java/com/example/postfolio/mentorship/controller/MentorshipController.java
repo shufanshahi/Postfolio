@@ -32,4 +32,10 @@ public class MentorshipController {
         List<MentorshipDto> mentorships = mentorshipService.getMentorshipsByProfileId(profileId);
         return ResponseEntity.ok(mentorships);
     }
+
+    @PostMapping("/enroll")
+    public ResponseEntity<MentorshipDto> enrollProfile(@RequestParam Long mentorshipId, @RequestParam Long profileId) {
+        MentorshipDto updated = mentorshipService.enrollProfile(mentorshipId, profileId);
+        return ResponseEntity.ok(updated);
+    }
 }
