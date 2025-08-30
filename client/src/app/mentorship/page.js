@@ -6,10 +6,18 @@ const cardGradient = 'linear-gradient(135deg, #f8fafc 0%, #e0e7ff 100%)';
 const accentColor = '#6366f1';
 const secondaryColor = '#f1f5f9';
 
+const menuOptions = [
+  { label: 'Create', value: 'create' },
+  { label: 'Purchased', value: 'purchased' },
+  { label: 'All', value: 'all' },
+  { label: 'My Programs', value: 'my-programs' },
+];
+
 const MentorshipPage = () => {
   const [mentorships, setMentorships] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [menuOpen, setMenuOpen] = useState(false);
 
   useEffect(() => {
     const fetchMentorships = async () => {
@@ -37,7 +45,70 @@ const MentorshipPage = () => {
 
   return (
     <div style={{ minHeight: '100vh', background: '#f8fafc', padding: '40px 0' }}>
-      <div style={{ maxWidth: 900, margin: '0 auto', padding: 24 }}>
+      <div style={{ maxWidth: 900, margin: '0 auto', padding: 24, position: 'relative' }}>
+        {/* Hamburger menu button */}
+        <div style={{ position: 'absolute', top: 24, right: 24, zIndex: 10 }}>
+          <button
+            onClick={() => setMenuOpen((open) => !open)}
+            style={{
+              background: 'white',
+              border: `1.5px solid ${secondaryColor}`,
+              borderRadius: 10,
+              width: 44,
+              height: 44,
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: 'pointer',
+              boxShadow: menuOpen ? '0 4px 16px 0 rgba(99,102,241,0.10)' : 'none',
+              transition: 'box-shadow 0.2s',
+              outline: 'none',
+              position: 'relative',
+            }}
+            aria-label="Open menu"
+          >
+            <span style={{ width: 22, height: 3, background: accentColor, borderRadius: 2, marginBottom: 4, display: 'block' }}></span>
+            <span style={{ width: 22, height: 3, background: accentColor, borderRadius: 2, marginBottom: 4, display: 'block' }}></span>
+            <span style={{ width: 22, height: 3, background: accentColor, borderRadius: 2, display: 'block' }}></span>
+            {/* Dropdown menu */}
+            {menuOpen && (
+              <div
+                style={{
+                  position: 'absolute',
+                  top: 50,
+                  right: 0,
+                  background: 'white',
+                  border: `1.5px solid ${secondaryColor}`,
+                  borderRadius: 12,
+                  boxShadow: '0 8px 32px 0 rgba(99,102,241,0.10)',
+                  minWidth: 160,
+                  padding: '8px 0',
+                  zIndex: 100,
+                  marginTop: 8
+                }}
+              >
+                {menuOptions.map((option) => (
+                  <div
+                    key={option.value}
+                    style={{
+                      padding: '10px 20px',
+                      cursor: 'pointer',
+                      color: accentColor,
+                      fontWeight: 600,
+                      fontSize: 15,
+                      transition: 'background 0.15s',
+                      borderRadius: 8,
+                    }}
+                    // No onClick handler, UI only
+                  >
+                    {option.label}
+                  </div>
+                ))}
+              </div>
+            )}
+          </button>
+        </div>
         <h1 style={{
           fontSize: 36,
           fontWeight: 800,
