@@ -189,7 +189,7 @@ export default function UserProfilePage() {
                                     {/* Avatar Section */}
                                     <div className="flex-shrink-0">
                                         <div className="relative">
-                                            <Avatar className="w-32 h-32 shadow-lg border-4 border-teal-400/80 ring-8 ring-teal-200/60 dark:ring-teal-500/20 rounded-2xl">
+                                            <Avatar className="w-32 h-32 shadow-md border border-teal-400/50 dark:border-teal-500/30 rounded-full bg-white/40 dark:bg-slate-800/40">
                                                 <AvatarImage
                                                     src={profile.pictureBase64 ? `data:image/jpeg;base64,${profile.pictureBase64}` : undefined}
                                                     alt="Profile"
@@ -199,9 +199,7 @@ export default function UserProfilePage() {
                                                     {profile.name?.slice(0, 2)?.toUpperCase() || 'U'}
                                                 </AvatarFallback>
                                             </Avatar>
-                                            <div className="absolute -bottom-2 -right-2 w-9 h-9 bg-gradient-to-br from-teal-500 to-indigo-500 rounded-2xl border-4 border-white dark:border-slate-900 flex items-center justify-center shadow">
-                                                <div className="w-2 h-2 bg-white/80 rounded-full animate-pulse" />
-                                            </div>
+                                            {/* Removed glowing status badge */}
                                         </div>
                                     </div>
 

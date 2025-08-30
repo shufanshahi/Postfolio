@@ -3,6 +3,11 @@ import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Badge } from './ui/badge';
 import { Button } from './ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from './ui/dialog';
+import { Loader2, GraduationCap, School, Edit2, Trash2 } from 'lucide-react';
+
+// Theme tokens aligned with dashboard
+const gradientPanel = 'bg-gradient-to-br from-teal-50/70 via-white/50 to-indigo-50/70 dark:from-slate-800/60 dark:via-slate-800/50 dark:to-slate-800/60 backdrop-blur-xl border border-white/40 dark:border-slate-700/50 shadow-sm';
+const subtleCard = 'bg-gradient-to-br from-teal-50/65 via-white/55 to-indigo-50/60 dark:from-slate-800/70 dark:via-slate-800/60 dark:to-slate-800/70 backdrop-blur-md border border-teal-900/5 dark:border-slate-700/60 hover:border-teal-500/30 dark:hover:border-teal-400/30 transition-colors';
 
 
 const EducationTimeline = ({ userId, onEdit, onDelete }) => {
@@ -49,17 +54,19 @@ const EducationTimeline = ({ userId, onEdit, onDelete }) => {
     };
 
     const getInstitutionColor = (institutionName) => {
-        // Generate consistent colors for institutions using sky theme
-        const colors = [
-            'bg-sky-400', 'bg-sky-500', 'bg-sky-600'
+        // Soft teal/indigo palette from dashboard
+        const palettes = [
+            'from-teal-300 to-teal-400',
+            'from-indigo-300 to-indigo-400',
+            'from-amber-300 to-amber-400'
         ];
-        const index = institutionName.length % colors.length;
-        return colors[index];
+        const index = institutionName.length % palettes.length;
+        return palettes[index];
     };
 
     const getLevelColor = (level, isCompleted = true) => {
-        if (!isCompleted) return 'bg-slate-300/60 dark:bg-slate-600/40';
-        return 'bg-gradient-to-br from-sky-300 to-sky-400 dark:from-sky-400 dark:to-sky-500';
+        if (!isCompleted) return 'bg-slate-200/70 dark:bg-slate-700/40 text-slate-500 dark:text-slate-400';
+        return 'bg-gradient-to-br from-teal-400 to-indigo-400 dark:from-teal-500 dark:to-indigo-500 text-white shadow-sm';
     };
 
     const openInstitutionModal = (institution) => {
@@ -69,13 +76,15 @@ const EducationTimeline = ({ userId, onEdit, onDelete }) => {
 
     if (loading) {
         return (
-            <Card className="w-full rounded-2xl border border-teal-900/10 dark:border-slate-700/60 bg-gradient-to-br from-white/80 to-white/60 dark:from-slate-900/60 dark:to-slate-900/50 backdrop-blur-xl shadow-md">
+            <Card className={`w-full rounded-2xl ${gradientPanel}`}>
                 <CardHeader>
-                    <CardTitle className="text-slate-800 dark:text-slate-100">Education Timeline</CardTitle>
+                    <CardTitle className="flex items-center gap-2 text-slate-800 dark:text-slate-100">
+                        <GraduationCap className="h-5 w-5 text-teal-600 dark:text-teal-400" /> Education Timeline
+                    </CardTitle>
                 </CardHeader>
                 <CardContent>
-                    <div className="flex justify-center">
-                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-sky-400"></div>
+                    <div className="flex justify-center py-6">
+                        <Loader2 className="h-6 w-6 animate-spin text-teal-600 dark:text-teal-300" />
                     </div>
                 </CardContent>
             </Card>
@@ -84,9 +93,11 @@ const EducationTimeline = ({ userId, onEdit, onDelete }) => {
 
     if (!educationData) {
         return (
-            <Card className="w-full rounded-2xl border border-teal-900/10 dark:border-slate-700/60 bg-gradient-to-br from-white/80 to-white/60 dark:from-slate-900/60 dark:to-slate-900/50 backdrop-blur-xl shadow-md">
+            <Card className={`w-full rounded-2xl ${gradientPanel}`}>
                 <CardHeader>
-                    <CardTitle className="text-slate-800 dark:text-slate-100">Education Timeline</CardTitle>
+                    <CardTitle className="flex items-center gap-2 text-slate-800 dark:text-slate-100">
+                        <GraduationCap className="h-5 w-5 text-teal-600 dark:text-teal-400" /> Education Timeline
+                    </CardTitle>
                 </CardHeader>
                 <CardContent>
                     <p className="text-slate-600 dark:text-slate-400">No education data available</p>
@@ -115,12 +126,12 @@ const EducationTimeline = ({ userId, onEdit, onDelete }) => {
 
     return (
         <div className="space-y-6">
-            <Card className="w-full rounded-2xl border border-teal-900/10 dark:border-slate-700/60 bg-gradient-to-br from-white/80 to-white/60 dark:from-slate-900/60 dark:to-slate-900/50 backdrop-blur-xl shadow-md">
+            <Card className={`w-full rounded-2xl relative overflow-hidden ${gradientPanel}`}>
                 <CardHeader>
-                    <CardTitle className="flex items-center gap-2 text-slate-800 dark:text-slate-100">
-                        🎓 Education Journey
-                        <Badge variant="secondary" className="bg-slate-100/80 dark:bg-slate-700/60 text-slate-700 dark:text-slate-200 border-slate-200 dark:border-slate-700">
-                            {educationData.schools?.length || 0} Schools • {educationData.universities?.length || 0} Semesters
+                    <CardTitle className="flex flex-wrap items-center gap-3 text-slate-800 dark:text-slate-100 text-lg font-semibold">
+                        <GraduationCap className="h-5 w-5 text-teal-600 dark:text-teal-400" /> Education Journey
+                        <Badge variant="secondary" className="bg-slate-100/80 dark:bg-slate-700/60 text-slate-700 dark:text-slate-200 ring-1 ring-inset ring-white/40 dark:ring-slate-600/40">
+                            {educationData.schools?.length || 0} Schools · {educationData.universities?.length || 0} Semesters
                         </Badge>
                     </CardTitle>
                 </CardHeader>
@@ -130,53 +141,28 @@ const EducationTimeline = ({ userId, onEdit, onDelete }) => {
                         {Object.entries(schoolsByInstitution).map(([institutionName, schools]) => (
                             <div key={institutionName} className="space-y-4">
                                 <div className="flex items-center gap-3">
-                                    <div className={`w-4 h-4 rounded-full ${getInstitutionColor(institutionName)}`}></div>
-                                    <h3 className="text-lg font-semibold text-slate-800 dark:text-slate-100">{institutionName}</h3>
-                                    <Badge variant="outline" className="ml-auto border-sky-300 dark:border-sky-600 text-sky-600 dark:text-sky-400">
+                                    <div className={`w-8 h-8 rounded-xl bg-gradient-to-br ${getInstitutionColor(institutionName)} flex items-center justify-center text-white shadow-sm ring-1 ring-white/50 dark:ring-white/10`}>
+                                        <School className="h-4 w-4" />
+                                    </div>
+                                    <h3 className="text-base font-semibold text-slate-800 dark:text-slate-100 tracking-wide">{institutionName}</h3>
+                                    <Badge variant="outline" className="ml-auto border-teal-300 dark:border-teal-600 text-teal-600 dark:text-teal-400 bg-white/60 dark:bg-slate-800/50 backdrop-blur">
                                         School
                                     </Badge>
                                 </div>
 
-                                <div className="flex flex-wrap gap-3 ml-7">
+                                <div className="flex flex-wrap gap-3 ml-10">
                                     {Array.from({ length: 12 }, (_, i) => {
                                         const school = schools.find(s => s.classLevel === i + 1);
                                         const isCompleted = !!school;
 
                                         return (
-                                            <Button
+                                            <div
                                                 key={i + 1}
-                                                variant={isCompleted ? "default" : "outline"}
-                                                size="sm"
-                                                className={`w-12 h-12 rounded-full p-0 ${getLevelColor(i + 1, isCompleted)} hover:scale-110 transition-transform relative border-0 text-white`}
                                                 onClick={() => isCompleted && openInstitutionModal({ type: 'school', data: school, institutionName })}
-                                                disabled={!isCompleted}
+                                                className={`group relative w-12 h-12 rounded-xl flex items-center justify-center text-[11px] font-semibold tracking-wide select-none cursor-pointer ring-1 ring-inset ${getLevelColor(i + 1, isCompleted)} transition-all duration-200 hover:-translate-y-0.5 ${isCompleted ? 'hover:shadow-md' : 'opacity-50 cursor-default'}`}
                                             >
-                                                <span className="text-xs font-bold">
-                                                    {school?.classLevel === 10 ? 'SSC' : school?.classLevel === 12 ? 'HSC' : school?.classLevel}
-                                                </span>
-                                                {isCompleted && (
-                                                    <div className="absolute -top-1 -right-1 flex gap-1">
-                                                        <button
-                                                            onClick={(e) => {
-                                                                e.stopPropagation();
-                                                                onEdit({ type: 'school', data: school, institutionName });
-                                                            }}
-                                                            className="w-4 h-4 bg-teal-500 hover:bg-teal-600 rounded-full flex items-center justify-center text-white text-xs"
-                                                        >
-                                                            ✏️
-                                                        </button>
-                                                        <button
-                                                            onClick={(e) => {
-                                                                e.stopPropagation();
-                                                                onDelete({ type: 'school', data: school, institutionName });
-                                                            }}
-                                                            className="w-4 h-4 bg-red-500 hover:bg-red-600 rounded-full flex items-center justify-center text-white text-xs"
-                                                        >
-                                                            🗑️
-                                                        </button>
-                                                    </div>
-                                                )}
-                                            </Button>
+                                                {school?.classLevel === 10 ? 'SSC' : school?.classLevel === 12 ? 'HSC' : school?.classLevel}
+                                            </div>
                                         );
                                     })}
                                 </div>
@@ -187,53 +173,28 @@ const EducationTimeline = ({ userId, onEdit, onDelete }) => {
                         {Object.entries(universitiesByInstitution).map(([institutionName, universities]) => (
                             <div key={institutionName} className="space-y-4">
                                 <div className="flex items-center gap-3">
-                                    <div className={`w-4 h-4 rounded-full ${getInstitutionColor(institutionName)}`}></div>
-                                    <h3 className="text-lg font-semibold text-slate-800 dark:text-slate-100">{institutionName}</h3>
-                                    <Badge variant="outline" className="ml-auto border-sky-300 dark:border-sky-600 text-sky-600 dark:text-sky-400">
+                                    <div className={`w-8 h-8 rounded-xl bg-gradient-to-br ${getInstitutionColor(institutionName)} flex items-center justify-center text-white shadow-sm ring-1 ring-white/50 dark:ring-white/10`}>
+                                        <GraduationCap className="h-4 w-4" />
+                                    </div>
+                                    <h3 className="text-base font-semibold text-slate-800 dark:text-slate-100 tracking-wide">{institutionName}</h3>
+                                    <Badge variant="outline" className="ml-auto border-indigo-300 dark:border-indigo-600 text-indigo-600 dark:text-indigo-400 bg-white/60 dark:bg-slate-800/50 backdrop-blur">
                                         University
                                     </Badge>
                                 </div>
 
-                                <div className="flex flex-wrap gap-3 ml-7">
+                                <div className="flex flex-wrap gap-3 ml-10">
                                     {Array.from({ length: 8 }, (_, i) => {
                                         const university = universities.find(u => u.semesterNumber === i + 1);
                                         const isCompleted = !!university;
 
                                         return (
-                                            <Button
+                                            <div
                                                 key={i + 1}
-                                                variant={isCompleted ? "default" : "outline"}
-                                                size="sm"
-                                                className={`w-12 h-12 rounded-full p-0 ${getLevelColor(i + 13, isCompleted)} hover:scale-110 transition-transform relative border-0 text-white`}
                                                 onClick={() => isCompleted && openInstitutionModal({ type: 'university', data: university, institutionName })}
-                                                disabled={!isCompleted}
+                                                className={`group relative w-12 h-12 rounded-xl flex items-center justify-center text-[11px] font-semibold tracking-wide select-none cursor-pointer ring-1 ring-inset ${getLevelColor(i + 13, isCompleted)} transition-all duration-200 hover:-translate-y-0.5 ${isCompleted ? 'hover:shadow-md' : 'opacity-50 cursor-default'}`}
                                             >
-                                                <span className="text-xs font-bold">
-                                                    {i + 1}
-                                                </span>
-                                                {isCompleted && (
-                                                    <div className="absolute -top-1 -right-1 flex gap-1">
-                                                        <button
-                                                            onClick={(e) => {
-                                                                e.stopPropagation();
-                                                                onEdit({ type: 'university', data: university, institutionName });
-                                                            }}
-                                                            className="w-4 h-4 bg-teal-500 hover:bg-teal-600 rounded-full flex items-center justify-center text-white text-xs"
-                                                        >
-                                                            ✏️
-                                                        </button>
-                                                        <button
-                                                            onClick={(e) => {
-                                                                e.stopPropagation();
-                                                                onDelete({ type: 'university', data: university, institutionName });
-                                                            }}
-                                                            className="w-4 h-4 bg-red-500 hover:bg-red-600 rounded-full flex items-center justify-center text-white text-xs"
-                                                        >
-                                                            🗑️
-                                                        </button>
-                                                    </div>
-                                                )}
-                                            </Button>
+                                                {i + 1}
+                                            </div>
                                         );
                                     })}
                                 </div>
@@ -245,45 +206,40 @@ const EducationTimeline = ({ userId, onEdit, onDelete }) => {
 
             {/* Institution Details Modal */}
             <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-                <DialogContent className="max-w-md rounded-2xl border border-teal-900/10 dark:border-slate-700/60 bg-gradient-to-br from-white/80 to-white/60 dark:from-slate-900/60 dark:to-slate-900/50 backdrop-blur-xl">
+                <DialogContent className="max-w-md bg-[oklch(0.985_0.015_95)] dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
                     <DialogHeader>
-                        <DialogTitle className="flex items-center gap-2 text-slate-800 dark:text-slate-100">
-                            {selectedInstitution?.type === 'school' ? '🏫' : '🎓'}
+                        <DialogTitle className="flex items-center gap-2">
+                            {selectedInstitution?.type === 'school' ? <School className="h-5 w-5" /> : <GraduationCap className="h-5 w-5" />}
                             {selectedInstitution?.institutionName}
                         </DialogTitle>
                     </DialogHeader>
 
                     {selectedInstitution?.type === 'school' && (
                         <div className="space-y-4">
-                            <div className="grid grid-cols-2 gap-4">
+                            <div className="grid grid-cols-2 gap-4 text-sm">
                                 <div>
-                                    <label className="text-sm font-medium text-slate-600">Class Level</label>
-                                    <p className="text-lg font-semibold text-slate-800">{selectedInstitution.data.displayName}</p>
+                                    <label className="text-xs font-medium text-slate-600 uppercase">Class Level</label>
+                                    <p className="mt-0.5 font-semibold">{selectedInstitution.data.displayName}</p>
                                 </div>
                                 <div>
-                                    <label className="text-sm font-medium text-slate-600">Result</label>
-                                    <p className="text-lg font-semibold text-emerald-600">{selectedInstitution.data.result}</p>
+                                    <label className="text-xs font-medium text-slate-600 uppercase">Result</label>
+                                    <p className="mt-0.5 font-semibold text-emerald-600">{selectedInstitution.data.result}</p>
                                 </div>
                                 <div>
-                                    <label className="text-sm font-medium text-slate-600">Academic Year</label>
-                                    <p className="text-lg text-slate-800">{selectedInstitution.data.academicYear}</p>
+                                    <label className="text-xs font-medium text-slate-600 uppercase">Academic Year</label>
+                                    <p className="mt-0.5">{selectedInstitution.data.academicYear}</p>
                                 </div>
                                 <div>
-                                    <label className="text-sm font-medium text-slate-600">Completion Date</label>
-                                    <p className="text-lg text-slate-800">{selectedInstitution.data.completionDate}</p>
+                                    <label className="text-xs font-medium text-slate-600 uppercase">Completion Date</label>
+                                    <p className="mt-0.5">{selectedInstitution.data.completionDate}</p>
                                 </div>
                             </div>
 
                             {selectedInstitution.data.certificateUrl && (
                                 <div>
-                                    <label className="text-sm font-medium text-slate-600">Certificate</label>
-                                    <a
-                                        href={selectedInstitution.data.certificateUrl}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="text-sky-600 hover:underline"
-                                    >
-                                        View Certificate
+                                    <label className="text-xs font-medium text-slate-600 uppercase">Certificate</label>
+                                    <a href={selectedInstitution.data.certificateUrl} target="_blank" rel="noopener noreferrer" className="mt-1 inline-block text-blue-600 hover:underline text-sm font-medium">
+                                        View Certificate ↗
                                     </a>
                                 </div>
                             )}
@@ -292,45 +248,42 @@ const EducationTimeline = ({ userId, onEdit, onDelete }) => {
 
                     {selectedInstitution?.type === 'university' && (
                         <div className="space-y-4">
-                            <div className="grid grid-cols-2 gap-4">
+                            <div className="grid grid-cols-2 gap-4 text-sm">
                                 <div>
-                                    <label className="text-sm font-medium text-slate-600">Semester</label>
-                                    <p className="text-lg font-semibold text-slate-800">{selectedInstitution.data.semesterDisplayName}</p>
+                                    <label className="text-xs font-medium text-slate-600 uppercase">Semester</label>
+                                    <p className="mt-0.5 font-semibold">{selectedInstitution.data.semesterDisplayName}</p>
                                 </div>
                                 <div>
-                                    <label className="text-sm font-medium text-slate-600">Result</label>
-                                    <p className="text-lg font-semibold text-emerald-600">{selectedInstitution.data.semesterResult}</p>
+                                    <label className="text-xs font-medium text-slate-600 uppercase">Result</label>
+                                    <p className="mt-0.5 font-semibold text-emerald-600">{selectedInstitution.data.semesterResult}</p>
                                 </div>
                                 <div>
-                                    <label className="text-sm font-medium text-slate-600">Degree</label>
-                                    <p className="text-lg text-slate-800">{selectedInstitution.data.degreeName}</p>
+                                    <label className="text-xs font-medium text-slate-600 uppercase">Degree</label>
+                                    <p className="mt-0.5">{selectedInstitution.data.degreeName}</p>
                                 </div>
                                 <div>
-                                    <label className="text-sm font-medium text-slate-600">Academic Year</label>
-                                    <p className="text-lg text-slate-800">{selectedInstitution.data.academicYear}</p>
+                                    <label className="text-xs font-medium text-slate-600 uppercase">Academic Year</label>
+                                    <p className="mt-0.5">{selectedInstitution.data.academicYear}</p>
                                 </div>
                                 <div>
-                                    <label className="text-sm font-medium text-slate-600">Credits</label>
-                                    <p className="text-lg text-slate-800">{selectedInstitution.data.totalCredits}</p>
+                                    <label className="text-xs font-medium text-slate-600 uppercase">Credits</label>
+                                    <p className="mt-0.5">{selectedInstitution.data.totalCredits}</p>
                                 </div>
                                 <div>
-                                    <label className="text-sm font-medium text-slate-600">Status</label>
-                                    <Badge variant={selectedInstitution.data.isCompleted ? "default" : "secondary"}>
-                                        {selectedInstitution.data.isCompleted ? "Completed" : "In Progress"}
-                                    </Badge>
+                                    <label className="text-xs font-medium text-slate-600 uppercase">Status</label>
+                                    <div className="mt-0.5">
+                                        <Badge variant={selectedInstitution.data.isCompleted ? "default" : "secondary"}>
+                                            {selectedInstitution.data.isCompleted ? "Completed" : "In Progress"}
+                                        </Badge>
+                                    </div>
                                 </div>
                             </div>
 
                             {selectedInstitution.data.transcriptUrl && (
                                 <div>
-                                    <label className="text-sm font-medium text-slate-600">Transcript</label>
-                                    <a
-                                        href={selectedInstitution.data.transcriptUrl}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="text-sky-600 hover:underline"
-                                    >
-                                        View Transcript
+                                    <label className="text-xs font-medium text-slate-600 uppercase">Transcript</label>
+                                    <a href={selectedInstitution.data.transcriptUrl} target="_blank" rel="noopener noreferrer" className="mt-1 inline-block text-blue-600 hover:underline text-sm font-medium">
+                                        View Transcript ↗
                                     </a>
                                 </div>
                             )}
