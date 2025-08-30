@@ -26,4 +26,10 @@ public class MentorshipController {
         MentorshipDto createdMentorship = mentorshipService.createMentorship(mentorshipDto);
         return ResponseEntity.ok(createdMentorship);
     }
+
+    @GetMapping("/profile/{profileId}")
+    public ResponseEntity<List<MentorshipDto>> getMentorshipsByProfileId(@PathVariable Long profileId) {
+        List<MentorshipDto> mentorships = mentorshipService.getMentorshipsByProfileId(profileId);
+        return ResponseEntity.ok(mentorships);
+    }
 }

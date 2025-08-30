@@ -29,18 +29,27 @@ public class MentorshipService {
         return convertToDto(savedMentorship);
     }
     
+    public List<MentorshipDto> getMentorshipsByProfileId(Long profileId) {
+    List<Mentorship> mentorships = mentorshipRepository.findAll().stream()
+        .filter(m -> m.getProfileId().equals(profileId))
+        .collect(Collectors.toList());
+    return mentorships.stream()
+        .map(this::convertToDto)
+        .collect(Collectors.toList());
+    }
+
     private MentorshipDto convertToDto(Mentorship mentorship) {
-        return new MentorshipDto(
-                mentorship.getId(),
-                mentorship.getName(),
-                mentorship.getSpecialization(),
-                mentorship.getStatus(),
-                mentorship.getPrice(),
-                mentorship.getTotalEnrolled(),
-                mentorship.getRating(),
-                mentorship.getProfileId(),
-                mentorship.getEnrolledIds()
-        );
+    return new MentorshipDto(
+        mentorship.getId(),
+        mentorship.getName(),
+        mentorship.getSpecialization(),
+        mentorship.getStatus(),
+        mentorship.getPrice(),
+        mentorship.getTotalEnrolled(),
+        mentorship.getRating(),
+        mentorship.getProfileId(),
+        mentorship.getEnrolledIds()
+    );
     }
     
     private Mentorship convertToEntity(MentorshipDto mentorshipDto) {
