@@ -4,9 +4,7 @@ import com.example.postfolio.mentorship.dto.MentorshipDto;
 import com.example.postfolio.mentorship.service.MentorshipService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
@@ -21,5 +19,11 @@ public class MentorshipController {
     public ResponseEntity<List<MentorshipDto>> getAllMentorships() {
         List<MentorshipDto> mentorships = mentorshipService.getAllMentorships();
         return ResponseEntity.ok(mentorships);
+    }
+    
+    @PostMapping
+    public ResponseEntity<MentorshipDto> createMentorship(@RequestBody MentorshipDto mentorshipDto) {
+        MentorshipDto createdMentorship = mentorshipService.createMentorship(mentorshipDto);
+        return ResponseEntity.ok(createdMentorship);
     }
 }
