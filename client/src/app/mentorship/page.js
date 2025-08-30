@@ -13,32 +13,105 @@ const menuOptions = [
   { label: 'My Programs', value: 'my-programs' },
 ];
 
+const statusOptions = [
+  { label: 'Active', value: 'ACTIVE' },
+  { label: 'Inactive', value: 'INACTIVE' },
+  { label: 'Paused', value: 'PAUSED' },
+];
+
 const MentorshipPage = () => {
   const [mentorships, setMentorships] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [showCreate, setShowCreate] = useState(false);
+  const [form, setForm] = useState({
+    name: '',
+    specialization: '',
+    status: 'ACTIVE',
+    price: '',
+  });
+  const [formLoading, setFormLoading] = useState(false);
+  const [formError, setFormError] = useState(null);
+
+  const fetchMentorships = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch('http://localhost:8080/api/mentorships', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      if (!res.ok) throw new Error('Failed to fetch mentorships');
+      const data = await res.json();
+      setMentorships(data);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchMentorships = async () => {
-      try {
-        const token = localStorage.getItem("token");
-        const res = await fetch('http://localhost:8080/api/mentorships', {
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        });
-        if (!res.ok) throw new Error('Failed to fetch mentorships');
-        const data = await res.json();
-        setMentorships(data);
-      } catch (err) {
-        setError(err.message);
-      } finally {
-        setLoading(false);
-      }
-    };
     fetchMentorships();
   }, []);
+
+  const handleMenuClick = (option) => {
+    setMenuOpen(false);
+    if (option.value === 'create') setShowCreate(true);
+    // Other options can be handled here
+  };
+
+  const handleFormChange = (e) => {
+    const { name, value } = e.target;
+    setForm((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleFormSubmit = async (e) => {
+    e.preventDefault();
+    setFormLoading(true);
+    setFormError(null);
+    try {
+      const token = localStorage.getItem("token");
+      // Fetch profileId
+      const profileRes = await fetch('http://localhost:8080/api/profile/me', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (!profileRes.ok) throw new Error('Failed to fetch profile');
+      const profile = await profileRes.json();
+      const profileId = profile.id;
+      // Prepare mentorship data
+      const mentorshipData = {
+        name: form.name,
+        specialization: form.specialization,
+        status: form.status,
+        price: parseFloat(form.price),
+        totalEnrolled: 0,
+        rating: 0.0,
+        profileId,
+        enrolledIds: []
+      };
+      // POST mentorship
+      const postRes = await fetch('http://localhost:8080/api/mentorships', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(mentorshipData)
+      });
+      if (!postRes.ok) throw new Error('Failed to create mentorship');
+      setShowCreate(false);
+      setForm({ name: '', specialization: '', status: 'ACTIVE', price: '' });
+      fetchMentorships();
+    } catch (err) {
+      setFormError(err.message);
+    } finally {
+      setFormLoading(false);
+    }
+  };
 
   if (loading) return <div className="mentorship-loading">Loading mentorships...</div>;
   if (error) return <div className="mentorship-error">Error: {error}</div>;
@@ -100,7 +173,7 @@ const MentorshipPage = () => {
                       transition: 'background 0.15s',
                       borderRadius: 8,
                     }}
-                    // No onClick handler, UI only
+                    onClick={() => handleMenuClick(option)}
                   >
                     {option.label}
                   </div>
@@ -109,6 +182,142 @@ const MentorshipPage = () => {
             )}
           </button>
         </div>
+        {/* Create Mentorship Modal */}
+        {showCreate && (
+          <div style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            width: '100vw',
+            height: '100vh',
+            background: 'rgba(30,41,59,0.18)',
+            zIndex: 1000,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}>
+            <div style={{
+              background: 'white',
+              borderRadius: 18,
+              boxShadow: '0 8px 32px 0 rgba(99,102,241,0.13)',
+              padding: 36,
+              minWidth: 340,
+              maxWidth: 95,
+              width: 400,
+              position: 'relative',
+            }}>
+              <button
+                onClick={() => setShowCreate(false)}
+                style={{
+                  position: 'absolute',
+                  top: 16,
+                  right: 16,
+                  background: 'none',
+                  border: 'none',
+                  fontSize: 22,
+                  color: '#64748b',
+                  cursor: 'pointer',
+                  fontWeight: 700
+                }}
+                aria-label="Close"
+              >×</button>
+              <h2 style={{ color: accentColor, fontWeight: 800, fontSize: 24, marginBottom: 18 }}>Create Mentorship</h2>
+              <form onSubmit={handleFormSubmit}>
+                <div style={{ marginBottom: 16 }}>
+                  <label style={{ fontWeight: 600, color: '#334155', display: 'block', marginBottom: 6 }}>Name</label>
+                  <input
+                    type="text"
+                    name="name"
+                    value={form.name}
+                    onChange={handleFormChange}
+                    required
+                    style={{
+                      width: '100%',
+                      padding: '8px 12px',
+                      borderRadius: 8,
+                      border: `1.5px solid ${secondaryColor}`,
+                      fontSize: 16
+                    }}
+                  />
+                </div>
+                <div style={{ marginBottom: 16 }}>
+                  <label style={{ fontWeight: 600, color: '#334155', display: 'block', marginBottom: 6 }}>Specialization</label>
+                  <input
+                    type="text"
+                    name="specialization"
+                    value={form.specialization}
+                    onChange={handleFormChange}
+                    required
+                    style={{
+                      width: '100%',
+                      padding: '8px 12px',
+                      borderRadius: 8,
+                      border: `1.5px solid ${secondaryColor}`,
+                      fontSize: 16
+                    }}
+                  />
+                </div>
+                <div style={{ marginBottom: 16 }}>
+                  <label style={{ fontWeight: 600, color: '#334155', display: 'block', marginBottom: 6 }}>Status</label>
+                  <select
+                    name="status"
+                    value={form.status}
+                    onChange={handleFormChange}
+                    style={{
+                      width: '100%',
+                      padding: '8px 12px',
+                      borderRadius: 8,
+                      border: `1.5px solid ${secondaryColor}`,
+                      fontSize: 16
+                    }}
+                  >
+                    {statusOptions.map(opt => (
+                      <option key={opt.value} value={opt.value}>{opt.label}</option>
+                    ))}
+                  </select>
+                </div>
+                <div style={{ marginBottom: 24 }}>
+                  <label style={{ fontWeight: 600, color: '#334155', display: 'block', marginBottom: 6 }}>Price (USD)</label>
+                  <input
+                    type="number"
+                    name="price"
+                    value={form.price}
+                    onChange={handleFormChange}
+                    required
+                    min="0"
+                    step="0.01"
+                    style={{
+                      width: '100%',
+                      padding: '8px 12px',
+                      borderRadius: 8,
+                      border: `1.5px solid ${secondaryColor}`,
+                      fontSize: 16
+                    }}
+                  />
+                </div>
+                {formError && <div style={{ color: '#dc2626', marginBottom: 12 }}>{formError}</div>}
+                <button
+                  type="submit"
+                  disabled={formLoading}
+                  style={{
+                    width: '100%',
+                    background: accentColor,
+                    color: 'white',
+                    fontWeight: 700,
+                    fontSize: 17,
+                    border: 'none',
+                    borderRadius: 8,
+                    padding: '12px 0',
+                    cursor: formLoading ? 'not-allowed' : 'pointer',
+                    opacity: formLoading ? 0.7 : 1
+                  }}
+                >
+                  {formLoading ? 'Creating...' : 'Create Mentorship'}
+                </button>
+              </form>
+            </div>
+          </div>
+        )}
         <h1 style={{
           fontSize: 36,
           fontWeight: 800,
