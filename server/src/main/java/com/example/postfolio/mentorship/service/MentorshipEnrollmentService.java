@@ -22,8 +22,14 @@ public class MentorshipEnrollmentService {
                 .collect(Collectors.toList());
     }
     
-    
-    
+
+    public List<MentorshipEnrollmentDto> getEnrollmentsByProfileId(Long profileId) {
+        List<MentorshipEnrollment> enrollments = enrollmentRepository.findByProfileId(profileId);
+        return enrollments.stream()
+                .map(this::convertToDto)
+                .collect(Collectors.toList());
+    }
+
     private MentorshipEnrollmentDto convertToDto(MentorshipEnrollment enrollment) {
         return new MentorshipEnrollmentDto(
                 enrollment.getId(),
@@ -32,6 +38,4 @@ public class MentorshipEnrollmentService {
                 enrollment.getStatus()
         );
     }
-    
-   
 }

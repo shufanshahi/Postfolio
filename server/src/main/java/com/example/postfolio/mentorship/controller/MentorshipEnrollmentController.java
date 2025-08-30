@@ -20,6 +20,10 @@ public class MentorshipEnrollmentController {
         List<MentorshipEnrollmentDto> enrollments = enrollmentService.getAllEnrollments();
         return ResponseEntity.ok(enrollments);
     }
-    
-   
+
+    @GetMapping("/profile/{profileId}")
+    public ResponseEntity<List<MentorshipEnrollmentDto>> getEnrollmentsByProfileId(@PathVariable Long profileId) {
+        List<MentorshipEnrollmentDto> enrollments = enrollmentService.getEnrollmentsByProfileId(profileId);
+        return ResponseEntity.ok(enrollments);
+    }
 }
