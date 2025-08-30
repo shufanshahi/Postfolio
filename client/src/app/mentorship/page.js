@@ -113,6 +113,43 @@ const MentorshipPage = () => {
     }
   };
 
+  const handleBuy = async (mentorshipId) => {
+    try {
+      const token = localStorage.getItem("token");
+      // 1. Fetch profile
+      const profileRes = await fetch('http://localhost:8080/api/profile/me', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (!profileRes.ok) throw new Error('Failed to fetch profile');
+      const profile = await profileRes.json();
+      const profileId = profile.id;
+      // 2. Enroll in mentorship
+      const enrollRes = await fetch(`http://localhost:8080/api/mentorships/enroll?mentorshipId=${mentorshipId}&profileId=${profileId}`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (!enrollRes.ok) throw new Error('Failed to enroll in mentorship');
+      // 3. Create enrollment record
+      const enrollmentRes = await fetch('http://localhost:8080/api/mentorship-enrollments', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          profileId,
+          mentorshipId,
+          status: 'APPROVED'
+        })
+      });
+      if (!enrollmentRes.ok) throw new Error('Failed to create enrollment record');
+      fetchMentorships();
+      alert('Successfully purchased mentorship!');
+    } catch (err) {
+      alert(err.message);
+    }
+  };
+
   if (loading) return <div className="mentorship-loading">Loading mentorships...</div>;
   if (error) return <div className="mentorship-error">Error: {error}</div>;
 
@@ -392,6 +429,24 @@ const MentorshipPage = () => {
                 <div style={{ marginBottom: 10 }}>
                   <span style={{ color: '#334155', fontWeight: 600 }}>Enrolled Profiles:</span> <span>{m.enrolledIds && m.enrolledIds.length > 0 ? m.enrolledIds.join(', ') : 'None'}</span>
                 </div>
+                <button
+                  style={{
+                    marginTop: 8,
+                    background: accentColor,
+                    color: 'white',
+                    fontWeight: 700,
+                    fontSize: 16,
+                    border: 'none',
+                    borderRadius: 8,
+                    padding: '10px 0',
+                    cursor: 'pointer',
+                    width: '100%',
+                    boxShadow: '0 2px 8px 0 rgba(99,102,241,0.08)'
+                  }}
+                  onClick={() => handleBuy(m.id)}
+                >
+                  Buy
+                </button>
               </div>
             ))}
           </div>
