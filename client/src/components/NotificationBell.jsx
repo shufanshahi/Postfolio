@@ -17,6 +17,8 @@ const getNotificationIcon = (type) => {
             return <UserPlus className="h-4 w-4 text-blue-600" />;
         case 'CONNECTION_ACCEPTED':
             return <UserPlus className="h-4 w-4 text-green-600" />;
+        case 'FOLLOW':
+            return <UserPlus className="h-4 w-4 text-purple-600" />;
         case 'MESSAGE':
         case 'MESSAGE_RECEIVED':
             return <MessageSquare className="h-4 w-4 text-blue-600" />;

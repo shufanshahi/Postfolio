@@ -114,6 +114,7 @@ export default function ProfilePage() {
 
 
         <div className="profile-container">
+            <EducationManagement/>
             <WorkManagement/>
             <h1 className="profile-title">Profile</h1>
 

@@ -1,16 +1,18 @@
 package com.example.postfolio.mcqGeneration.dto;
 
-import java.util.List;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
+@Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class MCQGenerationRequest {
     private String documentContent;
     private String documentName;
-
-    public MCQGenerationRequest() {}
-
-    public String getDocumentContent() { return documentContent; }
-    public void setDocumentContent(String documentContent) { this.documentContent = documentContent; }
-
-    public String getDocumentName() { return documentName; }
-    public void setDocumentName(String documentName) { this.documentName = documentName; }
+    private String topic;
+    private int questionCount;
+    private String difficulty;
 }

@@ -20,6 +20,10 @@ import { useMessagePolling } from '@/hooks/useMessagePolling';
 
 const API_BASE_URL = 'http://localhost:8080';
 
+// Design tokens for cohesive theming (mirrors dashboard/myfeed)
+const gradientPanel = 'bg-gradient-to-br from-teal-50/70 via-white/50 to-indigo-50/70 dark:from-slate-800/60 dark:via-slate-800/50 dark:to-slate-800/60 backdrop-blur-xl border border-white/40 dark:border-slate-700/50 shadow-sm';
+const subtleCard = 'bg-gradient-to-br from-teal-50/65 via-white/55 to-indigo-50/60 dark:from-slate-800/70 dark:via-slate-800/60 dark:to-slate-800/70 backdrop-blur-md border border-teal-900/5 dark:border-slate-700/60 hover:border-teal-500/30 dark:hover:border-teal-400/30 transition-colors';
+
 export default function ConnectionsPage() {
     const router = useRouter();
     const [activeTab, setActiveTab] = useState('connections');
@@ -376,81 +380,66 @@ export default function ConnectionsPage() {
     return (
         <>
             <Navbar />
-            <div className="min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">
-                <div className="max-w-4xl mx-auto">
+            <div className="min-h-screen relative overflow-hidden">
+                <div className="pointer-events-none select-none absolute inset-0 -z-10">
+                    <div className="absolute -top-24 -left-10 h-[36rem] w-[36rem] bg-gradient-to-br from-teal-200 via-teal-100 to-white dark:from-teal-600/30 dark:via-indigo-600/20 dark:to-transparent blur-3xl opacity-70" />
+                    <div className="absolute top-1/3 -right-32 h-[34rem] w-[34rem] bg-gradient-to-tr from-indigo-200 via-white to-amber-100 dark:from-indigo-700/30 dark:via-transparent dark:to-teal-700/20 blur-3xl opacity-60" />
+                </div>
+                <div className="max-w-6xl mx-auto px-6 py-10">
 
                     {/* Header */}
-                    <div className="flex items-center justify-between mb-8">
-                        <div className="flex items-center gap-4">
-                            <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => router.push('/dashboard')}
-                                className="gap-2 bg-white border-gray-300 text-gray-700 hover:bg-gray-100 hover:text-gray-900"
-                            >
-                                <ArrowLeft className="h-4 w-4" />
-                                Back to Dashboard
+                    <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-6 mb-10">
+                        <div className="space-y-3">
+                            <div className="flex items-center gap-3">
+                                <div className="h-11 w-11 rounded-xl bg-gradient-to-br from-teal-500 via-indigo-500 to-amber-400 flex items-center justify-center text-white shadow-sm ring-1 ring-white/40">
+                                    <Users className="h-5 w-5" />
+                                </div>
+                                <h1 className="text-3xl font-semibold tracking-tight text-slate-800 dark:text-slate-100">Connections Hub</h1>
+                            </div>
+                            <p className="text-slate-600 dark:text-slate-400 text-sm md:text-base flex items-center gap-2">
+                                <span className="inline-flex h-2 w-2 rounded-full bg-teal-500 animate-pulse" /> Manage your network & conversations
+                            </p>
+                        </div>
+                        <div className="flex items-center gap-3">
+                            <Button variant="outline" size="sm" onClick={() => router.push('/dashboard')} className="rounded-full border-slate-300/60 bg-white/60 backdrop-blur hover:bg-white shadow-sm text-slate-700 text-xs md:text-sm">
+                                <ArrowLeft className="h-4 w-4 mr-1" /> Dashboard
                             </Button>
-                            <h1 className="text-3xl font-bold text-gray-900">
-                                Connections
-                            </h1>
                         </div>
                     </div>
 
                     {/* Tab Navigation */}
-                    <div className="flex space-x-1 mb-6 bg-gray-100 rounded-lg p-1 border border-gray-200">
-                        <Button
-                            variant={activeTab === 'connections' ? 'default' : 'ghost'}
-                            onClick={() => setActiveTab('connections')}
-                            className={`flex-1 gap-2 ${activeTab === 'connections' ? 'bg-gradient-to-r from-sky-300 to-sky-400 text-white' : 'text-gray-700 hover:bg-white'}`}
-                        >
-                            <Users className="h-4 w-4" />
-                            My Connections
-                        </Button>
-                        <Button
-                            variant={activeTab === 'pending' ? 'default' : 'ghost'}
-                            onClick={() => setActiveTab('pending')}
-                            className={`flex-1 gap-2 ${activeTab === 'pending' ? 'bg-gradient-to-r from-sky-300 to-sky-400 text-white' : 'text-gray-700 hover:bg-white'}`}
-                        >
-                            <Clock className="h-4 w-4" />
-                            Pending
-                        </Button>
-                        <Button
-                            variant={activeTab === 'sent' ? 'default' : 'ghost'}
-                            onClick={() => setActiveTab('sent')}
-                            className={`flex-1 gap-2 ${activeTab === 'sent' ? 'bg-gradient-to-r from-sky-300 to-sky-400 text-white' : 'text-gray-700 hover:bg-white'}`}
-                        >
-                            <UserPlus className="h-4 w-4" />
-                            Sent
-                        </Button>
-                        <Button
-                            variant={activeTab === 'search' ? 'default' : 'ghost'}
-                            onClick={() => setActiveTab('search')}
-                            className={`flex-1 gap-2 ${activeTab === 'search' ? 'bg-gradient-to-r from-sky-300 to-sky-400 text-white' : 'text-gray-700 hover:bg-white'}`}
-                        >
-                            <Search className="h-4 w-4" />
-                            Search
-                        </Button>
-                        <Button
-                            variant={activeTab === 'messages' ? 'default' : 'ghost'}
-                            onClick={() => setActiveTab('messages')}
-                            className={`flex-1 gap-2 ${activeTab === 'messages' ? 'bg-gradient-to-r from-sky-300 to-sky-400 text-white' : 'text-gray-700 hover:bg-white'}`}
-                        >
-                            <MessageCircle className="h-4 w-4" />
-                            Messages
-                        </Button>
+                    <div className="flex mb-10 rounded-2xl p-1 bg-gradient-to-r from-teal-50/70 via-white/70 to-indigo-50/70 dark:from-slate-800/60 dark:via-slate-800/50 dark:to-slate-800/60 backdrop-blur border border-teal-900/10 dark:border-slate-700/60 shadow-sm overflow-x-auto">
+                        {[
+                            { key: 'connections', label: 'Connections', icon: Users },
+                            { key: 'pending', label: 'Pending', icon: Clock },
+                            { key: 'sent', label: 'Sent', icon: UserPlus },
+                            { key: 'search', label: 'Search', icon: Search },
+                            { key: 'messages', label: 'Messages', icon: MessageCircle }
+                        ].map(tab => {
+                            const Icon = tab.icon;
+                            const active = activeTab === tab.key;
+                            return (
+                                <button
+                                    key={tab.key}
+                                    onClick={() => setActiveTab(tab.key)}
+                                    className={`flex-1 min-w-[140px] px-5 py-2 rounded-xl text-sm font-medium tracking-wide flex items-center justify-center gap-2 transition-all ring-1 ring-transparent ${active ? 'bg-white/70 dark:bg-slate-900/50 text-teal-700 dark:text-teal-300 shadow-sm ring-teal-500/30' : 'text-slate-600 dark:text-slate-400 hover:bg-white/50 dark:hover:bg-slate-900/30'}`}
+                                >
+                                    <Icon className="h-4 w-4" /> {tab.label}
+                                </button>
+                            );
+                        })}
                     </div>
 
                     {/* Content */}
                     <div className="space-y-6">
                         {activeTab === 'connections' && (
-                            <Card className="bg-white border-gray-200">
+                            <Card className={`rounded-2xl ${subtleCard}`}>
                                 <CardHeader>
-                                    <CardTitle className="flex items-center gap-2 text-gray-900">
-                                        <Users className="h-5 w-5 text-sky-500" />
+                                    <CardTitle className="flex items-center gap-2 text-slate-800 dark:text-slate-100 text-base font-semibold">
+                                        <Users className="h-5 w-5 text-teal-600 dark:text-teal-400" />
                                         My Connections
                                     </CardTitle>
-                                    <CardDescription className="text-gray-600">
+                                    <CardDescription className="text-slate-600 dark:text-slate-400">
                                         People you're connected with
                                     </CardDescription>
                                 </CardHeader>
@@ -461,13 +450,13 @@ export default function ConnectionsPage() {
                         )}
 
                         {activeTab === 'pending' && (
-                            <Card className="bg-white border-gray-200">
+                            <Card className={`rounded-2xl ${subtleCard}`}>
                                 <CardHeader>
-                                    <CardTitle className="flex items-center gap-2 text-gray-900">
-                                        <Clock className="h-5 w-5 text-purple-500" />
+                                    <CardTitle className="flex items-center gap-2 text-slate-800 dark:text-slate-100 text-base font-semibold">
+                                        <Clock className="h-5 w-5 text-amber-600 dark:text-amber-400" />
                                         Pending Requests
                                     </CardTitle>
-                                    <CardDescription className="text-gray-600">
+                                    <CardDescription className="text-slate-600 dark:text-slate-400">
                                         Incoming connection requests
                                     </CardDescription>
                                 </CardHeader>
@@ -478,13 +467,13 @@ export default function ConnectionsPage() {
                         )}
 
                         {activeTab === 'sent' && (
-                            <Card className="bg-white border-gray-200">
+                            <Card className={`rounded-2xl ${subtleCard}`}>
                                 <CardHeader>
-                                    <CardTitle className="flex items-center gap-2 text-gray-900">
-                                        <UserPlus className="h-5 w-5 text-amber-500" />
+                                    <CardTitle className="flex items-center gap-2 text-slate-800 dark:text-slate-100 text-base font-semibold">
+                                        <UserPlus className="h-5 w-5 text-teal-600 dark:text-teal-400" />
                                         Sent Requests
                                     </CardTitle>
-                                    <CardDescription className="text-gray-600">
+                                    <CardDescription className="text-slate-600 dark:text-slate-400">
                                         Your outgoing connection requests
                                     </CardDescription>
                                 </CardHeader>
@@ -495,13 +484,13 @@ export default function ConnectionsPage() {
                         )}
 
                         {activeTab === 'search' && (
-                            <Card className="bg-white border-gray-200">
+                            <Card className={`rounded-2xl ${subtleCard}`}>
                                 <CardHeader>
-                                    <CardTitle className="flex items-center gap-2 text-gray-900">
-                                        <Search className="h-5 w-5 text-green-500" />
+                                    <CardTitle className="flex items-center gap-2 text-slate-800 dark:text-slate-100 text-base font-semibold">
+                                        <Search className="h-5 w-5 text-teal-600 dark:text-teal-400" />
                                         Search People
                                     </CardTitle>
-                                    <CardDescription className="text-gray-600">
+                                    <CardDescription className="text-slate-600 dark:text-slate-400">
                                         Find and connect with others
                                     </CardDescription>
                                 </CardHeader>
@@ -512,43 +501,36 @@ export default function ConnectionsPage() {
                         )}
 
                         {activeTab === 'messages' && (
-                            <Card className="bg-white border-gray-200">
+                            <Card className={`rounded-2xl ${subtleCard}`}>
                                 <CardHeader>
-                                    <CardTitle className="flex items-center gap-2 text-gray-900">
-                                        <MessageCircle className="h-5 w-5 text-blue-500" />
+                                    <CardTitle className="flex items-center gap-2 text-slate-800 dark:text-slate-100 text-base font-semibold">
+                                        <MessageCircle className="h-5 w-5 text-teal-600 dark:text-teal-400" />
                                         Messages
                                     </CardTitle>
-                                    <CardDescription className="text-gray-600">
+                                    <CardDescription className="text-slate-600 dark:text-slate-400">
                                         Chat with your connections
                                     </CardDescription>
                                 </CardHeader>
                                 <CardContent className="p-0">
-                                    <div className="h-[600px] flex bg-white overflow-hidden">
+                                    <div className="h-[600px] flex bg-white/60 dark:bg-slate-900/40 backdrop-blur-sm overflow-hidden rounded-b-2xl border-t border-teal-900/5 dark:border-slate-700/50">
                                         {/* Left Sidebar - Conversations */}
-                                        <div className="w-80 border-r bg-gray-50">
-                                            <div className="p-4 border-b bg-white">
-                                                <div className="flex items-center justify-between mb-4">
-                                                    <h3 className="text-lg font-semibold">Conversations</h3>
-                                                    <Button
-                                                        size="sm"
-                                                        onClick={() => setIsNewChatModalOpen(true)}
-                                                        className="flex items-center gap-2"
-                                                    >
-                                                        <Plus className="w-4 h-4" />
-                                                        New Chat
+                                        <div className="w-80 border-r border-teal-900/10 dark:border-slate-700/60 bg-white/50 dark:bg-slate-900/30 backdrop-blur">
+                                            <div className="p-4 border-b border-teal-900/10 dark:border-slate-700/60">
+                                                <div className="flex items-center justify-between mb-3">
+                                                    <h3 className="text-sm font-semibold tracking-wide uppercase text-slate-600 dark:text-slate-400">Conversations</h3>
+                                                    <Button size="sm" onClick={() => setIsNewChatModalOpen(true)} className="h-8 px-3 rounded-full bg-teal-600 hover:bg-teal-700 text-white text-xs font-medium gap-1">
+                                                        <Plus className="w-4 h-4" /> New
                                                     </Button>
                                                 </div>
-
-                                                {/* Polling Status Indicator */}
-                                                <div className="flex items-center gap-2 text-sm">
-                                                    <div className={`w-2 h-2 rounded-full ${isPolling ? 'bg-green-500' : 'bg-gray-500'}`}></div>
-                                                    <span className={isPolling ? 'text-green-600' : 'text-gray-600'}>
-                                                        {isPolling ? 'Auto-refreshing' : 'Paused'}
+                                                <div className="flex items-center gap-2 text-[11px] font-medium tracking-wide uppercase">
+                                                    <div className={`h-2 w-2 rounded-full ${isPolling ? 'bg-emerald-500' : 'bg-slate-400'} animate-pulse`} />
+                                                    <span className={isPolling ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-500 dark:text-slate-400'}>
+                                                        {isPolling ? 'Live' : 'Paused'}
                                                     </span>
                                                 </div>
                                             </div>
 
-                                            <div className="h-[536px] overflow-y-auto">
+                                            <div className="h-[536px] overflow-y-auto custom-scrollbar">
                                                 <ConversationsList
                                                     conversations={conversations}
                                                     selectedConversation={selectedConversation}
@@ -568,52 +550,59 @@ export default function ConnectionsPage() {
                                                     />
                                                 </div>
                                             ) : (
-                                                <div className="flex-1 flex items-center justify-center">
-                                                    <div className="text-center text-muted-foreground">
-                                                        <MessageCircle className="w-16 h-16 mx-auto mb-4 opacity-50" />
-                                                        <h3 className="text-lg font-medium mb-2">No conversation selected</h3>
-                                                        <p>Choose a conversation from the list or start a new chat</p>
+                                                <div className="flex-1 flex items-center justify-center p-10">
+                                                    <div className="text-center max-w-xs">
+                                                        <MessageCircle className="w-14 h-14 mx-auto mb-4 text-teal-500/60" />
+                                                        <h3 className="text-sm font-semibold tracking-wide uppercase text-slate-600 dark:text-slate-400 mb-2">No conversation selected</h3>
+                                                        <p className="text-slate-500 dark:text-slate-400 text-xs leading-relaxed">Choose a conversation or start a new chat to begin messaging.</p>
                                                     </div>
                                                 </div>
                                             )}
                                         </div>
                                     </div>
-
-                                    {/* New Chat Modal */}
-                                    <NewChatModal
-                                        isOpen={isNewChatModalOpen}
-                                        onClose={() => setIsNewChatModalOpen(false)}
-                                        connections={connections}
-                                        onStartChat={handleStartNewChat}
-                                        currentUserId={user?.id}
-                                    />
                                 </CardContent>
                             </Card>
                         )}
                     </div>
+
+                    {/* New Chat Modal */}
+                    <NewChatModal
+                        isOpen={isNewChatModalOpen}
+                        onClose={() => setIsNewChatModalOpen(false)}
+                        connections={connections}
+                        onStartChat={handleStartNewChat}
+                    />
                 </div>
             </div>
         </>
     );
 }
 
-const SentRequests = () => {
+// Local component for listing sent connection requests with themed styling
+function SentRequests() {
     const [sentRequests, setSentRequests] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
     useEffect(() => {
-        // Keep original data fetching logic
         const fetchSentRequests = async () => {
             try {
                 const token = localStorage.getItem('token');
-                const response = await fetch('http://localhost:8080/api/connections/pending/sent', {
+                console.log('Fetching sent requests with token:', token?.slice(0, 15) + '...');
+                const response = await fetch(`${API_BASE_URL}/api/connections/pending/sent`, {
                     headers: {
                         'Authorization': `Bearer ${token}`,
-                    },
+                        'Content-Type': 'application/json'
+                    }
                 });
 
-                if (!response.ok) throw new Error('Failed to fetch sent requests');
+                console.log('Sent requests response status:', response.status);
+
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    console.error('Sent requests error:', errorText);
+                    throw new Error(`Failed to fetch sent requests: ${response.status} ${errorText}`);
+                }
                 const data = await response.json();
                 setSentRequests(data);
             } catch (err) {
@@ -622,55 +611,50 @@ const SentRequests = () => {
                 setLoading(false);
             }
         };
-
         fetchSentRequests();
     }, []);
 
     if (loading) {
         return (
-            <div className="flex items-center justify-center py-8">
-                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-sky-500"></div>
-                <span className="ml-2 text-gray-600">Loading...</span>
+            <div className="flex items-center justify-center py-8 text-slate-500 dark:text-slate-400 text-sm">
+                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-teal-500"></div>
+                <span className="ml-2">Loading...</span>
             </div>
         );
     }
 
     if (error) {
-        return <div className="text-red-600 text-center py-4">Error: {error}</div>;
+        return <div className="text-red-600 text-center py-4 text-sm">Error: {error}</div>;
+    }
+
+    if (sentRequests.length === 0) {
+        return (
+            <div className="text-center py-10 text-slate-500 dark:text-slate-400">
+                <UserPlus className="h-10 w-10 mx-auto mb-3 text-teal-500/60" />
+                <p className="text-sm font-medium">No sent requests</p>
+            </div>
+        );
     }
 
     return (
-        <>
-            {sentRequests.length === 0 ? (
-                <div className="text-center py-8 text-gray-500">
-                    <UserPlus className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                    <p>No sent requests</p>
-                </div>
-            ) : (
-                <div className="space-y-4">
-                    {sentRequests.map((request) => (
-                        <div key={request.id} className="flex items-center justify-between p-4 rounded-lg bg-gray-50 border border-gray-200 hover:border-sky-300 transition-colors">
-                            <div className="flex items-center gap-3">
-                                <Avatar className="h-10 w-10">
-                                    <AvatarFallback className="bg-gradient-to-br from-sky-400 to-sky-500 text-white">
-                                        {request.receiverName?.charAt(0)?.toUpperCase() || 'U'}
-                                    </AvatarFallback>
-                                </Avatar>
-                                <div>
-                                    <p className="font-medium text-gray-900">{request.receiverName}</p>
-                                    <p className="text-sm text-gray-600">{request.receiverEmail}</p>
-                                    <p className="text-xs text-gray-500">
-                                        Sent on {new Date(request.createdAt).toLocaleDateString()}
-                                    </p>
-                                </div>
-                            </div>
-                            <Badge className="bg-amber-100 text-amber-800 border-amber-300">
-                                Pending
-                            </Badge>
+        <div className="space-y-4">
+            {sentRequests.map((request) => (
+                <div key={request.id} className="flex items-center justify-between p-4 rounded-xl bg-white/60 dark:bg-slate-900/40 border border-teal-900/10 dark:border-slate-700/60 hover:border-teal-500/40 transition-colors">
+                    <div className="flex items-center gap-3">
+                        <Avatar className="h-10 w-10 ring-2 ring-white/60 dark:ring-slate-800/60 rounded-xl overflow-hidden">
+                            <AvatarFallback className="bg-gradient-to-br from-teal-500 via-indigo-500 to-amber-500 text-white text-sm font-semibold">
+                                {request.receiverName?.charAt(0)?.toUpperCase() || 'U'}
+                            </AvatarFallback>
+                        </Avatar>
+                        <div className="space-y-0.5">
+                            <p className="font-medium text-slate-800 dark:text-slate-100 text-sm">{request.receiverName}</p>
+                            <p className="text-[11px] text-slate-500 dark:text-slate-400">{request.receiverEmail}</p>
+                            <p className="text-[10px] text-slate-400 dark:text-slate-500 uppercase tracking-wide">Sent {new Date(request.createdAt).toLocaleDateString()}</p>
                         </div>
-                    ))}
+                    </div>
+                    <Badge className="bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30 rounded-full px-3 py-1 h-6 text-[11px] font-medium">Pending</Badge>
                 </div>
-            )}
-        </>
+            ))}
+        </div>
     );
-};
+}

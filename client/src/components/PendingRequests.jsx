@@ -1,10 +1,8 @@
-'use client';
+"use client";
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Badge } from '@/components/ui/badge';
 import { UserCheck, UserX, Loader2, Users, ExternalLink } from 'lucide-react';
 import { apiFetch } from '@/lib/api';
 
@@ -76,127 +74,94 @@ const PendingRequests = ({ className }) => {
 
     if (loading) {
         return (
-            <Card className={`bg-white border-gray-200 ${className}`}>
-                <CardHeader>
-                    <CardTitle className="flex items-center gap-2 text-gray-900">
-                        <Users className="h-5 w-5 text-purple-500" />
-                        Pending Requests
-                    </CardTitle>
-                </CardHeader>
-                <CardContent>
-                    <div className="flex items-center justify-center py-8">
-                        <Loader2 className="h-6 w-6 animate-spin text-sky-500" />
-                        <span className="ml-2 text-gray-600">Loading requests...</span>
-                    </div>
-                </CardContent>
-            </Card>
+            <div className={`flex items-center justify-center py-10 ${className}`}>
+                <Loader2 className="h-6 w-6 animate-spin text-teal-600" />
+                <span className="ml-2 text-slate-600 dark:text-slate-400">Loading requests...</span>
+            </div>
         );
     }
 
     if (error) {
         return (
-            <Card className={`bg-white border-gray-200 ${className}`}>
-                <CardHeader>
-                    <CardTitle className="flex items-center gap-2 text-gray-900">
-                        <Users className="h-5 w-5 text-purple-500" />
-                        Pending Requests
-                    </CardTitle>
-                </CardHeader>
-                <CardContent>
-                    <div className="text-red-600 text-center py-4">
-                        Error: {error}
-                    </div>
-                </CardContent>
-            </Card>
+            <div className={`text-center py-8 ${className}`}>
+                <p className="text-red-600 text-sm font-medium">Error: {error}</p>
+            </div>
+        );
+    }
+
+    if (pendingRequests.length === 0) {
+        return (
+            <div className={`text-center py-12 ${className}`}>
+                <div className="h-16 w-16 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-teal-500 via-indigo-500 to-amber-400 text-white flex items-center justify-center shadow-sm ring-1 ring-white/50 dark:ring-slate-800/50">
+                    <Users className="h-7 w-7" />
+                </div>
+                <p className="text-slate-700 dark:text-slate-200 font-medium">No pending requests</p>
+                <p className="text-xs mt-1 text-slate-500 dark:text-slate-400">When someone sends you a request it will appear here</p>
+            </div>
         );
     }
 
     return (
-        <Card className={`bg-white border-gray-200 ${className}`}>
-            <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-gray-900">
-                    <Users className="h-5 w-5 text-purple-500" />
-                    Pending Requests
-                    <Badge className="ml-2 bg-purple-100 text-purple-800 border-purple-200">
-                        {pendingRequests.length}
-                    </Badge>
-                </CardTitle>
-                <CardDescription className="text-gray-600">
-                    Connection requests waiting for your response
-                </CardDescription>
-            </CardHeader>
-            <CardContent>
-                {pendingRequests.length === 0 ? (
-                    <div className="text-center py-8 text-gray-500">
-                        <Users className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                        <p>No pending requests</p>
-                        <p className="text-sm text-gray-400">When someone sends you a request, it will appear here</p>
+        <div className={`space-y-3 ${className}`}>
+            {pendingRequests.map((request) => (
+                <div
+                    key={request.id}
+                    className="group flex items-center justify-between p-4 rounded-xl bg-white/60 dark:bg-slate-900/40 border border-teal-900/10 dark:border-slate-700/60 hover:border-teal-500/40 dark:hover:border-teal-400/40 backdrop-blur-sm transition-colors"
+                    onClick={() => handleUserClick(request.requesterProfileId)}
+                >
+                    <div className="flex items-center gap-4 flex-1 min-w-0 cursor-pointer">
+                        <Avatar className="h-11 w-11 rounded-xl ring-2 ring-white/60 dark:ring-slate-800/60 overflow-hidden">
+                            {request.requesterPictureBase64 ? (
+                                <AvatarImage src={`data:image/jpeg;base64,${request.requesterPictureBase64}`} />
+                            ) : (
+                                <AvatarFallback className="bg-gradient-to-br from-teal-500 via-indigo-500 to-amber-500 text-white text-sm font-semibold">
+                                    {request.requesterName?.charAt(0)?.toUpperCase() || 'U'}
+                                </AvatarFallback>
+                            )}
+                        </Avatar>
+                        <div className="flex-1 truncate">
+                            <h4 className="font-medium text-slate-800 dark:text-slate-100 truncate">{request.requesterName || 'Unknown User'}</h4>
+                            <p className="text-xs text-slate-500 dark:text-slate-400 truncate">{request.requesterEmail}</p>
+                        </div>
+                        <ExternalLink className="h-4 w-4 text-slate-400 group-hover:text-teal-500 transition-colors" />
                     </div>
-                ) : (
-                    <div className="space-y-3">
-                        {pendingRequests.map((request) => (
-                            <div
-                                key={request.id}
-                                className="flex items-center justify-between p-4 rounded-lg bg-gray-50 border border-gray-200 hover:border-sky-300 transition-colors duration-200"
-                                onClick={() => handleUserClick(request.requesterProfileId)}
-                            >
-                                <div className="flex items-center gap-3 flex-1 cursor-pointer">
-                                    <Avatar className="h-10 w-10">
-                                        {request.requesterPictureBase64 ? (
-                                            <AvatarImage src={`data:image/jpeg;base64,${request.requesterPictureBase64}`} />
-                                        ) : (
-                                            <AvatarFallback className="bg-gradient-to-br from-sky-400 to-sky-500 text-white">
-                                                {request.requesterName?.charAt(0)?.toUpperCase() || 'U'}
-                                            </AvatarFallback>
-                                        )}
-                                    </Avatar>
-                                    <div className="flex-1">
-                                        <h4 className="font-medium text-gray-900">{request.requesterName || 'Unknown User'}</h4>
-                                        <p className="text-sm text-gray-600">{request.requesterEmail}</p>
-                                    </div>
-                                    <ExternalLink className="h-4 w-4 text-gray-400" />
-                                </div>
-                                <div className="flex items-center gap-2 ml-4">
-                                    <Button
-                                        onClick={(e) => {
-                                            e.stopPropagation();
-                                            handleAccept(request.id);
-                                        }}
-                                        disabled={actionLoading[request.id]}
-                                        size="sm"
-                                        className="bg-gradient-to-r from-sky-500 to-sky-600 text-white hover:from-sky-600 hover:to-sky-700"
-                                    >
-                                        {actionLoading[request.id] ? (
-                                            <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                                        ) : (
-                                            <UserCheck className="h-4 w-4 mr-2" />
-                                        )}
-                                        Accept
-                                    </Button>
-                                    <Button
-                                        onClick={(e) => {
-                                            e.stopPropagation();
-                                            handleReject(request.id);
-                                        }}
-                                        disabled={actionLoading[request.id]}
-                                        variant="outline"
-                                        size="sm"
-                                        className="text-red-600 border-red-300 hover:bg-red-50 hover:text-red-700"
-                                    >
-                                        {actionLoading[request.id] ? (
-                                            <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                                        ) : (
-                                            <UserX className="h-4 w-4 mr-2" />
-                                        )}
-                                        Reject
-                                    </Button>
-                                </div>
-                            </div>
-                        ))}
+                    <div className="flex items-center gap-2 ml-4 shrink-0">
+                        <Button
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                handleAccept(request.id);
+                            }}
+                            disabled={actionLoading[request.id]}
+                            size="sm"
+                            className="h-8 px-3 rounded-full bg-teal-600 hover:bg-teal-700 text-white text-xs font-medium flex items-center gap-1.5"
+                        >
+                            {actionLoading[request.id] ? (
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                            ) : (
+                                <UserCheck className="h-4 w-4" />
+                            )}
+                            Accept
+                        </Button>
+                        <Button
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                handleReject(request.id);
+                            }}
+                            disabled={actionLoading[request.id]}
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 w-8 p-0 rounded-full text-rose-500 hover:bg-rose-500/10 dark:hover:bg-rose-400/10"
+                        >
+                            {actionLoading[request.id] ? (
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                            ) : (
+                                <UserX className="h-4 w-4" />
+                            )}
+                        </Button>
                     </div>
-                )}
-            </CardContent>
-        </Card>
+                </div>
+            ))}
+        </div>
     );
 };
 

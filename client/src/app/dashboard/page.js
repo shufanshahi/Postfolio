@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { apiFetch } from '@/lib/api';
-import { 
+import {
   User, Users, FileText, Rss, LogOut, Bell, Search, Video, Briefcase,
   TrendingUp, Calendar, MessageSquare, Settings, ChevronRight, Plus,
   Activity, Target, Award, Clock, BarChart3, Loader2
@@ -38,6 +38,11 @@ import {
 } from '@/components/ui/alert';
 import Navbar from '@/components/Navbar';
 
+// Design tokens (fallback if Tailwind classes adjusted later)
+const gradientPanel = 'bg-gradient-to-br from-teal-50/70 via-white/50 to-indigo-50/70 dark:from-slate-800/60 dark:via-slate-800/50 dark:to-slate-800/60 backdrop-blur-xl border border-white/40 dark:border-slate-700/50 shadow-sm';
+// Softer, tinted cards matching new palette (reduces stark white feel)
+const subtleCard = 'bg-gradient-to-br from-teal-50/65 via-white/55 to-indigo-50/60 dark:from-slate-800/70 dark:via-slate-800/60 dark:to-slate-800/70 backdrop-blur-md border border-teal-900/5 dark:border-slate-700/60 hover:border-teal-500/30 dark:hover:border-teal-400/30 transition-colors';
+
 export default function FunctionalDashboard() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
@@ -55,7 +60,7 @@ export default function FunctionalDashboard() {
       try {
         setLoading(true);
         const token = localStorage.getItem('token');
-        
+
         if (!token) {
           router.push('/login');
           return;
@@ -144,68 +149,74 @@ export default function FunctionalDashboard() {
   ];
 
   const quickActions = [
-    { 
-      label: 'Post Update', 
-      icon: <Rss className="h-4 w-4" />, 
+    {
+      label: 'Post Update',
+      icon: <Rss className="h-4 w-4" />,
       color: 'bg-sky-300 hover:bg-sky-400 text-sky-900',
       action: () => handleQuickAction('post')
     },
-    { 
-      label: 'Update CV', 
-      icon: <FileText className="h-4 w-4" />, 
+    {
+      label: 'Update CV',
+      icon: <FileText className="h-4 w-4" />,
       color: 'bg-emerald-300 hover:bg-emerald-400 text-emerald-900',
       action: () => handleQuickAction('cv')
     },
-    { 
-      label: 'Mock Interview', 
-      icon: <Video className="h-4 w-4" />, 
+    {
+      label: 'Mock Interview',
+      icon: <Video className="h-4 w-4" />,
       color: 'bg-purple-300 hover:bg-purple-400 text-purple-900',
       action: () => handleQuickAction('interview')
     },
-    { 
-      label: 'Take MCQ', 
-      icon: <BarChart3 className="h-4 w-4" />, 
+    {
+      label: 'Take MCQ',
+      icon: <BarChart3 className="h-4 w-4" />,
       color: 'bg-amber-300 hover:bg-amber-400 text-amber-900',
       action: () => handleQuickAction('mcq')
+    },
+    {
+      label: 'News System',
+      icon: <Settings className="h-4 w-4" />,
+      color: 'bg-red-300 hover:bg-red-400 text-red-900',
+      action: () => handleNavigation('/news-system')
     }
   ];
 
   const getMainCards = () => {
     const cards = [
-      { 
-        title: 'My CV', 
+      {
+        title: 'My CV',
         description: 'Complete your professional profile',
-        icon: <FileText className="h-6 w-6" />, 
+        icon: <FileText className="h-6 w-6" />,
         color: 'from-sky-200 to-sky-300',
         iconBg: 'from-sky-300 to-sky-400',
         progress: userData?.profileCompletion || 0,
         action: 'Update Now',
         onClick: () => handleNavigation('/mycv')
       },
-      { 
-        title: 'Connections', 
+      {
+        title: 'Connections',
         description: 'Expand your professional network',
-        icon: <Users className="h-6 w-6" />, 
+        icon: <Users className="h-6 w-6" />,
         color: 'from-sky-300 to-sky-400',
         iconBg: 'from-sky-300 to-sky-400',
         count: userData?.connectionCount || '0',
         action: 'Find People',
         onClick: () => handleNavigation('/connections')
       },
-      { 
-        title: 'My Feed', 
+      {
+        title: 'My Feed',
         description: 'Latest posts and industry updates',
-        icon: <Rss className="h-6 w-6" />, 
+        icon: <Rss className="h-6 w-6" />,
         color: 'from-sky-300 to-sky-400',
         iconBg: 'from-sky-300 to-sky-400',
         count: userData?.unreadPosts ? `${userData.unreadPosts} new` : '0 new',
         action: 'View Feed',
         onClick: () => handleNavigation('/myfeed')
       },
-      { 
-        title: 'PREP MCQ', 
+      {
+        title: 'PREP MCQ',
         description: 'Practice and improve your skills',
-        icon: <Target className="h-6 w-6" />, 
+        icon: <Target className="h-6 w-6" />,
         color: 'from-sky-300 to-sky-400',
         iconBg: 'from-sky-300 to-sky-400',
         progress: userData?.skillScore || 0,
@@ -215,10 +226,10 @@ export default function FunctionalDashboard() {
     ];
 
     if (userData?.role === 'Employer') {
-      cards.push({ 
-        title: 'Job Postings', 
+      cards.push({
+        title: 'Job Postings',
         description: 'Manage your job listings',
-        icon: <Briefcase className="h-6 w-6" />, 
+        icon: <Briefcase className="h-6 w-6" />,
         color: 'from-sky-300 to-sky-400',
         iconBg: 'from-sky-300 to-sky-400',
         count: `${userData?.activeJobs || 0} active`,
@@ -226,20 +237,20 @@ export default function FunctionalDashboard() {
         onClick: () => handleNavigation('/job-postings')
       });
     } else if (userData?.role === 'User') {
-      cards.push({ 
-        title: 'Find Jobs', 
+      cards.push({
+        title: 'Find Jobs',
         description: 'Explore new opportunities',
-        icon: <Briefcase className="h-6 w-6" />, 
+        icon: <Briefcase className="h-6 w-6" />,
         color: 'from-sky-300 to-sky-400',
         iconBg: 'from-sky-300 to-sky-400',
         count: `${userData?.matchingJobs || 0} matches`,
         action: 'Browse Jobs',
         onClick: () => handleNavigation('/find-jobs')
       });
-      cards.push({ 
-        title: 'My Interviews', 
+      cards.push({
+        title: 'My Interviews',
         description: 'Track your interview schedule',
-        icon: <Video className="h-6 w-6" />, 
+        icon: <Video className="h-6 w-6" />,
         color: 'from-sky-300 to-sky-400',
         iconBg: 'from-sky-300 to-sky-400',
         count: `${userData?.upcomingInterviews || 0} upcoming`,
@@ -263,10 +274,14 @@ export default function FunctionalDashboard() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-stone-100 flex items-center justify-center">
-        <div className="text-center">
-          <Loader2 className="h-8 w-8 animate-spin text-slate-600 mx-auto mb-4" />
-          <p className="text-slate-600">Loading your dashboard...</p>
+      <div className="min-h-screen relative overflow-hidden flex items-center justify-center bg-[radial-gradient(circle_at_30%_20%,theme(colors.teal.100)_0%,theme(colors.teal.50)_35%,theme(colors.white)_70%)] dark:bg-[radial-gradient(circle_at_30%_20%,oklch(0.3_0.05_210)_0%,oklch(0.22_0.025_250)_60%)]">
+        <div className="absolute inset-0 -z-10 opacity-40 [mask-image:radial-gradient(circle_at_center,white,transparent)]">
+          <div className="absolute top-10 left-1/4 h-64 w-64 bg-teal-300/30 rounded-full blur-3xl animate-pulse" />
+          <div className="absolute bottom-10 right-1/4 h-72 w-72 bg-indigo-300/30 rounded-full blur-3xl animate-pulse [animation-delay:200ms]" />
+        </div>
+        <div className="text-center animate-in fade-in zoom-in duration-500">
+          <Loader2 className="h-9 w-9 animate-spin text-teal-600 dark:text-teal-300 mx-auto mb-4" />
+          <p className="text-sm font-medium text-slate-600 dark:text-slate-300 tracking-wide">Preparing your personalized workspace...</p>
         </div>
       </div>
     );
@@ -274,10 +289,10 @@ export default function FunctionalDashboard() {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-stone-100 flex items-center justify-center p-4">
-        <Alert className="max-w-md">
-          <AlertDescription>
-            {error}. Please try refreshing the page or contact support if the problem persists.
+      <div className="min-h-screen flex items-center justify-center p-6 bg-[conic-gradient(at_10%_30%,theme(colors.teal.50),theme(colors.indigo.50),theme(colors.white))] dark:bg-[linear-gradient(145deg,oklch(0.22_0.025_250),oklch(0.18_0.02_250))]">
+        <Alert className="max-w-md ${subtleCard}">
+          <AlertDescription className="text-sm">
+            {error}. Please refresh or contact support if this continues.
           </AlertDescription>
         </Alert>
       </div>
@@ -285,22 +300,30 @@ export default function FunctionalDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-stone-100">
-      {/* Top Navigation */}
-      <Navbar/>
-     
-         
-
-      {/* Main Content */}
-      <div className="max-w-7xl mx-auto py-8 px-6 space-y-8">
-        
-        {/* Welcome Section */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="text-3xl font-bold text-slate-800">
-              Welcome back, {userData?.name?.split(' ')[0] || 'there'}! 👋
-            </h2>
-            <p className="text-slate-600 mt-1">Here's what's happening with your career today.</p>
+    <div className="min-h-screen relative overflow-hidden">
+      <div className="pointer-events-none select-none absolute inset-0 -z-10">
+        <div className="absolute -top-24 -left-10 h-[38rem] w-[38rem] bg-gradient-to-br from-teal-200 via-teal-100 to-white dark:from-teal-600/30 dark:via-indigo-600/20 dark:to-transparent blur-3xl opacity-70" />
+        <div className="absolute top-1/3 -right-32 h-[34rem] w-[34rem] bg-gradient-to-tr from-indigo-200 via-white to-amber-100 dark:from-indigo-700/30 dark:via-transparent dark:to-teal-700/20 blur-3xl opacity-60" />
+      </div>
+      <Navbar />
+      <div className="max-w-7xl mx-auto py-10 px-6 space-y-10">
+        <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-6">
+          <div className="space-y-2">
+            <h1 className="text-4xl font-semibold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-teal-700 via-indigo-700 to-amber-600 dark:from-teal-200 dark:via-indigo-200 dark:to-amber-200">
+              Welcome back, {userData?.name?.split(' ')[0] || 'there'}
+            </h1>
+            <p className="text-slate-600 dark:text-slate-300 text-sm md:text-base flex items-center gap-2">
+              <span className="inline-flex h-2 w-2 rounded-full bg-teal-500 animate-pulse" />
+              Personalized snapshot for your career growth
+            </p>
+          </div>
+          <div className="flex items-center gap-3">
+            <Button variant="outline" className="rounded-full border-slate-300/60 bg-white/60 backdrop-blur hover:bg-white shadow-sm text-slate-700 text-sm">
+              Refresh
+            </Button>
+            <Button className="rounded-full bg-teal-600 hover:bg-teal-700 shadow-sm text-sm">
+              New Action
+            </Button>
           </div>
         </div>
 
@@ -330,67 +353,58 @@ export default function FunctionalDashboard() {
           ))}
         </div> */}
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
+
           {/* Main Feature Cards */}
-          <div className="lg:col-span-2 space-y-6">
+          <div className="lg:col-span-2 space-y-8">
             <div className="flex items-center justify-between">
-              <h3 className="text-xl font-semibold text-slate-800">Your Dashboard</h3>
-              <Button 
-                variant="outline" 
-                size="sm" 
-                className="border-stone-300 text-slate-600 hover:bg-stone-50"
-                onClick={() => handleNavigation('/settings')}
-              >
-                <Plus className="h-4 w-4 mr-2" />
-                Customize
+              <h2 className="text-lg font-medium tracking-wide text-slate-700 dark:text-slate-200 uppercase">Core Panels</h2>
+              <Button variant="ghost" size="sm" className="text-slate-500 hover:text-teal-600 dark:hover:text-teal-400" onClick={() => handleNavigation('/settings')}>
+                <Plus className="h-4 w-4 mr-2" /> Customize
               </Button>
             </div>
-            
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-7">
               {getMainCards().map((card, i) => (
-                <Card 
-                  key={i} 
-                  className="group hover:shadow-lg transition-all duration-300 hover:-translate-y-1 border-0 shadow-md overflow-hidden cursor-pointer bg-white/80"
+                <Card
+                  key={i}
+                  className={`group overflow-hidden cursor-pointer relative rounded-2xl ${subtleCard} shadow-sm hover:shadow-md transition-all duration-300 hover:-translate-y-0.5`}
                   onClick={card.onClick}
                 >
-                  <div className={`h-2 bg-gradient-to-r ${card.color}`} />
-                  <CardContent className="p-6">
-                    <div className="flex items-start justify-between mb-4">
-                      <div className={`p-3 rounded-xl bg-gradient-to-r ${card.iconBg} text-white shadow-sm`}>
-                        {card.icon}
-                      </div>
-                      <ChevronRight className="h-5 w-5 text-stone-400 group-hover:text-stone-600 transition-colors" />
-                    </div>
-                    
-                    <div className="space-y-3">
-                      <div>
-                        <h3 className="font-semibold text-slate-800 text-lg">{card.title}</h3>
-                        <p className="text-slate-600 text-sm">{card.description}</p>
-                      </div>
-                      
-                      {card.progress !== undefined && (
-                        <div className="space-y-2">
-                          <div className="flex justify-between text-sm">
-                            <span className="text-slate-600">Completion</span>
-                            <span className="font-medium text-slate-800">{card.progress}%</span>
-                          </div>
-                          <Progress value={card.progress} className="h-2" />
+                  <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-gradient-to-br from-teal-50/70 via-transparent to-amber-50/60 dark:from-teal-500/10 dark:to-indigo-500/10" />
+                  <CardContent className="relative p-6 space-y-4">
+                    <div className="flex items-start justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className={`p-3 rounded-xl bg-gradient-to-br ${card.iconBg} text-white shadow-sm ring-1 ring-white/40`}>{card.icon}</div>
+                        <div>
+                          <h3 className="font-semibold text-slate-800 dark:text-slate-100 text-base">{card.title}</h3>
+                          <p className="text-slate-600 dark:text-slate-400 text-xs leading-relaxed max-w-[16ch]">{card.description}</p>
                         </div>
-                      )}
-                      
-                      {card.count && (
-                        <div className="flex items-center justify-between">
-                          <Badge variant="secondary" className="font-medium bg-stone-100 text-stone-700">
-                            {card.count}
-                          </Badge>
-                        </div>
-                      )}
-                      
-                      <Button className="w-full mt-4 bg-slate-700 hover:bg-slate-800 text-white transition-colors">
-                        {card.action}
-                      </Button>
+                      </div>
+                      <ChevronRight className="h-4 w-4 text-slate-400 group-hover:text-teal-600 dark:group-hover:text-teal-400 transition-colors" />
                     </div>
+
+                    {card.progress !== undefined && (
+                      <div className="space-y-2">
+                        <div className="flex justify-between text-[11px] font-medium tracking-wide uppercase text-slate-500 dark:text-slate-400">
+                          <span>Completion</span>
+                          <span className="text-slate-700 dark:text-slate-200">{card.progress}%</span>
+                        </div>
+                        <Progress value={card.progress} className="h-1.5 overflow-hidden rounded-full" />
+                      </div>
+                    )}
+
+                    {card.count && (
+                      <div className="flex items-center justify-between">
+                        <Badge variant="secondary" className="font-medium bg-slate-100/80 dark:bg-slate-700/60 text-slate-700 dark:text-slate-200 ring-1 ring-inset ring-white/40">
+                          {card.count}
+                        </Badge>
+                      </div>
+                    )}
+
+                    <Button className="w-full mt-2 h-9 bg-teal-600 hover:bg-teal-700 dark:bg-teal-500 dark:hover:bg-teal-400 text-[13px] tracking-wide shadow-sm">
+                      {card.action}
+                    </Button>
                   </CardContent>
                 </Card>
               ))}
@@ -398,70 +412,68 @@ export default function FunctionalDashboard() {
           </div>
 
           {/* Sidebar */}
-          <div className="space-y-6">
-            
-            {/* Recent Activity */}
-            <Card className="border-0 shadow-md bg-white/80">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-slate-800">
-                  <Activity className="h-5 w-5" />
-                  Recent Activity
+          <div className="space-y-8">
+            <Card className={`rounded-2xl ${subtleCard} shadow-sm`}>
+              <CardHeader className="pb-3">
+                <CardTitle className="flex items-center gap-2 text-slate-800 dark:text-slate-100 text-base font-semibold">
+                  <Activity className="h-4 w-4 text-teal-600 dark:text-teal-400" /> Recent Activity
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 {dashboardData.recentActivity.length > 0 ? (
-                  dashboardData.recentActivity.map((activity, i) => (
-                    <div key={i} className="flex items-start gap-3">
-                      <div className={`w-2 h-2 rounded-full mt-2 ${
-                        activity.type === 'view' ? 'bg-sky-400' :
-                        activity.type === 'connection' ? 'bg-emerald-400' :
-                        activity.type === 'interview' ? 'bg-purple-400' : 'bg-amber-400'
-                      }`} />
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-slate-800">{activity.action}</p>
-                        <p className="text-xs text-slate-500 flex items-center gap-1">
-                          <Clock className="h-3 w-3" />
-                          {activity.time}
-                        </p>
+                  <div className="space-y-4">
+                    {dashboardData.recentActivity.map((activity, i) => (
+                      <div key={i} className="flex items-start gap-3 group">
+                        <div className={`mt-1.5 h-2 w-2 rounded-full ring-2 ring-white/60 shadow ${activity.type === 'view' ? 'bg-teal-500' : activity.type === 'connection' ? 'bg-emerald-500' : activity.type === 'interview' ? 'bg-indigo-500' : 'bg-amber-500'}`} />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-[13px] font-medium text-slate-700 dark:text-slate-200 leading-snug">{activity.action}</p>
+                          <p className="text-[11px] text-slate-500 dark:text-slate-400 flex items-center gap-1 mt-0.5">
+                            <Clock className="h-3 w-3" /> {activity.time}
+                          </p>
+                        </div>
                       </div>
-                    </div>
-                  ))
+                    ))}
+                  </div>
                 ) : (
-                  <p className="text-sm text-slate-500 text-center py-4">No recent activity</p>
+                  <p className="text-sm text-slate-500 dark:text-slate-400 text-center py-4">No recent activity</p>
                 )}
               </CardContent>
             </Card>
 
-            {/* Quick Stats */}
-            <Card className="border-0 shadow-md bg-gradient-to-br from-sky-50 to-purple-50">
-              <CardHeader>
-                <CardTitle className="text-slate-800">This Week</CardTitle>
-                <CardDescription className="text-slate-600">Your activity summary</CardDescription>
+            <Card className={`rounded-2xl relative overflow-hidden ${gradientPanel}`}>
+              <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,theme(colors.teal.200)/40,transparent_60%)] dark:bg-[radial-gradient(circle_at_20%_20%,oklch(0.3_0.05_210)/40,transparent_60%)]" />
+              <CardHeader className="relative">
+                <CardTitle className="text-slate-800 dark:text-slate-100 text-base font-semibold">This Week</CardTitle>
+                <CardDescription className="text-slate-600 dark:text-slate-400 text-xs">Engagement summary snapshot</CardDescription>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-slate-600">Profile views</span>
-                  <span className="font-semibold text-slate-800">+{userData?.weeklyViews || 0}</span>
+              <CardContent className="relative space-y-4">
+                <div className="grid grid-cols-2 gap-4 text-[13px]">
+                  <div className="space-y-1">
+                    <p className="text-slate-500 dark:text-slate-400">Profile views</p>
+                    <p className="font-semibold text-slate-800 dark:text-slate-100">+{userData?.weeklyViews || 0}</p>
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-slate-500 dark:text-slate-400">New connections</p>
+                    <p className="font-semibold text-slate-800 dark:text-slate-100">+{userData?.weeklyConnections || 0}</p>
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-slate-500 dark:text-slate-400">Messages sent</p>
+                    <p className="font-semibold text-slate-800 dark:text-slate-100">{userData?.weeklyMessages || 0}</p>
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-slate-500 dark:text-slate-400">Interviews</p>
+                    <p className="font-semibold text-slate-800 dark:text-slate-100">{userData?.weeklyInterviews || 0}</p>
+                  </div>
                 </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-slate-600">New connections</span>
-                  <span className="font-semibold text-slate-800">+{userData?.weeklyConnections || 0}</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-slate-600">Messages sent</span>
-                  <span className="font-semibold text-slate-800">{userData?.weeklyMessages || 0}</span>
-                </div>
-                <Separator />
-                <div className="flex justify-between items-center">
-                  <span className="text-sm font-medium text-slate-800">Total engagement</span>
-                  <Badge className="bg-emerald-100 text-emerald-800">
-                    <TrendingUp className="h-3 w-3 mr-1" />
-                    +{userData?.engagementGrowth || 0}%
+                <Separator className="bg-gradient-to-r from-transparent via-slate-200/80 to-transparent dark:via-slate-700/60" />
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-medium tracking-wide uppercase text-slate-600 dark:text-slate-400">Total engagement</span>
+                  <Badge className="bg-emerald-500/15 text-emerald-700 dark:bg-emerald-400/15 dark:text-emerald-300 rounded-full px-3 py-1 h-6 text-[12px] font-medium">
+                    <TrendingUp className="h-3 w-3 mr-1" /> +{userData?.engagementGrowth || 0}%
                   </Badge>
                 </div>
               </CardContent>
             </Card>
-
           </div>
         </div>
       </div>

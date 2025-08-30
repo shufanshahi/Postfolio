@@ -1,10 +1,9 @@
 package com.example.postfolio.post.service;
 
+import com.example.postfolio.aiservice.dto.PostProcessingRequest;
+import com.example.postfolio.aiservice.service.AIServiceManager;
 import com.example.postfolio.cvInApp.service.CvUpdateService;
 import com.example.postfolio.notification.service.NotificationService;
-import com.example.postfolio.post.dto.CreatePostDTO;
-import com.example.postfolio.post.dto.PostResponseDTO;
-import com.example.postfolio.post.dto.UpdatePostDTO;
 import com.example.postfolio.post.entity.Post;
 import com.example.postfolio.post.models.PostType;
 import com.example.postfolio.post.repository.PostRepository;
@@ -38,11 +37,11 @@ public class PostService {
 
     private final PostRepository postRepository;
     private final ProfileService profileService;
-    private final GeminiService geminiService;
     private final CvUpdateService cvUpdateService;
     private final UserRepository userRepository;
     private final ReactionRepository reactionRepository;
     private final NotificationService notificationService;
+    private final AIServiceManager aiServiceManager;
 
     @Transactional
     public Post createPost(Long profileId, String content, List<String> images) {
@@ -60,21 +59,32 @@ public class PostService {
             images = validateAndCleanImages(images);
         }
 
-        try {
-            GeminiService.GeminiResponse analysis = geminiService.analyzePost(content);
-            Post savedPost = savePost(content, profile, analysis.getPostType(),
-                    analysis.getTags(), analysis.getSummary(), true, images);
+        // Check if user is an EMPLOYER - if so, skip AI processing
+        boolean isEmployer = profile.getUser().getRole().name().equals("Employer");
 
-            // Only update CV if the post is CV-relevant (not GENERAL)
-            if (analysis.isCvRelevant()) {
-                cvUpdateService.updateCvFromPost(savedPost);
-            }
-
-            return savedPost;
-        } catch (Exception e) {
-            log.error("Failed to generate CV heading for post, using fallback", e);
+        if (isEmployer) {
+            // For EMPLOYER users: directly create post as GENERAL type without AI
+            // processing
+            log.info("Creating post for EMPLOYER user - skipping AI analysis and setting as GENERAL type");
             Post savedPost = savePost(content, profile, PostType.GENERAL,
-                    List.of(), generateFallbackCvHeading(content), false, images);
+                    List.of(), "General Post", true, images);
+            log.info("EMPLOYER post created with ID: {} - no AI processing required", savedPost.getId());
+            return savedPost;
+        } else {
+            // For regular users: Save post immediately with default values for fast
+            // response (200ms)
+            Post savedPost = savePost(content, profile, PostType.GENERAL,
+                    List.of(), "Processing...", false, images);
+
+            // Trigger async AI processing in background (2-5s)
+            PostProcessingRequest request = PostProcessingRequest.builder()
+                    .postId(savedPost.getId())
+                    .content(content)
+                    .profileId(profile.getId())
+                    .profileBio(profile.getBio())
+                    .profilePosition(profile.getPositionOrInstitue())
+                    .build();
+            aiServiceManager.processPostAsync(request);
 
             return savedPost;
         }
@@ -84,33 +94,100 @@ public class PostService {
     public Post reprocessPostWithAI(Long postId, Long profileId) {
         Post post = getPostById(postId);
         validatePostOwnership(post, profileId);
+        Profile profile = post.getProfile();
 
-        try {
-            GeminiService.GeminiResponse analysis = geminiService.analyzePost(post.getContent());
-            post.setType(analysis.getPostType());
-            post.setTags(analysis.getTags());
-            post.setCvHeading(analysis.getSummary());
+        // Check if user is an EMPLOYER - if so, skip AI processing
+        boolean isEmployer = profile.getUser().getRole().name().equals("Employer");
+
+        if (isEmployer) {
+            // For EMPLOYER users: directly set as GENERAL type without AI processing
+            log.info("Reprocessing post for EMPLOYER user - skipping AI analysis and setting as GENERAL type");
+            post.setCvHeading("General Post");
             post.setAutoTagged(true);
+            post.setType(PostType.GENERAL);
+            post.setUpdatedAt(LocalDateTime.now());
+            Post savedPost = postRepository.save(post);
+            log.info("EMPLOYER post reprocessed with ID: {} - no AI processing required", savedPost.getId());
+            return savedPost;
+        } else {
+            // Update post status to indicate reprocessing
+            post.setCvHeading("Reprocessing...");
+            post.setAutoTagged(false);
             post.setUpdatedAt(LocalDateTime.now());
             Post savedPost = postRepository.save(post);
 
-            // Only update CV if the post is CV-relevant
-            if (analysis.isCvRelevant()) {
-                cvUpdateService.updateCvFromPost(savedPost);
-            } else {
-                // If post was previously CV-relevant but now classified as GENERAL,
-                // remove it from CV
-                cvUpdateService.removeCvEntriesByPostId(postId);
-            }
+            // Trigger async reprocessing
+            PostProcessingRequest request = PostProcessingRequest.builder()
+                    .postId(postId)
+                    .content(post.getContent())
+                    .profileId(profile.getId())
+                    .profileBio(profile.getBio())
+                    .profilePosition(profile.getPositionOrInstitue())
+                    .build();
+            aiServiceManager.processPostAsync(request);
 
             return savedPost;
-        } catch (Exception e) {
-            log.error("Failed to reprocess post {} with AI: {}", postId, e.getMessage());
-            throw new ResponseStatusException(
-                    HttpStatus.INTERNAL_SERVER_ERROR,
-                    "Failed to reprocess post with AI");
         }
     }
+
+    @Transactional
+    public Post updatePost(Long postId, Long profileId, String newContent, List<String> images) {
+        Post post = getPostById(postId);
+        validatePostOwnership(post, profileId);
+        Profile profile = post.getProfile();
+
+        // Validate image count
+        if (images != null && images.size() > 4) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Maximum 4 images allowed per post");
+        }
+
+        // Validate and clean images
+        if (images != null) {
+            images = validateAndCleanImages(images);
+        }
+
+        // Check if user is an EMPLOYER - if so, skip AI processing
+        boolean isEmployer = profile.getUser().getRole().name().equals("Employer");
+
+        // Update post content and images immediately
+        post.setContent(newContent);
+        post.setImages(images != null ? new ArrayList<>(images) : new ArrayList<>());
+        post.setUpdatedAt(LocalDateTime.now());
+
+        if (isEmployer) {
+            // For EMPLOYER users: directly set as GENERAL type without AI processing
+            log.info("Updating post for EMPLOYER user - skipping AI analysis and setting as GENERAL type");
+            post.setCvHeading("General Post");
+            post.setAutoTagged(true);
+            post.setType(PostType.GENERAL);
+            Post savedPost = postRepository.save(post);
+            log.info("EMPLOYER post updated with ID: {} - no AI processing required", savedPost.getId());
+            return savedPost;
+        } else {
+            // For regular users: trigger AI reprocessing
+            post.setCvHeading("Processing...");
+            post.setAutoTagged(false);
+
+            // Save immediately for fast response
+            Post savedPost = postRepository.save(post);
+
+            // Trigger async reprocessing with new content
+            PostProcessingRequest request = PostProcessingRequest.builder()
+                    .postId(postId)
+                    .content(newContent)
+                    .profileId(profile.getId())
+                    .profileBio(profile.getBio())
+                    .profilePosition(profile.getPositionOrInstitue())
+                    .build();
+            aiServiceManager.processPostAsync(request);
+
+            return savedPost;
+        }
+    }
+
+    // ... (rest of the existing methods remain unchanged)
 
     @Transactional(readOnly = true)
     public List<String> getProfileSkills(Long profileId) {
@@ -154,67 +231,6 @@ public class PostService {
     public List<Post> getFeedPosts() {
         User currentUser = getCurrentUser();
         return postRepository.findPostsFromFriendsAndSelf(currentUser);
-    }
-
-    @Transactional
-    public Post updatePost(Long postId, Long profileId, String newContent, List<String> images) {
-        Post post = getPostById(postId);
-        validatePostOwnership(post, profileId);
-        PostType previousType = post.getType();
-
-        // Validate image count
-        if (images != null && images.size() > 4) {
-            throw new ResponseStatusException(
-                    HttpStatus.BAD_REQUEST,
-                    "Maximum 4 images allowed per post");
-        }
-
-        // Validate and clean images
-        if (images != null) {
-            images = validateAndCleanImages(images);
-        }
-
-        post.setContent(newContent);
-        post.setImages(images != null ? new ArrayList<>(images) : new ArrayList<>());
-
-        try {
-            GeminiService.GeminiResponse analysis = geminiService.analyzePost(newContent);
-            post.setCvHeading(analysis.getSummary());
-            post.setType(analysis.getPostType());
-            post.setTags(analysis.getTags());
-
-            post.setUpdatedAt(LocalDateTime.now());
-            post.setAutoTagged(false);
-
-            Post savedPost = postRepository.save(post);
-
-            // Handle CV updates based on post type changes
-            if (analysis.isCvRelevant()) {
-                cvUpdateService.updateCvFromPost(savedPost);
-            } else if (previousType != PostType.GENERAL) {
-                // Post was CV-relevant before but now is GENERAL, remove from CV
-                cvUpdateService.removeCvEntriesByPostId(postId);
-            }
-
-            return savedPost;
-        } catch (Exception e) {
-            log.error("Failed to generate CV heading for updated post, using fallback", e);
-            post.setCvHeading(generateFallbackCvHeading(newContent));
-            post.setType(PostType.GENERAL); // Fallback to GENERAL
-            post.setTags(List.of());
-
-            post.setUpdatedAt(LocalDateTime.now());
-            post.setAutoTagged(false);
-
-            Post savedPost = postRepository.save(post);
-
-            // Remove from CV since we're treating it as GENERAL
-            if (previousType != PostType.GENERAL) {
-                cvUpdateService.removeCvEntriesByPostId(postId);
-            }
-
-            return savedPost;
-        }
     }
 
     @Transactional
@@ -343,10 +359,6 @@ public class PostService {
                     HttpStatus.FORBIDDEN,
                     "You can only modify your own posts");
         }
-    }
-
-    private String generateFallbackCvHeading(String content) {
-        return content.length() > 50 ? content.substring(0, 50) + "..." : content;
     }
 
     private User getCurrentUser() {

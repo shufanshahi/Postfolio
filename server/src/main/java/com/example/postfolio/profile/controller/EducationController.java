@@ -1,7 +1,5 @@
 package com.example.postfolio.profile.controller;
 
-
-
 import com.example.postfolio.profile.dto.EducationSummaryDto;
 import com.example.postfolio.profile.dto.SchoolDto;
 import com.example.postfolio.profile.dto.UniversityDto;
@@ -39,8 +37,8 @@ public class EducationController {
 
     @PutMapping("/schools/{schoolId}")
     public ResponseEntity<SchoolDto> updateSchool(@PathVariable Long schoolId,
-                                                  @RequestBody SchoolDto schoolDto,
-                                                  Authentication authentication) {
+            @RequestBody SchoolDto schoolDto,
+            Authentication authentication) {
         User user = (User) authentication.getPrincipal();
         SchoolDto updatedSchool = educationService.updateSchool(schoolId, schoolDto, user);
         return ResponseEntity.ok(updatedSchool);
@@ -56,7 +54,7 @@ public class EducationController {
     // University endpoints
     @PostMapping("/universities")
     public ResponseEntity<UniversityDto> createUniversity(@RequestBody UniversityDto universityDto,
-                                                          Authentication authentication) {
+            Authentication authentication) {
         User user = (User) authentication.getPrincipal();
         UniversityDto createdUniversity = educationService.createUniversity(universityDto, user);
         return ResponseEntity.ok(createdUniversity);
@@ -71,8 +69,8 @@ public class EducationController {
 
     @PutMapping("/universities/{universityId}")
     public ResponseEntity<UniversityDto> updateUniversity(@PathVariable Long universityId,
-                                                          @RequestBody UniversityDto universityDto,
-                                                          Authentication authentication) {
+            @RequestBody UniversityDto universityDto,
+            Authentication authentication) {
         User user = (User) authentication.getPrincipal();
         UniversityDto updatedUniversity = educationService.updateUniversity(universityId, universityDto, user);
         return ResponseEntity.ok(updatedUniversity);
@@ -90,6 +88,13 @@ public class EducationController {
     public ResponseEntity<EducationSummaryDto> getEducationSummary(Authentication authentication) {
         User user = (User) authentication.getPrincipal();
         EducationSummaryDto summary = educationService.getEducationSummary(user);
+        return ResponseEntity.ok(summary);
+    }
+
+    // Public education summary endpoint for viewing other users' profiles
+    @GetMapping("/summary/{userId}")
+    public ResponseEntity<EducationSummaryDto> getEducationSummaryByUserId(@PathVariable Long userId) {
+        EducationSummaryDto summary = educationService.getEducationSummaryByUserId(userId);
         return ResponseEntity.ok(summary);
     }
 }

@@ -38,6 +38,12 @@ public class ConnectionService {
             throw new RuntimeException("Cannot send friend request to yourself");
         }
 
+        // Prevent friend requests to employer accounts (they should be followed
+        // instead)
+        if (receiver.getRole() == com.example.postfolio.user.model.Role.Employer) {
+            throw new RuntimeException("Cannot send friend request to employer accounts. Please follow them instead.");
+        }
+
         // Check if connection already exists
         Optional<Connection> existingConnection = connectionRepository.findConnectionBetweenUsers(requester, receiver);
         if (existingConnection.isPresent()) {

@@ -30,8 +30,16 @@ public class WorkController {
         return ResponseEntity.ok(works);
     }
 
+    // Public endpoint to get works by user ID
+    @GetMapping("/{userId}")
+    public ResponseEntity<List<WorkDto>> getUserWorksByUserId(@PathVariable Long userId) {
+        List<WorkDto> works = workService.getUserWorksByUserId(userId);
+        return ResponseEntity.ok(works);
+    }
+
     @PutMapping("/{workId}")
-    public ResponseEntity<WorkDto> updateWork(@PathVariable Long workId, @RequestBody WorkDto workDto, @AuthenticationPrincipal User user) {
+    public ResponseEntity<WorkDto> updateWork(@PathVariable Long workId, @RequestBody WorkDto workDto,
+            @AuthenticationPrincipal User user) {
         WorkDto updatedWork = workService.updateWork(workId, workDto, user);
         return ResponseEntity.ok(updatedWork);
     }
@@ -41,4 +49,4 @@ public class WorkController {
         workService.deleteWork(workId, user);
         return ResponseEntity.ok().build();
     }
-} 
+}
