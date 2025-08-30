@@ -26,4 +26,10 @@ public class MentorshipEnrollmentController {
         List<MentorshipEnrollmentDto> enrollments = enrollmentService.getEnrollmentsByProfileId(profileId);
         return ResponseEntity.ok(enrollments);
     }
+
+    @PostMapping
+    public ResponseEntity<MentorshipEnrollmentDto> createEnrollment(@RequestBody MentorshipEnrollmentDto dto) {
+        MentorshipEnrollmentDto created = enrollmentService.createEnrollment(dto);
+        return ResponseEntity.ok(created);
+    }
 }

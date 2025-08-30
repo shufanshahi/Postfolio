@@ -1,3 +1,4 @@
+
 package com.example.postfolio.mentorship.service;
 
 import com.example.postfolio.mentorship.dto.MentorshipEnrollmentDto;
@@ -37,5 +38,14 @@ public class MentorshipEnrollmentService {
                 enrollment.getMentorshipId(),
                 enrollment.getStatus()
         );
+    }
+
+    public MentorshipEnrollmentDto createEnrollment(MentorshipEnrollmentDto dto) {
+        MentorshipEnrollment enrollment = new MentorshipEnrollment();
+        enrollment.setProfileId(dto.getProfileId());
+        enrollment.setMentorshipId(dto.getMentorshipId());
+        enrollment.setStatus(dto.getStatus());
+        MentorshipEnrollment saved = enrollmentRepository.save(enrollment);
+        return convertToDto(saved);
     }
 }
