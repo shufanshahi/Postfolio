@@ -7,6 +7,7 @@ import {
   TrendingUp, TrendingDown, Clock, ArrowLeft, History,
   CreditCard, Wallet, Activity, Search, Download
 } from 'lucide-react';
+import StripePayment from '../../components/StripePayment';
 import {
   Card, CardHeader, CardTitle, CardDescription, CardContent
 } from '@/components/ui/card';
@@ -37,6 +38,13 @@ export default function AddCreditPage() {
   const [error, setError] = useState('');
   const [creditData, setCreditData] = useState(null);
   const [filteredTransactions, setFilteredTransactions] = useState([]);
+  const [showPayment, setShowPayment] = useState(false);
+  const [showAddCreditForm, setShowAddCreditForm] = useState(false);
+  const [addCreditForm, setAddCreditForm] = useState({
+    amount: '',
+    description: ''
+  });
+  const [selectedCreditAmount, setSelectedCreditAmount] = useState(null);
   const [dateFilter, setDateFilter] = useState({
     startDate: '',
     endDate: '',
@@ -200,6 +208,93 @@ export default function AddCreditPage() {
     };
   };
 
+  // Handle Add Credit button click
+  const handleAddCreditClick = () => {
+    setShowAddCreditForm(true);
+  };
+
+  // Handle form submission for adding credit
+  const handleAddCreditSubmit = (e) => {
+    e.preventDefault();
+    
+    if (!addCreditForm.amount || parseFloat(addCreditForm.amount) <= 0) {
+      alert('Please enter a valid amount');
+      return;
+    }
+
+    // Create a fake mentorship object for Stripe payment
+    const creditItem = {
+      id: 'credit-add',
+      name: 'Add Credit',
+      specialization: addCreditForm.description || 'Account Top-up',
+      price: parseFloat(addCreditForm.amount)
+    };
+
+    setSelectedCreditAmount(creditItem);
+    setShowPayment(true);
+    setShowAddCreditForm(false);
+  };
+
+  // Handle successful payment
+  const handlePaymentSuccess = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      
+      // Get profile ID
+      const profileRes = await fetch('http://localhost:8080/api/profile/me', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (!profileRes.ok) throw new Error('Failed to fetch profile');
+      const profile = await profileRes.json();
+      const profileId = profile.id;
+
+      // Add credit using the API
+      const addCreditRes = await fetch('http://localhost:8080/api/credits/add', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          profileId,
+          amount: selectedCreditAmount.price,
+          description: `Credit added via Stripe payment - ${selectedCreditAmount.specialization}`
+        })
+      });
+
+      if (!addCreditRes.ok) throw new Error('Failed to add credit');
+
+      // Close payment modal and refresh data
+      setShowPayment(false);
+      setSelectedCreditAmount(null);
+      setAddCreditForm({ amount: '', description: '' });
+      fetchCreditData();
+      alert('Credit added successfully!');
+    } catch (err) {
+      alert('Failed to add credit: ' + err.message);
+      setShowPayment(false);
+      setSelectedCreditAmount(null);
+    }
+  };
+
+  // Handle payment error
+  const handlePaymentError = (error) => {
+    console.error('Payment failed:', error);
+    alert('Payment failed. Please try again.');
+  };
+
+  // Handle payment close
+  const handlePaymentClose = () => {
+    setShowPayment(false);
+    setSelectedCreditAmount(null);
+  };
+
+  // Handle form input changes
+  const handleFormChange = (e) => {
+    const { name, value } = e.target;
+    setAddCreditForm(prev => ({ ...prev, [name]: value }));
+  };
+
   useEffect(() => {
     fetchCreditData();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
@@ -263,7 +358,10 @@ export default function AddCreditPage() {
               <RefreshCw className="h-4 w-4 mr-2" />
               Refresh
             </Button>
-            <Button className="rounded-full bg-teal-600 hover:bg-teal-700 shadow-sm">
+            <Button 
+              onClick={handleAddCreditClick}
+              className="rounded-full bg-teal-600 hover:bg-teal-700 shadow-sm"
+            >
               <Plus className="h-4 w-4 mr-2" />
               Add Credit
             </Button>
@@ -439,6 +537,88 @@ export default function AddCreditPage() {
             )}
           </CardContent>
         </Card>
+
+        {/* Add Credit Form Modal */}
+        {showAddCreditForm && (
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+            <Card className="w-full max-w-md bg-white dark:bg-slate-800 shadow-2xl">
+              <CardHeader className="pb-4">
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-xl font-semibold text-slate-800 dark:text-slate-100">
+                    Add Credit
+                  </CardTitle>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setShowAddCreditForm(false)}
+                    className="h-8 w-8 p-0"
+                  >
+                    ×
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <form onSubmit={handleAddCreditSubmit} className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                      Amount (USD)
+                    </label>
+                    <Input
+                      type="number"
+                      name="amount"
+                      value={addCreditForm.amount}
+                      onChange={handleFormChange}
+                      placeholder="Enter amount"
+                      min="0.01"
+                      step="0.01"
+                      required
+                      className="w-full"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                      Description (Optional)
+                    </label>
+                    <Input
+                      type="text"
+                      name="description"
+                      value={addCreditForm.description}
+                      onChange={handleFormChange}
+                      placeholder="e.g., Account top-up"
+                      className="w-full"
+                    />
+                  </div>
+                  <div className="flex gap-3 pt-4">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => setShowAddCreditForm(false)}
+                      className="flex-1"
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      type="submit"
+                      className="flex-1 bg-teal-600 hover:bg-teal-700"
+                    >
+                      Proceed to Payment
+                    </Button>
+                  </div>
+                </form>
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
+        {/* Stripe Payment Modal */}
+        {showPayment && selectedCreditAmount && (
+          <StripePayment
+            mentorship={selectedCreditAmount}
+            onPaymentSuccess={handlePaymentSuccess}
+            onPaymentError={handlePaymentError}
+            onClose={handlePaymentClose}
+          />
+        )}
       </div>
     </div>
   );
