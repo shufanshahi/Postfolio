@@ -1,81 +1,221 @@
 package com.example.postfolio.mentorship.service;
 
-import com.example.postfolio.mentorship.dto.MentorshipDto;
+import com.example.postfolio.mentorship.dto.*;
 import com.example.postfolio.mentorship.entity.Mentorship;
 import com.example.postfolio.mentorship.repository.MentorshipRepository;
-import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
-@RequiredArgsConstructor
+@Transactional
 public class MentorshipService {
     
     private final MentorshipRepository mentorshipRepository;
     
-    public List<MentorshipDto> getAllMentorships() {
+    @Autowired
+    public MentorshipService(MentorshipRepository mentorshipRepository) {
+        this.mentorshipRepository = mentorshipRepository;
+    }
+    
+    /**
+     * Get all mentorships
+     */
+    public List<MentorshipResponse> getAllMentorships() {
         List<Mentorship> mentorships = mentorshipRepository.findAll();
         return mentorships.stream()
-                .map(this::convertToDto)
+                .map(MentorshipResponse::new)
                 .collect(Collectors.toList());
     }
     
-    public MentorshipDto createMentorship(MentorshipDto mentorshipDto) {
-        Mentorship mentorship = convertToEntity(mentorshipDto);
-        Mentorship savedMentorship = mentorshipRepository.save(mentorship);
-        return convertToDto(savedMentorship);
-    }
-    
-    public List<MentorshipDto> getMentorshipsByProfileId(Long profileId) {
-    List<Mentorship> mentorships = mentorshipRepository.findAll().stream()
-        .filter(m -> m.getProfileId().equals(profileId))
-        .collect(Collectors.toList());
-    return mentorships.stream()
-        .map(this::convertToDto)
-        .collect(Collectors.toList());
-    }
-
-    public MentorshipDto enrollProfile(Long mentorshipId, Long profileId) {
-        Mentorship mentorship = mentorshipRepository.findById(mentorshipId)
-            .orElseThrow(() -> new RuntimeException("Mentorship not found"));
-        List<Long> enrolled = mentorship.getEnrolledIds();
-        if (!enrolled.contains(profileId)) {
-            enrolled.add(profileId);
-            mentorship.setTotalEnrolled(enrolled.size());
-            mentorship.setEnrolledIds(enrolled);
-            mentorshipRepository.save(mentorship);
+    /**
+     * Get all mentorships by profile ID
+     */
+    public List<MentorshipResponse> getAllMentorshipsByProfileId(Long profileId) {
+        if (profileId == null) {
+            throw new IllegalArgumentException("Profile ID cannot be null");
         }
-        return convertToDto(mentorship);
-    }
-
-    private MentorshipDto convertToDto(Mentorship mentorship) {
-        return new MentorshipDto(
-            mentorship.getId(),
-            mentorship.getName(),
-            mentorship.getSpecialization(),
-            mentorship.getStatus(),
-            mentorship.getPrice(),
-            mentorship.getTotalEnrolled(),
-            mentorship.getRating(),
-            mentorship.getProfileId(),
-            mentorship.getEnrolledIds()
-        );
+        
+        List<Mentorship> mentorships = mentorshipRepository.findByProfileId(profileId);
+        return mentorships.stream()
+                .map(MentorshipResponse::new)
+                .collect(Collectors.toList());
     }
     
-    private Mentorship convertToEntity(MentorshipDto mentorshipDto) {
+    /**
+     * Get mentorship by ID
+     */
+    public Optional<MentorshipResponse> getMentorshipById(Long id) {
+        if (id == null) {
+            throw new IllegalArgumentException("Mentorship ID cannot be null");
+        }
+        
+        return mentorshipRepository.findById(id)
+                .map(MentorshipResponse::new);
+    }
+    
+    /**
+     * Create a new mentorship
+     */
+    public MentorshipResponse createMentorship(CreateMentorshipRequest request) {
+        if (request == null) {
+            throw new IllegalArgumentException("Create mentorship request cannot be null");
+        }
+        
+        if (request.getProfileId() == null) {
+            throw new IllegalArgumentException("Profile ID is required");
+        }
+        
+        if (request.getPrice() == null || request.getPrice() <= 0) {
+            throw new IllegalArgumentException("Price must be positive");
+        }
+        
         Mentorship mentorship = new Mentorship();
-        mentorship.setId(mentorshipDto.getId());
-        mentorship.setName(mentorshipDto.getName());
-        mentorship.setSpecialization(mentorshipDto.getSpecialization());
-        mentorship.setStatus(mentorshipDto.getStatus());
-        mentorship.setPrice(mentorshipDto.getPrice());
-        mentorship.setTotalEnrolled(mentorshipDto.getTotalEnrolled() != null ? mentorshipDto.getTotalEnrolled() : 0);
-        mentorship.setRating(mentorshipDto.getRating() != null ? mentorshipDto.getRating() : 0.0);
-        mentorship.setProfileId(mentorshipDto.getProfileId());
-        mentorship.setEnrolledIds(mentorshipDto.getEnrolledIds() != null ? mentorshipDto.getEnrolledIds() : new ArrayList<>());
-        return mentorship;
+        mentorship.setProfileId(request.getProfileId());
+        mentorship.setPrice(request.getPrice());
+        mentorship.setStatus(Mentorship.MentorshipStatus.ACTIVE);
+        
+        if (request.getAvailableTimes() != null) {
+            mentorship.setAvailableTimes(request.getAvailableTimes());
+        }
+        
+        if (request.getRepeatStatus() != null) {
+            mentorship.setRepeatStatus(request.getRepeatStatus());
+        }
+        
+        Mentorship savedMentorship = mentorshipRepository.save(mentorship);
+        return new MentorshipResponse(savedMentorship);
+    }
+    
+    /**
+     * Enroll a profile in a mentorship
+     */
+    public MentorshipResponse enrollInMentorship(Long mentorshipId, EnrollMentorshipRequest request) {
+        if (mentorshipId == null) {
+            throw new IllegalArgumentException("Mentorship ID cannot be null");
+        }
+        
+        if (request == null || request.getProfileId() == null) {
+            throw new IllegalArgumentException("Profile ID is required for enrollment");
+        }
+        
+        Mentorship mentorship = mentorshipRepository.findById(mentorshipId)
+                .orElseThrow(() -> new RuntimeException("Mentorship not found with ID: " + mentorshipId));
+        
+        // Check if mentorship is active
+        if (mentorship.getStatus() != Mentorship.MentorshipStatus.ACTIVE) {
+            throw new RuntimeException("Cannot enroll in inactive mentorship");
+        }
+        
+        // Check if profile is already enrolled
+        if (mentorshipRepository.isProfileEnrolledInMentorship(mentorshipId, request.getProfileId())) {
+            throw new RuntimeException("Profile is already enrolled in this mentorship");
+        }
+        
+        // Check if trying to enroll in own mentorship
+        if (mentorship.getProfileId().equals(request.getProfileId())) {
+            throw new RuntimeException("Cannot enroll in your own mentorship");
+        }
+        
+        mentorship.addEnrolledProfileId(request.getProfileId());
+        Mentorship savedMentorship = mentorshipRepository.save(mentorship);
+        
+        return new MentorshipResponse(savedMentorship);
+    }
+    
+    /**
+     * Update repeat status of a mentorship
+     */
+    public MentorshipResponse updateRepeatStatus(Long mentorshipId, UpdateRepeatStatusRequest request) {
+        if (mentorshipId == null) {
+            throw new IllegalArgumentException("Mentorship ID cannot be null");
+        }
+        
+        if (request == null || request.getRepeatStatus() == null) {
+            throw new IllegalArgumentException("Repeat status is required");
+        }
+        
+        Mentorship mentorship = mentorshipRepository.findById(mentorshipId)
+                .orElseThrow(() -> new RuntimeException("Mentorship not found with ID: " + mentorshipId));
+        
+        mentorship.setRepeatStatus(request.getRepeatStatus());
+        Mentorship savedMentorship = mentorshipRepository.save(mentorship);
+        
+        return new MentorshipResponse(savedMentorship);
+    }
+    
+    /**
+     * Update status of a mentorship
+     */
+    public MentorshipResponse updateStatus(Long mentorshipId, UpdateStatusRequest request) {
+        if (mentorshipId == null) {
+            throw new IllegalArgumentException("Mentorship ID cannot be null");
+        }
+        
+        if (request == null || request.getStatus() == null) {
+            throw new IllegalArgumentException("Status is required");
+        }
+        
+        Mentorship mentorship = mentorshipRepository.findById(mentorshipId)
+                .orElseThrow(() -> new RuntimeException("Mentorship not found with ID: " + mentorshipId));
+        
+        mentorship.setStatus(request.getStatus());
+        Mentorship savedMentorship = mentorshipRepository.save(mentorship);
+        
+        return new MentorshipResponse(savedMentorship);
+    }
+    
+    /**
+     * Get mentorships where a profile is enrolled
+     */
+    public List<MentorshipResponse> getMentorshipsByEnrolledProfile(Long profileId) {
+        if (profileId == null) {
+            throw new IllegalArgumentException("Profile ID cannot be null");
+        }
+        
+        List<Mentorship> mentorships = mentorshipRepository.findByEnrolledProfileId(profileId);
+        return mentorships.stream()
+                .map(MentorshipResponse::new)
+                .collect(Collectors.toList());
+    }
+    
+    /**
+     * Get active mentorships only
+     */
+    public List<MentorshipResponse> getActiveMentorships() {
+        List<Mentorship> mentorships = mentorshipRepository.findByStatus(Mentorship.MentorshipStatus.ACTIVE);
+        return mentorships.stream()
+                .map(MentorshipResponse::new)
+                .collect(Collectors.toList());
+    }
+    
+    /**
+     * Delete a mentorship (soft delete by setting status to INACTIVE)
+     */
+    public void deleteMentorship(Long mentorshipId) {
+        if (mentorshipId == null) {
+            throw new IllegalArgumentException("Mentorship ID cannot be null");
+        }
+        
+        Mentorship mentorship = mentorshipRepository.findById(mentorshipId)
+                .orElseThrow(() -> new RuntimeException("Mentorship not found with ID: " + mentorshipId));
+        
+        mentorship.setStatus(Mentorship.MentorshipStatus.INACTIVE);
+        mentorshipRepository.save(mentorship);
+    }
+    
+    /**
+     * Get enrolled profiles count for a mentorship
+     */
+    public Integer getEnrolledProfilesCount(Long mentorshipId) {
+        if (mentorshipId == null) {
+            throw new IllegalArgumentException("Mentorship ID cannot be null");
+        }
+        
+        return mentorshipRepository.countEnrolledProfiles(mentorshipId);
     }
 }
