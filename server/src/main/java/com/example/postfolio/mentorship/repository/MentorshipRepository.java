@@ -26,6 +26,26 @@ public interface MentorshipRepository extends JpaRepository<Mentorship, Long> {
     List<Mentorship> findByProfileIdAndStatus(Long profileId, Mentorship.MentorshipStatus status);
     
     /**
+     * Find mentorships by name (case-insensitive)
+     */
+    List<Mentorship> findByNameContainingIgnoreCase(String name);
+    
+    /**
+     * Find mentorships by specialization (case-insensitive)
+     */
+    List<Mentorship> findBySpecializationContainingIgnoreCase(String specialization);
+    
+    /**
+     * Find mentorships by name and specialization (case-insensitive)
+     */
+    List<Mentorship> findByNameContainingIgnoreCaseAndSpecializationContainingIgnoreCase(String name, String specialization);
+    
+    /**
+     * Find mentorships by specialization and status
+     */
+    List<Mentorship> findBySpecializationContainingIgnoreCaseAndStatus(String specialization, Mentorship.MentorshipStatus status);
+    
+    /**
      * Find mentorships where a specific profile ID is enrolled
      */
     @Query("SELECT m FROM Mentorship m JOIN m.enrolledProfileIds e WHERE e = :profileId")

@@ -17,6 +17,12 @@ public class Mentorship {
     @Column(name = "profile_id", nullable = false)
     private Long profileId;
     
+    @Column(name = "name", nullable = false)
+    private String name;
+    
+    @Column(name = "specialization", nullable = false)
+    private String specialization;
+    
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false)
     private MentorshipStatus status = MentorshipStatus.ACTIVE;
@@ -59,6 +65,14 @@ public class Mentorship {
         this.updatedAt = LocalDateTime.now();
     }
     
+    public Mentorship(Long profileId, String name, String specialization, Double price) {
+        this();
+        this.profileId = profileId;
+        this.name = name;
+        this.specialization = specialization;
+        this.price = price;
+    }
+    
     public Mentorship(Long profileId, Double price) {
         this();
         this.profileId = profileId;
@@ -80,6 +94,24 @@ public class Mentorship {
     
     public void setProfileId(Long profileId) {
         this.profileId = profileId;
+    }
+    
+    public String getName() {
+        return name;
+    }
+    
+    public void setName(String name) {
+        this.name = name;
+        this.updatedAt = LocalDateTime.now();
+    }
+    
+    public String getSpecialization() {
+        return specialization;
+    }
+    
+    public void setSpecialization(String specialization) {
+        this.specialization = specialization;
+        this.updatedAt = LocalDateTime.now();
     }
     
     public MentorshipStatus getStatus() {

@@ -9,6 +9,8 @@ public class MentorshipResponse {
     
     private Long id;
     private Long profileId;
+    private String name;
+    private String specialization;
     private Mentorship.MentorshipStatus status;
     private Double price;
     private Double rating;
@@ -31,6 +33,8 @@ public class MentorshipResponse {
     public MentorshipResponse(Mentorship mentorship) {
         this.id = mentorship.getId();
         this.profileId = mentorship.getProfileId();
+        this.name = mentorship.getName();
+        this.specialization = mentorship.getSpecialization();
         this.status = mentorship.getStatus();
         this.price = mentorship.getPrice();
         this.rating = mentorship.getRating();
@@ -56,6 +60,22 @@ public class MentorshipResponse {
     
     public void setProfileId(Long profileId) {
         this.profileId = profileId;
+    }
+    
+    public String getName() {
+        return name;
+    }
+    
+    public void setName(String name) {
+        this.name = name;
+    }
+    
+    public String getSpecialization() {
+        return specialization;
+    }
+    
+    public void setSpecialization(String specialization) {
+        this.specialization = specialization;
     }
     
     public Mentorship.MentorshipStatus getStatus() {

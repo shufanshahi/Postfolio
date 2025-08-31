@@ -198,4 +198,66 @@ public class MentorshipController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
+    
+    /**
+     * GET /api/mentorships/search/name - Search mentorships by name
+     */
+    @GetMapping("/search/name")
+    public ResponseEntity<List<MentorshipResponse>> searchMentorshipsByName(@RequestParam String name) {
+        try {
+            List<MentorshipResponse> mentorships = mentorshipService.searchMentorshipsByName(name);
+            return ResponseEntity.ok(mentorships);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().build();
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+    
+    /**
+     * GET /api/mentorships/search/specialization - Search mentorships by specialization
+     */
+    @GetMapping("/search/specialization")
+    public ResponseEntity<List<MentorshipResponse>> searchMentorshipsBySpecialization(@RequestParam String specialization) {
+        try {
+            List<MentorshipResponse> mentorships = mentorshipService.searchMentorshipsBySpecialization(specialization);
+            return ResponseEntity.ok(mentorships);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().build();
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+    
+    /**
+     * GET /api/mentorships/search - Search mentorships by name and specialization
+     */
+    @GetMapping("/search")
+    public ResponseEntity<List<MentorshipResponse>> searchMentorships(
+            @RequestParam String name, 
+            @RequestParam String specialization) {
+        try {
+            List<MentorshipResponse> mentorships = mentorshipService.searchMentorshipsByNameAndSpecialization(name, specialization);
+            return ResponseEntity.ok(mentorships);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().build();
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+    
+    /**
+     * GET /api/mentorships/search/active/specialization - Search active mentorships by specialization
+     */
+    @GetMapping("/search/active/specialization")
+    public ResponseEntity<List<MentorshipResponse>> searchActiveMentorshipsBySpecialization(@RequestParam String specialization) {
+        try {
+            List<MentorshipResponse> mentorships = mentorshipService.searchActiveMentorshipsBySpecialization(specialization);
+            return ResponseEntity.ok(mentorships);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().build();
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
 }

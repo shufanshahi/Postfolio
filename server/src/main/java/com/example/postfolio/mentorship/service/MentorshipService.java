@@ -70,12 +70,22 @@ public class MentorshipService {
             throw new IllegalArgumentException("Profile ID is required");
         }
         
+        if (request.getName() == null || request.getName().trim().isEmpty()) {
+            throw new IllegalArgumentException("Name is required");
+        }
+        
+        if (request.getSpecialization() == null || request.getSpecialization().trim().isEmpty()) {
+            throw new IllegalArgumentException("Specialization is required");
+        }
+        
         if (request.getPrice() == null || request.getPrice() <= 0) {
             throw new IllegalArgumentException("Price must be positive");
         }
         
         Mentorship mentorship = new Mentorship();
         mentorship.setProfileId(request.getProfileId());
+        mentorship.setName(request.getName().trim());
+        mentorship.setSpecialization(request.getSpecialization().trim());
         mentorship.setPrice(request.getPrice());
         mentorship.setStatus(Mentorship.MentorshipStatus.ACTIVE);
         
@@ -217,5 +227,64 @@ public class MentorshipService {
         }
         
         return mentorshipRepository.countEnrolledProfiles(mentorshipId);
+    }
+    
+    /**
+     * Search mentorships by name
+     */
+    public List<MentorshipResponse> searchMentorshipsByName(String name) {
+        if (name == null || name.trim().isEmpty()) {
+            throw new IllegalArgumentException("Name cannot be null or empty");
+        }
+        
+        List<Mentorship> mentorships = mentorshipRepository.findByNameContainingIgnoreCase(name.trim());
+        return mentorships.stream()
+                .map(MentorshipResponse::new)
+                .collect(Collectors.toList());
+    }
+    
+    /**
+     * Search mentorships by specialization
+     */
+    public List<MentorshipResponse> searchMentorshipsBySpecialization(String specialization) {
+        if (specialization == null || specialization.trim().isEmpty()) {
+            throw new IllegalArgumentException("Specialization cannot be null or empty");
+        }
+        
+        List<Mentorship> mentorships = mentorshipRepository.findBySpecializationContainingIgnoreCase(specialization.trim());
+        return mentorships.stream()
+                .map(MentorshipResponse::new)
+                .collect(Collectors.toList());
+    }
+    
+    /**
+     * Search mentorships by name and specialization
+     */
+    public List<MentorshipResponse> searchMentorshipsByNameAndSpecialization(String name, String specialization) {
+        if (name == null || name.trim().isEmpty()) {
+            throw new IllegalArgumentException("Name cannot be null or empty");
+        }
+        if (specialization == null || specialization.trim().isEmpty()) {
+            throw new IllegalArgumentException("Specialization cannot be null or empty");
+        }
+        
+        List<Mentorship> mentorships = mentorshipRepository.findByNameContainingIgnoreCaseAndSpecializationContainingIgnoreCase(name.trim(), specialization.trim());
+        return mentorships.stream()
+                .map(MentorshipResponse::new)
+                .collect(Collectors.toList());
+    }
+    
+    /**
+     * Search active mentorships by specialization
+     */
+    public List<MentorshipResponse> searchActiveMentorshipsBySpecialization(String specialization) {
+        if (specialization == null || specialization.trim().isEmpty()) {
+            throw new IllegalArgumentException("Specialization cannot be null or empty");
+        }
+        
+        List<Mentorship> mentorships = mentorshipRepository.findBySpecializationContainingIgnoreCaseAndStatus(specialization.trim(), Mentorship.MentorshipStatus.ACTIVE);
+        return mentorships.stream()
+                .map(MentorshipResponse::new)
+                .collect(Collectors.toList());
     }
 }

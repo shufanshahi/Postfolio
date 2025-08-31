@@ -11,6 +11,12 @@ public class CreateMentorshipRequest {
     @NotNull(message = "Profile ID is required")
     private Long profileId;
     
+    @NotNull(message = "Name is required")
+    private String name;
+    
+    @NotNull(message = "Specialization is required")
+    private String specialization;
+    
     @NotNull(message = "Price is required")
     @Positive(message = "Price must be positive")
     private Double price;
@@ -22,6 +28,15 @@ public class CreateMentorshipRequest {
     
     // Constructors
     public CreateMentorshipRequest() {}
+    
+    public CreateMentorshipRequest(Long profileId, String name, String specialization, Double price, List<LocalDateTime> availableTimes, Boolean repeatStatus) {
+        this.profileId = profileId;
+        this.name = name;
+        this.specialization = specialization;
+        this.price = price;
+        this.availableTimes = availableTimes;
+        this.repeatStatus = repeatStatus;
+    }
     
     public CreateMentorshipRequest(Long profileId, Double price, List<LocalDateTime> availableTimes, Boolean repeatStatus) {
         this.profileId = profileId;
@@ -37,6 +52,22 @@ public class CreateMentorshipRequest {
     
     public void setProfileId(Long profileId) {
         this.profileId = profileId;
+    }
+    
+    public String getName() {
+        return name;
+    }
+    
+    public void setName(String name) {
+        this.name = name;
+    }
+    
+    public String getSpecialization() {
+        return specialization;
+    }
+    
+    public void setSpecialization(String specialization) {
+        this.specialization = specialization;
     }
     
     public Double getPrice() {
