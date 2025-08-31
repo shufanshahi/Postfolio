@@ -72,9 +72,14 @@ public class EnrollmentService {
             throw new IllegalArgumentException("Mentorship ID is required");
         }
         
-        // Check if enrollment already exists
-        if (enrollmentRepository.existsByProfileIdAndMentorshipId(request.getProfileId(), request.getMentorshipId())) {
-            throw new IllegalStateException("Enrollment already exists for this profile and mentorship");
+        // Check for time conflict if time is provided
+        if (request.getTime() != null) {
+            if (enrollmentRepository.existsByProfileIdAndMentorshipIdAndTime(
+                    request.getProfileId(), 
+                    request.getMentorshipId(), 
+                    request.getTime())) {
+                throw new IllegalStateException("An enrollment already exists for this profile, mentorship, and time slot");
+            }
         }
         
         // Create new enrollment with manual time if provided

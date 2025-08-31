@@ -5,6 +5,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -45,6 +46,11 @@ public interface EnrollmentRepository extends JpaRepository<Enrollment, Long> {
      * Check if a profile is already enrolled in a mentorship
      */
     boolean existsByProfileIdAndMentorshipId(Long profileId, Long mentorshipId);
+    
+    /**
+     * Check if a profile has an enrollment with the same time slot
+     */
+    boolean existsByProfileIdAndMentorshipIdAndTime(Long profileId, Long mentorshipId, LocalDateTime time);
     
     /**
      * Count enrollments by mentorship ID

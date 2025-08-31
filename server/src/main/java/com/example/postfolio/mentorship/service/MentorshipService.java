@@ -121,9 +121,9 @@ public class MentorshipService {
             throw new RuntimeException("Cannot enroll in inactive mentorship");
         }
         
-        // Check if profile is already enrolled
+        // Check if profile is already enrolled - if so, just return without error
         if (mentorshipRepository.isProfileEnrolledInMentorship(mentorshipId, request.getProfileId())) {
-            throw new RuntimeException("Profile is already enrolled in this mentorship");
+            return new MentorshipResponse(mentorship);
         }
         
         // Check if trying to enroll in own mentorship
@@ -308,9 +308,9 @@ public class MentorshipService {
             throw new RuntimeException("Cannot enroll in inactive mentorship");
         }
         
-        // Check if profile is already enrolled
+        // Check if profile is already enrolled - if so, just return without error
         if (mentorshipRepository.isProfileEnrolledInMentorship(mentorshipId, profileId)) {
-            throw new RuntimeException("Profile is already enrolled in this mentorship");
+            return new MentorshipResponse(mentorship);
         }
         
         // Check if trying to enroll in own mentorship
