@@ -6,9 +6,8 @@ import { apiFetch } from '@/lib/api';
 import {
   User, Users, FileText, Rss, LogOut, Bell, Search, Video, Briefcase,
   TrendingUp, Calendar, MessageSquare, Settings, ChevronRight, Plus,
-  Activity, Target, Award, Clock, BarChart3, Loader2
-  } from 'lucide-react'; 
-  import { LaptopMinimal } from 'lucide-react';
+  Activity, Target, Award, Clock, BarChart3, Loader2, LaptopMinimal, MapPin
+  } from 'lucide-react';
 import {
   Card, CardHeader, CardTitle, CardDescription, CardContent
 } from '@/components/ui/card';
@@ -258,15 +257,35 @@ export default function FunctionalDashboard() {
         onClick: () => handleNavigation('/my-interviews')
       });
       // Add Mock Interview card for User
-        cards.push({
-          title: 'Mock Interview',
-          description: 'Practice real interview scenarios',
-          icon: <LaptopMinimal className="h-6 w-6" />, // AI/robot-like icon
-          color: 'from-sky-300 to-sky-400',
-          iconBg: 'from-sky-300 to-sky-400',
-          action: 'Start Mock Interview',
-          onClick: () => handleNavigation('/mockInterview')
-        });
+      cards.push({
+        title: 'Mock Interview',
+        description: 'Practice real interview scenarios',
+        icon: <LaptopMinimal className="h-6 w-6" />, // AI/robot-like icon
+        color: 'from-sky-300 to-sky-400',
+        iconBg: 'from-sky-300 to-sky-400',
+        action: 'Start Mock Interview',
+        onClick: () => handleNavigation('/mockInterview')
+      });
+      // Add Nearby Jobs card for User
+      cards.push({
+        title: 'Nearby Jobs',
+        description: 'Find jobs near your location',
+        icon: <MapPin className="h-6 w-6" />, // You may need to import MapPin from lucide-react
+        color: 'from-amber-200 to-amber-300',
+        iconBg: 'from-amber-300 to-amber-400',
+        action: 'View Map',
+        onClick: () => handleNavigation('/nearbyjobs')
+      });
+      // Add Mentorship Program card for User
+      cards.push({
+        title: 'Mentorship Program',
+        description: 'Join or offer mentorships',
+        icon: <Users className="h-6 w-6" />, // Reuse Users icon for mentorship
+        color: 'from-indigo-200 to-indigo-300',
+        iconBg: 'from-indigo-300 to-indigo-400',
+        action: 'Explore Mentorships',
+        onClick: () => handleNavigation('/mentorship')
+      });
     }
 
     return cards;
