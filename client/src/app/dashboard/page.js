@@ -6,8 +6,8 @@ import { apiFetch } from '@/lib/api';
 import {
   User, Users, FileText, Rss, LogOut, Bell, Search, Video, Briefcase,
   TrendingUp, Calendar, MessageSquare, Settings, ChevronRight, Plus,
-  Activity, Target, Award, Clock, BarChart3, Loader2, LaptopMinimal, MapPin
-  } from 'lucide-react';
+  Activity, Target, Award, Clock, BarChart3, Loader2, LaptopMinimal, MapPin, DollarSign
+} from 'lucide-react';
 import {
   Card, CardHeader, CardTitle, CardDescription, CardContent
 } from '@/components/ui/card';
@@ -285,6 +285,16 @@ export default function FunctionalDashboard() {
         iconBg: 'from-indigo-300 to-indigo-400',
         action: 'Explore Mentorships',
         onClick: () => handleNavigation('/mentorship')
+      });
+      // Add Add Credit card for User
+      cards.push({
+        title: 'Add Credit',
+        description: 'Top up your account balance',
+        icon: <DollarSign className="h-6 w-6" />, // You may need to import DollarSign from lucide-react
+        color: 'from-green-200 to-green-300',
+        iconBg: 'from-green-300 to-green-400',
+        action: 'Top Up',
+        onClick: () => handleNavigation('/addcradit')
       });
     }
 
