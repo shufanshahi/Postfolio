@@ -55,6 +55,10 @@ export default function MentorshipPage() {
   const [mentorships, setMentorships] = useState([]);
   const [userProfile, setUserProfile] = useState(null);
   const [showCreateForm, setShowCreateForm] = useState(false);
+  const [showDetailsModal, setShowDetailsModal] = useState(false);
+  const [selectedMentorship, setSelectedMentorship] = useState(null);
+  const [selectedTimeSlot, setSelectedTimeSlot] = useState('');
+  const [purchasing, setPurchasing] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [specializationFilter, setSpecializationFilter] = useState('all');
 
@@ -177,6 +181,100 @@ export default function MentorshipPage() {
       setError(err.message || 'Failed to create mentorship');
     } finally {
       setCreating(false);
+    }
+  };
+
+  const handleViewDetails = (mentorship) => {
+    setSelectedMentorship(mentorship);
+    setSelectedTimeSlot('');
+    setShowDetailsModal(true);
+  };
+
+  const handlePurchaseAndEnroll = async () => {
+    if (!selectedTimeSlot || !selectedMentorship) {
+      setError('Please select a time slot');
+      return;
+    }
+
+    try {
+      setPurchasing(true);
+      setError('');
+      const token = localStorage.getItem('token');
+
+      // Step 1: Purchase credits
+      const purchaseData = {
+        profileId: userProfile.id,
+        amount: selectedMentorship.price,
+        description: selectedMentorship.name
+      };
+
+      const purchaseResponse = await fetch('http://localhost:8080/api/credits/purchase', {
+        method: 'POST',
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(purchaseData)
+      });
+
+      if (!purchaseResponse.ok) {
+        throw new Error('Payment failed. Please check your balance or payment method.');
+      }
+
+      // Step 2: Enroll in mentorship
+      const enrollMentorshipData = {
+        profileId: userProfile.id
+      };
+
+      const enrollResponse = await fetch(`http://localhost:8080/api/mentorships/${selectedMentorship.id}/enroll/${userProfile.id}`, {
+        method: 'POST',
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(enrollMentorshipData)
+      });
+
+      if (!enrollResponse.ok) {
+        throw new Error('Failed to enroll in mentorship');
+      }
+
+      // Step 3: Create enrollment record
+      const enrollmentData = {
+        profileId: userProfile.id,
+        mentorshipId: selectedMentorship.id,
+        status: "APPROVED",
+        time: selectedTimeSlot
+      };
+
+      const enrollmentResponse = await fetch('http://localhost:8080/api/enrollments', {
+        method: 'POST',
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(enrollmentData)
+      });
+
+      if (!enrollmentResponse.ok) {
+        throw new Error('Failed to create enrollment record');
+      }
+
+      // Success! Close modal and refresh data
+      setShowDetailsModal(false);
+      setSelectedMentorship(null);
+      setSelectedTimeSlot('');
+      await fetchMentorships();
+      
+      // Show success message
+      setError(''); // Clear any previous errors
+      // You might want to show a success toast here instead
+      alert('Successfully enrolled in mentorship!');
+
+    } catch (err) {
+      setError(err.message || 'Failed to complete purchase and enrollment');
+    } finally {
+      setPurchasing(false);
     }
   };
 
@@ -408,7 +506,7 @@ export default function MentorshipPage() {
                     </div>
                   </div>
                   
-                  <Button size="sm" className="bg-teal-600 hover:bg-teal-700 text-xs">
+                  <Button size="sm" className="bg-teal-600 hover:bg-teal-700 text-xs" onClick={() => handleViewDetails(mentorship)}>
                     View Details
                   </Button>
                 </div>
@@ -575,6 +673,184 @@ export default function MentorshipPage() {
               )}
             </Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Mentorship Details Modal */}
+      <Dialog open={showDetailsModal} onOpenChange={setShowDetailsModal}>
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+          {selectedMentorship && (
+            <>
+              <DialogHeader>
+                <DialogTitle className="text-xl font-semibold flex items-center gap-3">
+                  <Avatar className="h-12 w-12 ring-2 ring-white/40 shadow-sm">
+                    <AvatarImage src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${selectedMentorship.profileId}`} />
+                    <AvatarFallback className="bg-gradient-to-br from-teal-500 to-indigo-500 text-white">
+                      <User className="h-6 w-6" />
+                    </AvatarFallback>
+                  </Avatar>
+                  <div>
+                    <div>{selectedMentorship.name}</div>
+                    <div className="text-sm font-normal text-slate-600 dark:text-slate-400">
+                      {selectedMentorship.specialization}
+                    </div>
+                  </div>
+                </DialogTitle>
+                <DialogDescription>
+                  Select your preferred time slot and complete the enrollment.
+                </DialogDescription>
+              </DialogHeader>
+
+              <div className="space-y-6 py-4">
+                {/* Mentorship Info */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <Card className={`${subtleCard} p-4`}>
+                    <div className="flex items-center gap-2 mb-2">
+                      <DollarSign className="h-5 w-5 text-teal-600" />
+                      <span className="font-medium text-slate-700 dark:text-slate-300">Price</span>
+                    </div>
+                    <div className="text-2xl font-bold text-slate-800 dark:text-slate-100">
+                      ${selectedMentorship.price}
+                    </div>
+                    <div className="text-sm text-slate-500">per session</div>
+                  </Card>
+
+                  <Card className={`${subtleCard} p-4`}>
+                    <div className="flex items-center gap-2 mb-2">
+                      <Star className="h-5 w-5 text-amber-500" />
+                      <span className="font-medium text-slate-700 dark:text-slate-300">Rating</span>
+                    </div>
+                    <div className="text-2xl font-bold text-slate-800 dark:text-slate-100">
+                      {selectedMentorship.rating > 0 ? selectedMentorship.rating.toFixed(1) : 'New'}
+                    </div>
+                    <div className="text-sm text-slate-500">
+                      {selectedMentorship.rating > 0 ? 'out of 5' : 'mentorship'}
+                    </div>
+                  </Card>
+
+                  <Card className={`${subtleCard} p-4`}>
+                    <div className="flex items-center gap-2 mb-2">
+                      <Users className="h-5 w-5 text-indigo-600" />
+                      <span className="font-medium text-slate-700 dark:text-slate-300">Enrolled</span>
+                    </div>
+                    <div className="text-2xl font-bold text-slate-800 dark:text-slate-100">
+                      {selectedMentorship.enrolledProfileIds?.length || 0}
+                    </div>
+                    <div className="text-sm text-slate-500">students</div>
+                  </Card>
+                </div>
+
+                {/* Available Time Slots */}
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2">
+                    <Calendar className="h-5 w-5 text-teal-600" />
+                    <Label className="text-lg font-medium">Available Time Slots</Label>
+                  </div>
+                  
+                  {selectedMentorship.availableTimes && selectedMentorship.availableTimes.length > 0 ? (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-h-60 overflow-y-auto">
+                      {selectedMentorship.availableTimes.map((time, index) => (
+                        <Card
+                          key={index}
+                          className={`cursor-pointer transition-all duration-200 ${
+                            selectedTimeSlot === time
+                              ? 'ring-2 ring-teal-500 bg-teal-50 dark:bg-teal-900/20'
+                              : 'hover:shadow-md bg-white dark:bg-slate-800'
+                          } border rounded-lg p-3`}
+                          onClick={() => setSelectedTimeSlot(time)}
+                        >
+                          <div className="flex items-center gap-3">
+                            <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${
+                              selectedTimeSlot === time
+                                ? 'border-teal-500 bg-teal-500'
+                                : 'border-slate-300'
+                            }`}>
+                              {selectedTimeSlot === time && (
+                                <div className="w-2 h-2 bg-white rounded-full" />
+                              )}
+                            </div>
+                            <div>
+                              <div className="font-medium text-slate-800 dark:text-slate-100">
+                                {formatDateTime(time)}
+                              </div>
+                              <div className="text-sm text-slate-500">
+                                Available
+                              </div>
+                            </div>
+                          </div>
+                        </Card>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-8">
+                      <Clock className="h-12 w-12 mx-auto text-slate-400 mb-4" />
+                      <p className="text-slate-500">No available time slots at the moment</p>
+                    </div>
+                  )}
+                </div>
+
+                {/* Selected Slot Summary */}
+                {selectedTimeSlot && (
+                  <Card className={`${gradientPanel} p-4`}>
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <div className="font-medium text-slate-800 dark:text-slate-100">
+                          Selected Time Slot
+                        </div>
+                        <div className="text-sm text-slate-600 dark:text-slate-400">
+                          {formatDateTime(selectedTimeSlot)}
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-lg font-bold text-slate-800 dark:text-slate-100">
+                          ${selectedMentorship.price}
+                        </div>
+                        <div className="text-sm text-slate-500">
+                          Total Amount
+                        </div>
+                      </div>
+                    </div>
+                  </Card>
+                )}
+
+                {/* Error Display */}
+                {error && (
+                  <Alert className={`${subtleCard} border-red-200 dark:border-red-800`}>
+                    <AlertDescription className="text-red-600 dark:text-red-400">
+                      {error}
+                    </AlertDescription>
+                  </Alert>
+                )}
+              </div>
+
+              <DialogFooter>
+                <Button 
+                  variant="outline" 
+                  onClick={() => setShowDetailsModal(false)}
+                  disabled={purchasing}
+                >
+                  Cancel
+                </Button>
+                <Button 
+                  onClick={handlePurchaseAndEnroll}
+                  disabled={purchasing || !selectedTimeSlot}
+                  className="bg-teal-600 hover:bg-teal-700"
+                >
+                  {purchasing ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Processing...
+                    </>
+                  ) : (
+                    <>
+                      <DollarSign className="mr-2 h-4 w-4" />
+                      Buy & Enroll (${selectedMentorship.price})
+                    </>
+                  )}
+                </Button>
+              </DialogFooter>
+            </>
+          )}
         </DialogContent>
       </Dialog>
     </div>

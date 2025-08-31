@@ -287,4 +287,41 @@ public class MentorshipService {
                 .map(MentorshipResponse::new)
                 .collect(Collectors.toList());
     }
+    
+    /**
+     * Add profile to enrolled list
+     */
+    public MentorshipResponse addProfileToEnrolledList(Long mentorshipId, Long profileId) {
+        if (mentorshipId == null) {
+            throw new IllegalArgumentException("Mentorship ID cannot be null");
+        }
+        
+        if (profileId == null) {
+            throw new IllegalArgumentException("Profile ID cannot be null");
+        }
+        
+        Mentorship mentorship = mentorshipRepository.findById(mentorshipId)
+                .orElseThrow(() -> new RuntimeException("Mentorship not found with ID: " + mentorshipId));
+        
+        // Check if mentorship is active
+        if (mentorship.getStatus() != Mentorship.MentorshipStatus.ACTIVE) {
+            throw new RuntimeException("Cannot enroll in inactive mentorship");
+        }
+        
+        // Check if profile is already enrolled
+        if (mentorshipRepository.isProfileEnrolledInMentorship(mentorshipId, profileId)) {
+            throw new RuntimeException("Profile is already enrolled in this mentorship");
+        }
+        
+        // Check if trying to enroll in own mentorship
+        if (mentorship.getProfileId().equals(profileId)) {
+            throw new RuntimeException("Cannot enroll in your own mentorship");
+        }
+        
+        // Add profile to enrolled list
+        mentorship.addEnrolledProfileId(profileId);
+        Mentorship savedMentorship = mentorshipRepository.save(mentorship);
+        
+        return new MentorshipResponse(savedMentorship);
+    }
 }
