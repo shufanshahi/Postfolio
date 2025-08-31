@@ -1,0 +1,582 @@
+'use client';
+
+import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { apiFetch } from '@/lib/api';
+import {
+  Users, Plus, Calendar, DollarSign, Star, Clock, MapPin, 
+  ChevronDown, X, Search, Filter, Loader2, User, Award,
+  BookOpen, Globe, Heart, MessageCircle, TrendingUp
+} from 'lucide-react';
+import {
+  Card, CardHeader, CardTitle, CardDescription, CardContent
+} from '@/components/ui/card';
+import {
+  Button
+} from '@/components/ui/button';
+import {
+  Avatar, AvatarImage, AvatarFallback
+} from '@/components/ui/avatar';
+import {
+  Badge
+} from '@/components/ui/badge';
+import {
+  Input
+} from '@/components/ui/input';
+import {
+  Label
+} from '@/components/ui/label';
+import {
+  Textarea
+} from '@/components/ui/textarea';
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue
+} from '@/components/ui/select';
+import {
+  Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle
+} from '@/components/ui/dialog';
+import {
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger
+} from '@/components/ui/dropdown-menu';
+import {
+  Alert, AlertDescription
+} from '@/components/ui/alert';
+import Navbar from '@/components/Navbar';
+
+// Design tokens matching dashboard theme
+const gradientPanel = 'bg-gradient-to-br from-teal-50/70 via-white/50 to-indigo-50/70 dark:from-slate-800/60 dark:via-slate-800/50 dark:to-slate-800/60 backdrop-blur-xl border border-white/40 dark:border-slate-700/50 shadow-sm';
+const subtleCard = 'bg-gradient-to-br from-teal-50/65 via-white/55 to-indigo-50/60 dark:from-slate-800/70 dark:via-slate-800/60 dark:to-slate-800/70 backdrop-blur-md border border-teal-900/5 dark:border-slate-700/60 hover:border-teal-500/30 dark:hover:border-teal-400/30 transition-colors';
+
+export default function MentorshipPage() {
+  const router = useRouter();
+  const [loading, setLoading] = useState(true);
+  const [creating, setCreating] = useState(false);
+  const [error, setError] = useState('');
+  const [mentorships, setMentorships] = useState([]);
+  const [userProfile, setUserProfile] = useState(null);
+  const [showCreateForm, setShowCreateForm] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [specializationFilter, setSpecializationFilter] = useState('all');
+
+  // Create form state
+  const [createForm, setCreateForm] = useState({
+    name: '',
+    specialization: '',
+    price: '',
+    availableTimes: [],
+    repeatStatus: false
+  });
+
+  // Time slot selection state
+  const [timeSlots, setTimeSlots] = useState([]);
+  const [selectedDate, setSelectedDate] = useState('');
+  const [selectedTime, setSelectedTime] = useState('');
+
+  // Fetch data on component mount
+  useEffect(() => {
+    async function initializePage() {
+      try {
+        setLoading(true);
+        const token = localStorage.getItem('token');
+
+        if (!token) {
+          router.push('/login');
+          return;
+        }
+
+        // Fetch user profile
+        const profileRes = await fetch('http://localhost:8080/api/profile/me', {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        if (!profileRes.ok) {
+          throw new Error('Failed to fetch profile');
+        }
+        const profile = await profileRes.json();
+        setUserProfile(profile);
+
+        // Fetch mentorships
+        await fetchMentorships();
+
+      } catch (err) {
+        setError(err.message || 'Failed to load mentorship data');
+        console.error('Mentorship page initialization error:', err);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    initializePage();
+  }, [router]);
+
+  const fetchMentorships = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch('http://localhost:8080/api/mentorships', {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setMentorships(data);
+      }
+    } catch (err) {
+      console.error('Failed to fetch mentorships:', err);
+    }
+  };
+
+  const handleCreateMentorship = async () => {
+    if (!createForm.name || !createForm.specialization || !createForm.price) {
+      setError('Please fill in all required fields');
+      return;
+    }
+
+    try {
+      setCreating(true);
+      const token = localStorage.getItem('token');
+
+      const mentorshipData = {
+        profileId: userProfile.id,
+        name: createForm.name,
+        specialization: createForm.specialization,
+        price: parseFloat(createForm.price),
+        availableTimes: timeSlots,
+        repeatStatus: createForm.repeatStatus
+      };
+
+      const response = await fetch('http://localhost:8080/api/mentorships', {
+        method: 'POST',
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(mentorshipData)
+      });
+
+      if (response.ok) {
+        setShowCreateForm(false);
+        setCreateForm({
+          name: '',
+          specialization: '',
+          price: '',
+          availableTimes: [],
+          repeatStatus: false
+        });
+        setTimeSlots([]);
+        await fetchMentorships();
+      } else {
+        throw new Error('Failed to create mentorship');
+      }
+    } catch (err) {
+      setError(err.message || 'Failed to create mentorship');
+    } finally {
+      setCreating(false);
+    }
+  };
+
+  const addTimeSlot = () => {
+    if (selectedDate && selectedTime) {
+      const dateTime = `${selectedDate} ${selectedTime}:00`;
+      if (!timeSlots.includes(dateTime)) {
+        setTimeSlots([...timeSlots, dateTime]);
+        setSelectedDate('');
+        setSelectedTime('');
+      }
+    }
+  };
+
+  const removeTimeSlot = (indexToRemove) => {
+    setTimeSlots(timeSlots.filter((_, index) => index !== indexToRemove));
+  };
+
+  const formatDateTime = (dateTimeString) => {
+    const date = new Date(dateTimeString);
+    return date.toLocaleString('en-US', {
+      weekday: 'short',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  };
+
+  const filteredMentorships = mentorships.filter(mentorship => {
+    const matchesSearch = mentorship.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                         mentorship.specialization?.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesSpecialization = specializationFilter === '' || specializationFilter === 'all' || 
+                                 mentorship.specialization?.toLowerCase().includes(specializationFilter.toLowerCase());
+    return matchesSearch && matchesSpecialization;
+  });
+
+  // Get unique specializations for filter
+  const specializations = [...new Set(mentorships.map(m => m.specialization).filter(Boolean))];
+
+  if (loading) {
+    return (
+      <div className="min-h-screen relative overflow-hidden flex items-center justify-center bg-[radial-gradient(circle_at_30%_20%,theme(colors.teal.100)_0%,theme(colors.teal.50)_35%,theme(colors.white)_70%)] dark:bg-[radial-gradient(circle_at_30%_20%,oklch(0.3_0.05_210)_0%,oklch(0.22_0.025_250)_60%)]">
+        <div className="absolute inset-0 -z-10 opacity-40 [mask-image:radial-gradient(circle_at_center,white,transparent)]">
+          <div className="absolute top-10 left-1/4 h-64 w-64 bg-teal-300/30 rounded-full blur-3xl animate-pulse" />
+          <div className="absolute bottom-10 right-1/4 h-72 w-72 bg-indigo-300/30 rounded-full blur-3xl animate-pulse [animation-delay:200ms]" />
+        </div>
+        <div className="text-center animate-in fade-in zoom-in duration-500">
+          <Loader2 className="h-9 w-9 animate-spin text-teal-600 dark:text-teal-300 mx-auto mb-4" />
+          <p className="text-sm font-medium text-slate-600 dark:text-slate-300 tracking-wide">Loading mentorship opportunities...</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen relative overflow-hidden">
+      {/* Background gradients matching dashboard */}
+      <div className="pointer-events-none select-none absolute inset-0 -z-10">
+        <div className="absolute -top-24 -left-10 h-[38rem] w-[38rem] bg-gradient-to-br from-teal-200 via-teal-100 to-white dark:from-teal-600/30 dark:via-indigo-600/20 dark:to-transparent blur-3xl opacity-70" />
+        <div className="absolute top-1/3 -right-32 h-[34rem] w-[34rem] bg-gradient-to-tr from-indigo-200 via-white to-amber-100 dark:from-indigo-700/30 dark:via-transparent dark:to-teal-700/20 blur-3xl opacity-60" />
+      </div>
+      
+      <Navbar />
+      
+      <div className="max-w-7xl mx-auto py-10 px-6 space-y-10">
+        {/* Header Section */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6">
+          <div className="space-y-2">
+            <h1 className="text-4xl font-semibold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-teal-700 via-indigo-700 to-amber-600 dark:from-teal-200 dark:via-indigo-200 dark:to-amber-200">
+              Mentorship Program
+            </h1>
+            <p className="text-slate-600 dark:text-slate-300 text-sm md:text-base flex items-center gap-2">
+              <span className="inline-flex h-2 w-2 rounded-full bg-teal-500 animate-pulse" />
+              Connect with industry experts and grow your skills
+            </p>
+          </div>
+          
+          {/* Create Mentorship Dropdown */}
+          <div className="flex items-center gap-3">
+            <div className="relative flex items-center gap-2">
+              <Input
+                placeholder="Search mentorships..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-64 rounded-full border-slate-300/60 bg-white/60 backdrop-blur"
+              />
+              <Search className="absolute right-3 h-4 w-4 text-slate-400" />
+            </div>
+            
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button className="rounded-full bg-teal-600 hover:bg-teal-700 shadow-sm text-sm flex items-center gap-2">
+                  <div className="flex flex-col space-y-1">
+                    <div className="h-0.5 w-4 bg-white rounded-full"></div>
+                    <div className="h-0.5 w-4 bg-white rounded-full"></div>
+                    <div className="h-0.5 w-4 bg-white rounded-full"></div>
+                  </div>
+                  Create
+                  <ChevronDown className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-48">
+                <DropdownMenuItem onClick={() => setShowCreateForm(true)} className="flex items-center gap-2">
+                  <Plus className="h-4 w-4" />
+                  Create Mentorship
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+        </div>
+
+        {/* Filters */}
+        <div className="flex items-center gap-4 flex-wrap">
+          <Select value={specializationFilter} onValueChange={setSpecializationFilter}>
+            <SelectTrigger className="w-48 rounded-full border-slate-300/60 bg-white/60 backdrop-blur">
+              <SelectValue placeholder="Filter by specialization" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Specializations</SelectItem>
+              {specializations.map((spec) => (
+                <SelectItem key={spec} value={spec}>{spec}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          
+          <Badge variant="secondary" className="text-xs">
+            {filteredMentorships.length} mentorship{filteredMentorships.length !== 1 ? 's' : ''} available
+          </Badge>
+        </div>
+
+        {/* Error Alert */}
+        {error && (
+          <Alert className={`${subtleCard} border-red-200 dark:border-red-800`}>
+            <AlertDescription className="text-red-600 dark:text-red-400">
+              {error}
+            </AlertDescription>
+          </Alert>
+        )}
+
+        {/* Mentorships Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {filteredMentorships.map((mentorship) => (
+            <Card
+              key={mentorship.id}
+              className={`group overflow-hidden cursor-pointer relative rounded-2xl ${subtleCard} shadow-sm hover:shadow-lg transition-all duration-300 hover:-translate-y-1`}
+            >
+              <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-gradient-to-br from-teal-50/70 via-transparent to-amber-50/60 dark:from-teal-500/10 dark:to-indigo-500/10" />
+              
+              <CardHeader className="relative pb-4">
+                <div className="flex items-start justify-between">
+                  <div className="flex items-center gap-3">
+                    <Avatar className="h-12 w-12 ring-2 ring-white/40 shadow-sm">
+                      <AvatarImage src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${mentorship.profileId}`} />
+                      <AvatarFallback className="bg-gradient-to-br from-teal-500 to-indigo-500 text-white">
+                        <User className="h-6 w-6" />
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1 min-w-0">
+                      <CardTitle className="text-lg font-semibold text-slate-800 dark:text-slate-100 truncate">
+                        {mentorship.name}
+                      </CardTitle>
+                      <CardDescription className="text-slate-600 dark:text-slate-400 text-sm">
+                        {mentorship.specialization}
+                      </CardDescription>
+                    </div>
+                  </div>
+                  <Badge 
+                    variant={mentorship.status === 'ACTIVE' ? 'default' : 'secondary'}
+                    className={`${mentorship.status === 'ACTIVE' ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-600'} text-xs`}
+                  >
+                    {mentorship.status}
+                  </Badge>
+                </div>
+              </CardHeader>
+
+              <CardContent className="relative space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <DollarSign className="h-4 w-4 text-teal-600 dark:text-teal-400" />
+                    <span className="font-semibold text-slate-800 dark:text-slate-100">
+                      ${mentorship.price}
+                    </span>
+                    <span className="text-slate-500 dark:text-slate-400 text-sm">per session</span>
+                  </div>
+                  
+                  {mentorship.rating > 0 && (
+                    <div className="flex items-center gap-1">
+                      <Star className="h-4 w-4 text-amber-500 fill-current" />
+                      <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                        {mentorship.rating.toFixed(1)}
+                      </span>
+                    </div>
+                  )}
+                </div>
+
+                {mentorship.availableTimes && mentorship.availableTimes.length > 0 && (
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2">
+                      <Clock className="h-4 w-4 text-slate-500" />
+                      <span className="text-sm font-medium text-slate-600 dark:text-slate-400">
+                        Available Times
+                      </span>
+                    </div>
+                    <div className="flex flex-wrap gap-1">
+                      {mentorship.availableTimes.slice(0, 3).map((time, index) => (
+                        <Badge key={index} variant="outline" className="text-xs px-2 py-1">
+                          {formatDateTime(time)}
+                        </Badge>
+                      ))}
+                      {mentorship.availableTimes.length > 3 && (
+                        <Badge variant="outline" className="text-xs px-2 py-1">
+                          +{mentorship.availableTimes.length - 3} more
+                        </Badge>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                <div className="flex items-center justify-between pt-2">
+                  <div className="flex items-center gap-4 text-xs text-slate-500 dark:text-slate-400">
+                    <div className="flex items-center gap-1">
+                      <Users className="h-3 w-3" />
+                      <span>{mentorship.enrolledProfileIds?.length || 0} enrolled</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <Heart className="h-3 w-3" />
+                      <span>{Math.floor(Math.random() * 50) + 10} likes</span>
+                    </div>
+                  </div>
+                  
+                  <Button size="sm" className="bg-teal-600 hover:bg-teal-700 text-xs">
+                    View Details
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+
+        {filteredMentorships.length === 0 && !loading && (
+          <div className="text-center py-12">
+            <div className="rounded-full bg-slate-100 dark:bg-slate-800 w-20 h-20 mx-auto mb-4 flex items-center justify-center">
+              <Users className="h-8 w-8 text-slate-400" />
+            </div>
+            <h3 className="text-lg font-medium text-slate-700 dark:text-slate-300 mb-2">
+              No mentorships found
+            </h3>
+            <p className="text-slate-500 dark:text-slate-400 text-sm">
+              Try adjusting your search or filters, or create a new mentorship.
+            </p>
+          </div>
+        )}
+      </div>
+
+      {/* Create Mentorship Dialog */}
+      <Dialog open={showCreateForm} onOpenChange={setShowCreateForm}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-semibold">Create New Mentorship</DialogTitle>
+            <DialogDescription>
+              Share your expertise and help others grow in their careers.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-6 py-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="name">Mentorship Name *</Label>
+                <Input
+                  id="name"
+                  placeholder="e.g., Advanced React Development"
+                  value={createForm.name}
+                  onChange={(e) => setCreateForm({...createForm, name: e.target.value})}
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="specialization">Specialization *</Label>
+                <Input
+                  id="specialization"
+                  placeholder="e.g., Frontend Development"
+                  value={createForm.specialization}
+                  onChange={(e) => setCreateForm({...createForm, specialization: e.target.value})}
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="price">Price per Session (USD) *</Label>
+              <Input
+                id="price"
+                type="number"
+                placeholder="50.00"
+                value={createForm.price}
+                onChange={(e) => setCreateForm({...createForm, price: e.target.value})}
+              />
+            </div>
+
+            {/* Time Slot Selection */}
+            <div className="space-y-4">
+              <Label>Available Time Slots</Label>
+              
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 rounded-lg bg-slate-50 dark:bg-slate-800">
+                <div className="space-y-2">
+                  <Label htmlFor="date">Date</Label>
+                  <Input
+                    id="date"
+                    type="date"
+                    value={selectedDate}
+                    onChange={(e) => setSelectedDate(e.target.value)}
+                    min={new Date().toISOString().split('T')[0]}
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="time">Time</Label>
+                  <Input
+                    id="time"
+                    type="time"
+                    value={selectedTime}
+                    onChange={(e) => setSelectedTime(e.target.value)}
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label>&nbsp;</Label>
+                  <Button 
+                    type="button" 
+                    onClick={addTimeSlot}
+                    disabled={!selectedDate || !selectedTime}
+                    className="w-full"
+                  >
+                    Add Slot
+                  </Button>
+                </div>
+              </div>
+
+              {/* Display added time slots */}
+              {timeSlots.length > 0 && (
+                <div className="space-y-2">
+                  <Label>Added Time Slots ({timeSlots.length})</Label>
+                  <div className="max-h-32 overflow-y-auto space-y-2">
+                    {timeSlots.map((slot, index) => (
+                      <div key={index} className="flex items-center justify-between p-2 bg-white dark:bg-slate-700 rounded border">
+                        <span className="text-sm">{formatDateTime(slot)}</span>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => removeTimeSlot(index)}
+                          className="h-6 w-6 p-0 text-red-500 hover:text-red-700"
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="flex items-center space-x-2">
+              <input
+                type="checkbox"
+                id="repeatStatus"
+                checked={createForm.repeatStatus}
+                onChange={(e) => setCreateForm({...createForm, repeatStatus: e.target.checked})}
+                className="rounded border-slate-300"
+              />
+              <Label htmlFor="repeatStatus" className="text-sm">
+                This is a recurring mentorship program
+              </Label>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button 
+              variant="outline" 
+              onClick={() => setShowCreateForm(false)}
+              disabled={creating}
+            >
+              Cancel
+            </Button>
+            <Button 
+              onClick={handleCreateMentorship}
+              disabled={creating || !createForm.name || !createForm.specialization || !createForm.price}
+            >
+              {creating ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Creating...
+                </>
+              ) : (
+                'Create Mentorship'
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}
