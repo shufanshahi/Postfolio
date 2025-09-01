@@ -26,7 +26,8 @@ import {
   AlertCircle,
   Book,
   Star,
-  Users
+  Users,
+  Video
 } from 'lucide-react';
 
 // Design tokens matching dashboard theme
@@ -376,16 +377,32 @@ export default function MyMentorshipPage() {
                       Enrollment ID: {enrollment.id}
                     </div>
                     
-                    {enrollment.mentorship && (
-                      <Button 
-                        size="sm" 
-                        variant="outline"
-                        className="text-xs hover:bg-teal-50 hover:text-teal-700 hover:border-teal-300 dark:hover:bg-teal-900/20"
-                        onClick={() => router.push(`/mentorship`)}
-                      >
-                        View Mentorship
-                      </Button>
-                    )}
+                    <div className="flex items-center gap-2">
+                      {enrollment.status?.toLowerCase() === 'ongoing' && (
+                        <Button 
+                          size="sm" 
+                          className="text-xs bg-emerald-600 hover:bg-emerald-700 text-white flex items-center gap-1"
+                          onClick={() => {
+                            const roomId = `${enrollment.id}`;
+                            router.push(`/videoCall/${roomId}?role=participant`);
+                          }}
+                        >
+                          <Video className="h-3 w-3" />
+                          Join
+                        </Button>
+                      )}
+                      
+                      {enrollment.mentorship && (
+                        <Button 
+                          size="sm" 
+                          variant="outline"
+                          className="text-xs hover:bg-teal-50 hover:text-teal-700 hover:border-teal-300 dark:hover:bg-teal-900/20"
+                          onClick={() => router.push(`/mentorship`)}
+                        >
+                          View Mentorship
+                        </Button>
+                      )}
+                    </div>
                   </div>
                 </div>
               </CardContent>

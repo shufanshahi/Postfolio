@@ -188,6 +188,18 @@ export default function MenteesPage() {
                         <Clock className="h-4 w-4" />
                         {formatDateTime(enrollment.time)}
                       </div>
+                      {enrollment.status === 'ONGOING' && (
+                        <Button
+                          size="sm"
+                          className="ml-2 bg-teal-600 hover:bg-teal-700 text-white"
+                          onClick={() => {
+                            const roomId = `${enrollment.id}`;
+                            router.push(`/videoCall/${roomId}?role=host`);
+                          }}
+                        >
+                          Join
+                        </Button>
+                      )}
                     </div>
                   </li>
                 ))}
