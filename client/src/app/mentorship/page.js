@@ -390,6 +390,14 @@ export default function MentorshipPage() {
                   <DollarSign className="h-4 w-4" />
                   My Purchase
                 </DropdownMenuItem>
+                <DropdownMenuItem 
+                  onClick={() => router.push(`/my-mentorship/${userProfile?.id}`)} 
+                  className="flex items-center gap-2"
+                  disabled={!userProfile?.id}
+                >
+                  <BookOpen className="h-4 w-4" />
+                  My Mentorship
+                </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
