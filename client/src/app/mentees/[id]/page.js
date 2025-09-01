@@ -22,6 +22,7 @@ export default function MenteesPage() {
   const [error, setError] = useState('');
   const [enrollments, setEnrollments] = useState([]);
   const [mentorship, setMentorship] = useState(null);
+  const [profileNames, setProfileNames] = useState({});
 
   useEffect(() => {
     async function fetchData() {
@@ -49,6 +50,30 @@ export default function MenteesPage() {
         if (!enrollmentsRes.ok) throw new Error('Failed to fetch enrollments');
         const enrollmentsData = await enrollmentsRes.json();
         setEnrollments(enrollmentsData);
+
+        // Fetch profile names for each enrollment
+        const namesMap = {};
+        await Promise.all(enrollmentsData.map(async (enrollment) => {
+          if (enrollment.profileId) {
+            try {
+              const profileRes = await fetch(`http://localhost:8080/api/profile/${enrollment.profileId}`, {
+                headers: {
+                  'Content-Type': 'application/json',
+                  Authorization: `Bearer ${token}`,
+                },
+              });
+              if (profileRes.ok) {
+                const profileData = await profileRes.json();
+                namesMap[enrollment.profileId] = profileData.name || `Profile ${enrollment.profileId}`;
+              } else {
+                namesMap[enrollment.profileId] = `Profile ${enrollment.profileId}`;
+              }
+            } catch {
+              namesMap[enrollment.profileId] = `Profile ${enrollment.profileId}`;
+            }
+          }
+        }));
+        setProfileNames(namesMap);
       } catch (err) {
         setError(err.message || 'Failed to load mentees data');
       } finally {
@@ -151,7 +176,9 @@ export default function MenteesPage() {
                         </AvatarFallback>
                       </Avatar>
                       <div>
-                        <div className="font-medium text-slate-800 dark:text-slate-100">Profile ID: {enrollment.profileId}</div>
+                        <div className="font-medium text-slate-800 dark:text-slate-100">
+                          {profileNames[enrollment.profileId] || `Profile ${enrollment.profileId}`}
+                        </div>
                         <div className="text-xs text-slate-500 dark:text-slate-400">Enrollment ID: {enrollment.id}</div>
                       </div>
                     </div>
