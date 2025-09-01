@@ -34,6 +34,8 @@ public class Enrollment {
     public enum EnrollmentStatus {
         APPROVED,
         REFUNDED,
+        ONGOING,
+        MISSED,
         COMPLETED
     }
     

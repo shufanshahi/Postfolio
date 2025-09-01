@@ -373,7 +373,7 @@ export default function MentorshipPage() {
                     <div className="h-0.5 w-4 bg-white rounded-full"></div>
                     <div className="h-0.5 w-4 bg-white rounded-full"></div>
                   </div>
-                  Create
+                  Menu
                   <ChevronDown className="h-4 w-4" />
                 </Button>
               </DropdownMenuTrigger>
@@ -381,6 +381,14 @@ export default function MentorshipPage() {
                 <DropdownMenuItem onClick={() => setShowCreateForm(true)} className="flex items-center gap-2">
                   <Plus className="h-4 w-4" />
                   Create Mentorship
+                </DropdownMenuItem>
+                <DropdownMenuItem 
+                  onClick={() => router.push(`/my-purchase/${userProfile?.id}`)} 
+                  className="flex items-center gap-2"
+                  disabled={!userProfile?.id}
+                >
+                  <DollarSign className="h-4 w-4" />
+                  My Purchase
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
