@@ -369,6 +369,14 @@ export default function MyMentorshipPage() {
                       <Edit className="h-3 w-3 mr-1" />
                       Edit
                     </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="text-xs ml-2 hover:bg-amber-50 hover:text-amber-700 hover:border-amber-300 dark:hover:bg-amber-900/20"
+                      onClick={() => router.push(`/mentees/${mentorship.id}`)}
+                    >
+                      Details
+                    </Button>
                   </div>
                 </div>
               </CardContent>
