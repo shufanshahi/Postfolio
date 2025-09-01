@@ -384,7 +384,7 @@ export default function MyMentorshipPage() {
                           className="text-xs bg-emerald-600 hover:bg-emerald-700 text-white flex items-center gap-1"
                           onClick={() => {
                             const roomId = `${enrollment.id}`;
-                            router.push(`/videoCall/${roomId}?role=participant`);
+                            router.push(`/mentorvideocall/${roomId}?role=participant`);
                           }}
                         >
                           <Video className="h-3 w-3" />

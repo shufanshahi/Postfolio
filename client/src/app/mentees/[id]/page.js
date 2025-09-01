@@ -194,7 +194,7 @@ export default function MenteesPage() {
                           className="ml-2 bg-teal-600 hover:bg-teal-700 text-white"
                           onClick={() => {
                             const roomId = `${enrollment.id}`;
-                            router.push(`/videoCall/${roomId}?role=host`);
+                            router.push(`/mentorvideocall/${roomId}?role=host`);
                           }}
                         >
                           Join
