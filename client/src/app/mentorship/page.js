@@ -61,6 +61,7 @@ export default function MentorshipPage() {
   const [purchasing, setPurchasing] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [specializationFilter, setSpecializationFilter] = useState('all');
+  const [selectedViewDate, setSelectedViewDate] = useState('');
 
   // Create form state
   const [createForm, setCreateForm] = useState({
@@ -187,12 +188,62 @@ export default function MentorshipPage() {
   const handleViewDetails = (mentorship) => {
     setSelectedMentorship(mentorship);
     setSelectedTimeSlot('');
+    setSelectedViewDate('');
     setShowDetailsModal(true);
+  };
+
+  // Group time slots by date
+  const groupTimeSlotsByDate = (timeSlots) => {
+    if (!timeSlots || timeSlots.length === 0) return {};
+    
+    const grouped = {};
+    timeSlots.forEach(slot => {
+      const date = new Date(slot);
+      const dateKey = date.toISOString().split('T')[0]; // YYYY-MM-DD format
+      const dateLabel = date.toLocaleDateString('en-US', { 
+        weekday: 'long', 
+        year: 'numeric', 
+        month: 'long', 
+        day: 'numeric' 
+      });
+      
+      if (!grouped[dateKey]) {
+        grouped[dateKey] = {
+          label: dateLabel,
+          slots: []
+        };
+      }
+      grouped[dateKey].slots.push(slot);
+    });
+    
+    // Sort slots within each date
+    Object.keys(grouped).forEach(dateKey => {
+      grouped[dateKey].slots.sort((a, b) => new Date(a) - new Date(b));
+    });
+    
+    return grouped;
+  };
+
+  // Get available dates for the dropdown
+  const getAvailableDates = (mentorship) => {
+    if (!mentorship?.availableTimes) return [];
+    const grouped = groupTimeSlotsByDate(mentorship.availableTimes);
+    return Object.keys(grouped).sort().map(dateKey => ({
+      value: dateKey,
+      label: grouped[dateKey].label
+    }));
+  };
+
+  // Get time slots for selected date
+  const getTimeSlotsForDate = (mentorship, selectedDate) => {
+    if (!mentorship?.availableTimes || !selectedDate) return [];
+    const grouped = groupTimeSlotsByDate(mentorship.availableTimes);
+    return grouped[selectedDate]?.slots || [];
   };
 
   const handlePurchaseAndEnroll = async () => {
     if (!selectedTimeSlot || !selectedMentorship) {
-      setError('Please select a time slot');
+      setError('Please select a specific time slot');
       return;
     }
 
@@ -266,11 +317,11 @@ export default function MentorshipPage() {
       setShowDetailsModal(false);
       setSelectedMentorship(null);
       setSelectedTimeSlot('');
+      setSelectedViewDate('');
       await fetchMentorships();
       
       // Show success message
       setError(''); // Clear any previous errors
-      // You might want to show a success toast here instead
       alert('Successfully transferred payment and enrolled in mentorship!');
 
     } catch (err) {
@@ -489,7 +540,7 @@ export default function MentorshipPage() {
                   )}
                 </div>
 
-                {mentorship.availableTimes && mentorship.availableTimes.length > 0 && (
+                {/* {mentorship.availableTimes && mentorship.availableTimes.length > 0 && (
                   <div className="space-y-2">
                     <div className="flex items-center gap-2">
                       <Clock className="h-4 w-4 text-slate-500" />
@@ -510,7 +561,7 @@ export default function MentorshipPage() {
                       )}
                     </div>
                   </div>
-                )}
+                )} */}
 
                 <div className="flex items-center justify-between pt-2">
                   <div className="flex items-center gap-4 text-xs text-slate-500 dark:text-slate-400">
@@ -762,49 +813,93 @@ export default function MentorshipPage() {
                 <div className="space-y-4">
                   <div className="flex items-center gap-2">
                     <Calendar className="h-5 w-5 text-teal-600" />
-                    <Label className="text-lg font-medium">Available Time Slots</Label>
+                    <Label className="text-lg font-medium">Select Your Preferred Date & Time</Label>
                   </div>
                   
-                  {selectedMentorship.availableTimes && selectedMentorship.availableTimes.length > 0 ? (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-h-60 overflow-y-auto">
-                      {selectedMentorship.availableTimes.map((time, index) => (
-                        <Card
-                          key={index}
-                          className={`cursor-pointer transition-all duration-200 ${
-                            selectedTimeSlot === time
-                              ? 'ring-2 ring-teal-500 bg-teal-50 dark:bg-teal-900/20'
-                              : 'hover:shadow-md bg-white dark:bg-slate-800'
-                          } border rounded-lg p-3`}
-                          onClick={() => setSelectedTimeSlot(time)}
-                        >
-                          <div className="flex items-center gap-3">
-                            <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${
-                              selectedTimeSlot === time
-                                ? 'border-teal-500 bg-teal-500'
-                                : 'border-slate-300'
-                            }`}>
-                              {selectedTimeSlot === time && (
-                                <div className="w-2 h-2 bg-white rounded-full" />
-                              )}
-                            </div>
-                            <div>
-                              <div className="font-medium text-slate-800 dark:text-slate-100">
-                                {formatDateTime(time)}
-                              </div>
-                              <div className="text-sm text-slate-500">
-                                Available
-                              </div>
-                            </div>
+                  <div className="space-y-4">
+                    {/* Date Selection - Any Date */}
+                    <div className="space-y-2">
+                      <Label>Choose Your Preferred Date</Label>
+                      <Input
+                        type="date"
+                        value={selectedViewDate}
+                        onChange={(e) => setSelectedViewDate(e.target.value)}
+                        min={new Date().toISOString().split('T')[0]}
+                        className="w-full"
+                      />
+                    </div>
+
+                    {/* Time Slots for Selected Date */}
+                    {selectedViewDate && (
+                      <div className="space-y-3">
+                        <Label className="text-sm font-medium text-slate-600 dark:text-slate-400">
+                          Available time slots for {new Date(selectedViewDate).toLocaleDateString('en-US', { 
+                            weekday: 'long', 
+                            year: 'numeric', 
+                            month: 'long', 
+                            day: 'numeric' 
+                          })}
+                        </Label>
+                        
+                        {getTimeSlotsForDate(selectedMentorship, selectedViewDate).length > 0 ? (
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-h-60 overflow-y-auto">
+                            {getTimeSlotsForDate(selectedMentorship, selectedViewDate).map((time, index) => (
+                              <Card
+                                key={index}
+                                className={`cursor-pointer transition-all duration-200 ${
+                                  selectedTimeSlot === time
+                                    ? 'ring-2 ring-teal-500 bg-teal-50 dark:bg-teal-900/20'
+                                    : 'hover:shadow-md bg-white dark:bg-slate-800'
+                                } border rounded-lg p-3`}
+                                onClick={() => setSelectedTimeSlot(time)}
+                              >
+                                <div className="flex items-center gap-3">
+                                  <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${
+                                    selectedTimeSlot === time
+                                      ? 'border-teal-500 bg-teal-500'
+                                      : 'border-slate-300'
+                                  }`}>
+                                    {selectedTimeSlot === time && (
+                                      <div className="w-2 h-2 bg-white rounded-full" />
+                                    )}
+                                  </div>
+                                  <div>
+                                    <div className="font-medium text-slate-800 dark:text-slate-100">
+                                      {new Date(time).toLocaleTimeString('en-US', {
+                                        hour: '2-digit',
+                                        minute: '2-digit'
+                                      })}
+                                    </div>
+                                    <div className="text-sm text-slate-500">
+                                      Available
+                                    </div>
+                                  </div>
+                                </div>
+                              </Card>
+                            ))}
                           </div>
-                        </Card>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="text-center py-8">
-                      <Clock className="h-12 w-12 mx-auto text-slate-400 mb-4" />
-                      <p className="text-slate-500">No available time slots at the moment</p>
-                    </div>
-                  )}
+                        ) : (
+                          <div className="text-center py-6 border-2 border-dashed border-slate-200 dark:border-slate-700 rounded-lg">
+                            <Clock className="h-8 w-8 mx-auto text-slate-400 mb-3" />
+                            <p className="text-slate-500 dark:text-slate-400 font-medium mb-2">
+                              No time slots available for this date
+                            </p>
+                            <p className="text-sm text-slate-400 dark:text-slate-500">
+                              Please try selecting a different date
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {!selectedViewDate && (
+                      <div className="text-center py-8 border-2 border-dashed border-slate-200 dark:border-slate-700 rounded-lg">
+                        <Calendar className="h-12 w-12 mx-auto text-slate-400 mb-4" />
+                        <p className="text-slate-500">Select a date above to view available time slots</p>
+                        <p className="text-sm text-slate-400 mt-2">You can choose any date from today onwards</p>
+                      </div>
+                    )}
+                  </div>
                 </div>
 
                 {/* Selected Slot Summary */}
