@@ -228,6 +228,9 @@ export default function MentorshipPage() {
   const getAvailableDates = (mentorship) => {
     if (!mentorship?.availableTimes) return [];
     const grouped = groupTimeSlotsByDate(mentorship.availableTimes);
+    
+    // If repeatStatus is true, we don't need to return specific dates as any date can have slots
+    // This function is not used anymore when repeatStatus is true since we use date input
     return Object.keys(grouped).sort().map(dateKey => ({
       value: dateKey,
       label: grouped[dateKey].label
@@ -237,8 +240,47 @@ export default function MentorshipPage() {
   // Get time slots for selected date
   const getTimeSlotsForDate = (mentorship, selectedDate) => {
     if (!mentorship?.availableTimes || !selectedDate) return [];
+    
     const grouped = groupTimeSlotsByDate(mentorship.availableTimes);
-    return grouped[selectedDate]?.slots || [];
+    let slotsForDate = grouped[selectedDate]?.slots || [];
+    
+    // If repeatStatus is true and no slots found for the selected date, generate repeated slots
+    if (mentorship.repeatStatus && slotsForDate.length === 0) {
+      slotsForDate = generateRepeatedSlotsForDate(mentorship, selectedDate);
+    }
+    
+    return slotsForDate;
+  };
+
+  // Generate repeated time slots for a specific date based on the weekly pattern
+  const generateRepeatedSlotsForDate = (mentorship, targetDate) => {
+    if (!mentorship?.availableTimes || mentorship.availableTimes.length === 0) return [];
+    
+    const targetDateObj = new Date(targetDate);
+    const targetDayOfWeek = targetDateObj.getDay(); // 0 = Sunday, 1 = Monday, ..., 6 = Saturday
+    
+    // Find slots from the original week that match the target day of week
+    const matchingSlots = [];
+    
+    mentorship.availableTimes.forEach(originalSlot => {
+      const originalDate = new Date(originalSlot);
+      const originalDayOfWeek = originalDate.getDay();
+      
+      // If the day of week matches, create a new slot for the target date
+      if (originalDayOfWeek === targetDayOfWeek) {
+        const hours = originalDate.getHours();
+        const minutes = originalDate.getMinutes();
+        const seconds = originalDate.getSeconds();
+        
+        // Create new date with target date but original time
+        const newSlot = new Date(targetDateObj);
+        newSlot.setHours(hours, minutes, seconds, 0);
+        
+        matchingSlots.push(newSlot.toISOString().replace('T', ' ').substring(0, 19));
+      }
+    });
+    
+    return matchingSlots;
   };
 
   const handlePurchaseAndEnroll = async () => {
@@ -511,12 +553,19 @@ export default function MentorshipPage() {
                       </CardDescription>
                     </div>
                   </div>
-                  <Badge 
-                    variant={mentorship.status === 'ACTIVE' ? 'default' : 'secondary'}
-                    className={`${mentorship.status === 'ACTIVE' ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-600'} text-xs`}
-                  >
-                    {mentorship.status}
-                  </Badge>
+                  <div className="flex items-center gap-1">
+                    <Badge 
+                      variant={mentorship.status === 'ACTIVE' ? 'default' : 'secondary'}
+                      className={`${mentorship.status === 'ACTIVE' ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-600'} text-xs`}
+                    >
+                      {mentorship.status}
+                    </Badge>
+                    {mentorship.repeatStatus && (
+                      <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200 text-xs">
+                        Recurring
+                      </Badge>
+                    )}
+                  </div>
                 </div>
               </CardHeader>
 
@@ -814,7 +863,20 @@ export default function MentorshipPage() {
                   <div className="flex items-center gap-2">
                     <Calendar className="h-5 w-5 text-teal-600" />
                     <Label className="text-lg font-medium">Select Your Preferred Date & Time</Label>
+                    {selectedMentorship.repeatStatus && (
+                      <Badge variant="outline" className="bg-emerald-50 text-emerald-700 border-emerald-200 text-xs">
+                        Recurring Program
+                      </Badge>
+                    )}
                   </div>
+                  
+                  {selectedMentorship.repeatStatus && (
+                    <div className="p-3 bg-emerald-50 dark:bg-emerald-900/10 border border-emerald-200 dark:border-emerald-800 rounded-lg">
+                      <p className="text-sm text-emerald-700 dark:text-emerald-400">
+                        <strong>Recurring Mentorship:</strong> This program repeats weekly. Select any date and see available time slots that match the weekly schedule.
+                      </p>
+                    </div>
+                  )}
                   
                   <div className="space-y-4">
                     {/* Date Selection - Any Date */}
@@ -839,6 +901,11 @@ export default function MentorshipPage() {
                             month: 'long', 
                             day: 'numeric' 
                           })}
+                          {selectedMentorship.repeatStatus && (
+                            <span className="text-emerald-600 dark:text-emerald-400 ml-2">
+                              (Weekly recurring)
+                            </span>
+                          )}
                         </Label>
                         
                         {getTimeSlotsForDate(selectedMentorship, selectedViewDate).length > 0 ? (
@@ -882,10 +949,16 @@ export default function MentorshipPage() {
                           <div className="text-center py-6 border-2 border-dashed border-slate-200 dark:border-slate-700 rounded-lg">
                             <Clock className="h-8 w-8 mx-auto text-slate-400 mb-3" />
                             <p className="text-slate-500 dark:text-slate-400 font-medium mb-2">
-                              No time slots available for this date
+                              {selectedMentorship.repeatStatus 
+                                ? `No recurring slots available for ${new Date(selectedViewDate).toLocaleDateString('en-US', { weekday: 'long' })}s`
+                                : "No time slots available for this date"
+                              }
                             </p>
                             <p className="text-sm text-slate-400 dark:text-slate-500">
-                              Please try selecting a different date
+                              {selectedMentorship.repeatStatus 
+                                ? "This mentorship doesn't have sessions on this day of the week"
+                                : "Please try selecting a different date"
+                              }
                             </p>
                           </div>
                         )}
