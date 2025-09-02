@@ -285,7 +285,16 @@ export default function MentorshipPage() {
     const targetDateObj = new Date(targetDate);
     const targetDayOfWeek = targetDateObj.getDay(); // 0 = Sunday, 1 = Monday, ..., 6 = Saturday
     
-    // Find slots from the original week that match the target day of week
+    // Find the latest available time slot to determine the reference week
+    const latestSlot = mentorship.availableTimes.reduce((latest, current) => {
+      const currentDate = new Date(current);
+      const latestDate = new Date(latest);
+      return currentDate > latestDate ? current : latest;
+    });
+    
+    const latestSlotDate = new Date(latestSlot);
+    
+    // Find slots from the reference week that match the target day of week
     const matchingSlots = [];
     
     mentorship.availableTimes.forEach(originalSlot => {
@@ -294,6 +303,7 @@ export default function MentorshipPage() {
       
       // If the day of week matches, create a new slot for the target date
       if (originalDayOfWeek === targetDayOfWeek) {
+        // Get the time components from the original slot (in local time)
         const hours = originalDate.getHours();
         const minutes = originalDate.getMinutes();
         const seconds = originalDate.getSeconds();
@@ -302,7 +312,16 @@ export default function MentorshipPage() {
         const newSlot = new Date(targetDateObj);
         newSlot.setHours(hours, minutes, seconds, 0);
         
-        matchingSlots.push(newSlot.toISOString().replace('T', ' ').substring(0, 19));
+        // Format as local datetime string (not UTC) to avoid timezone issues
+        const year = newSlot.getFullYear();
+        const month = String(newSlot.getMonth() + 1).padStart(2, '0');
+        const day = String(newSlot.getDate()).padStart(2, '0');
+        const hour = String(newSlot.getHours()).padStart(2, '0');
+        const minute = String(newSlot.getMinutes()).padStart(2, '0');
+        const second = String(newSlot.getSeconds()).padStart(2, '0');
+        
+        const formattedSlot = `${year}-${month}-${day} ${hour}:${minute}:${second}`;
+        matchingSlots.push(formattedSlot);
       }
     });
     
@@ -920,7 +939,7 @@ export default function MentorshipPage() {
                   {selectedMentorship.repeatStatus && (
                     <div className="p-3 bg-emerald-50 dark:bg-emerald-900/10 border border-emerald-200 dark:border-emerald-800 rounded-lg">
                       <p className="text-sm text-emerald-700 dark:text-emerald-400">
-                        <strong>Recurring Mentorship:</strong> This program repeats weekly. Select any date and see available time slots that match the weekly schedule.
+                        <strong>Recurring Mentorship:</strong> This program repeats weekly based on the schedule from the latest available time slots. Select any date to see available time slots that match the weekly schedule.
                       </p>
                     </div>
                   )}
