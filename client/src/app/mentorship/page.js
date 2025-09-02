@@ -62,6 +62,7 @@ export default function MentorshipPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [specializationFilter, setSpecializationFilter] = useState('all');
   const [selectedViewDate, setSelectedViewDate] = useState('');
+  const [existingEnrollments, setExistingEnrollments] = useState([]);
 
   // Create form state
   const [createForm, setCreateForm] = useState({
@@ -189,7 +190,32 @@ export default function MentorshipPage() {
     setSelectedMentorship(mentorship);
     setSelectedTimeSlot('');
     setSelectedViewDate('');
+    setExistingEnrollments([]);
     setShowDetailsModal(true);
+    // Fetch existing enrollments for this mentorship
+    fetchMentorshipEnrollments(mentorship.id);
+  };
+
+  // Fetch existing enrollments for a mentorship
+  const fetchMentorshipEnrollments = async (mentorshipId) => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`http://localhost:8080/api/enrollments/mentorship/${mentorshipId}`, {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (response.ok) {
+        const enrollments = await response.json();
+        setExistingEnrollments(enrollments);
+      } else {
+        console.error('Failed to fetch enrollments');
+      }
+    } catch (err) {
+      console.error('Error fetching enrollments:', err);
+    }
   };
 
   // Group time slots by date
@@ -281,6 +307,27 @@ export default function MentorshipPage() {
     });
     
     return matchingSlots;
+  };
+
+  // Check if a time slot is already booked
+  const isTimeSlotBooked = (timeSlot) => {
+    return existingEnrollments.some(enrollment => {
+      const enrollmentTime = enrollment.time;
+      // Compare the exact time slots
+      return enrollmentTime === timeSlot;
+    });
+  };
+
+  // Get available (non-booked) time slots for a date
+  const getAvailableTimeSlotsForDate = (mentorship, selectedDate) => {
+    const allSlots = getTimeSlotsForDate(mentorship, selectedDate);
+    return allSlots.filter(slot => !isTimeSlotBooked(slot));
+  };
+
+  // Get booked time slots for a date
+  const getBookedTimeSlotsForDate = (mentorship, selectedDate) => {
+    const allSlots = getTimeSlotsForDate(mentorship, selectedDate);
+    return allSlots.filter(slot => isTimeSlotBooked(slot));
   };
 
   const handlePurchaseAndEnroll = async () => {
@@ -909,41 +956,98 @@ export default function MentorshipPage() {
                         </Label>
                         
                         {getTimeSlotsForDate(selectedMentorship, selectedViewDate).length > 0 ? (
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-h-60 overflow-y-auto">
-                            {getTimeSlotsForDate(selectedMentorship, selectedViewDate).map((time, index) => (
-                              <Card
-                                key={index}
-                                className={`cursor-pointer transition-all duration-200 ${
-                                  selectedTimeSlot === time
-                                    ? 'ring-2 ring-teal-500 bg-teal-50 dark:bg-teal-900/20'
-                                    : 'hover:shadow-md bg-white dark:bg-slate-800'
-                                } border rounded-lg p-3`}
-                                onClick={() => setSelectedTimeSlot(time)}
-                              >
-                                <div className="flex items-center gap-3">
-                                  <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${
-                                    selectedTimeSlot === time
-                                      ? 'border-teal-500 bg-teal-500'
-                                      : 'border-slate-300'
-                                  }`}>
-                                    {selectedTimeSlot === time && (
-                                      <div className="w-2 h-2 bg-white rounded-full" />
-                                    )}
-                                  </div>
-                                  <div>
-                                    <div className="font-medium text-slate-800 dark:text-slate-100">
-                                      {new Date(time).toLocaleTimeString('en-US', {
-                                        hour: '2-digit',
-                                        minute: '2-digit'
-                                      })}
-                                    </div>
-                                    <div className="text-sm text-slate-500">
-                                      Available
-                                    </div>
-                                  </div>
+                          <div className="space-y-4">
+                            {/* Available Slots */}
+                            {getAvailableTimeSlotsForDate(selectedMentorship, selectedViewDate).length > 0 && (
+                              <div>
+                                <Label className="text-xs font-medium text-emerald-600 dark:text-emerald-400 mb-2 block">
+                                  Available Slots
+                                </Label>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-h-40 overflow-y-auto">
+                                  {getAvailableTimeSlotsForDate(selectedMentorship, selectedViewDate).map((time, index) => (
+                                    <Card
+                                      key={`available-${index}`}
+                                      className={`cursor-pointer transition-all duration-200 ${
+                                        selectedTimeSlot === time
+                                          ? 'ring-2 ring-teal-500 bg-teal-50 dark:bg-teal-900/20'
+                                          : 'hover:shadow-md bg-white dark:bg-slate-800'
+                                      } border rounded-lg p-3`}
+                                      onClick={() => setSelectedTimeSlot(time)}
+                                    >
+                                      <div className="flex items-center gap-3">
+                                        <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${
+                                          selectedTimeSlot === time
+                                            ? 'border-teal-500 bg-teal-500'
+                                            : 'border-slate-300'
+                                        }`}>
+                                          {selectedTimeSlot === time && (
+                                            <div className="w-2 h-2 bg-white rounded-full" />
+                                          )}
+                                        </div>
+                                        <div>
+                                          <div className="font-medium text-slate-800 dark:text-slate-100">
+                                            {new Date(time).toLocaleTimeString('en-US', {
+                                              hour: '2-digit',
+                                              minute: '2-digit'
+                                            })}
+                                          </div>
+                                          <div className="text-sm text-emerald-600 dark:text-emerald-400">
+                                            Available
+                                          </div>
+                                        </div>
+                                      </div>
+                                    </Card>
+                                  ))}
                                 </div>
-                              </Card>
-                            ))}
+                              </div>
+                            )}
+
+                            {/* Booked Slots */}
+                            {getBookedTimeSlotsForDate(selectedMentorship, selectedViewDate).length > 0 && (
+                              <div>
+                                <Label className="text-xs font-medium text-red-600 dark:text-red-400 mb-2 block">
+                                  Already Booked
+                                </Label>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-h-32 overflow-y-auto">
+                                  {getBookedTimeSlotsForDate(selectedMentorship, selectedViewDate).map((time, index) => (
+                                    <Card
+                                      key={`booked-${index}`}
+                                      className="cursor-not-allowed opacity-60 bg-red-50 dark:bg-red-900/10 border-red-200 dark:border-red-800 rounded-lg p-3"
+                                    >
+                                      <div className="flex items-center gap-3">
+                                        <div className="w-4 h-4 rounded-full border-2 border-red-300 bg-red-100 dark:bg-red-900/20 flex items-center justify-center">
+                                          <X className="w-2 h-2 text-red-500" />
+                                        </div>
+                                        <div>
+                                          <div className="font-medium text-slate-700 dark:text-slate-300">
+                                            {new Date(time).toLocaleTimeString('en-US', {
+                                              hour: '2-digit',
+                                              minute: '2-digit'
+                                            })}
+                                          </div>
+                                          <div className="text-sm text-red-600 dark:text-red-400">
+                                            Booked
+                                          </div>
+                                        </div>
+                                      </div>
+                                    </Card>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+
+                            {/* No Available Slots */}
+                            {getAvailableTimeSlotsForDate(selectedMentorship, selectedViewDate).length === 0 && (
+                              <div className="text-center py-4 border-2 border-dashed border-amber-200 dark:border-amber-700 rounded-lg bg-amber-50 dark:bg-amber-900/10">
+                                <Clock className="h-6 w-6 mx-auto text-amber-500 mb-2" />
+                                <p className="text-amber-700 dark:text-amber-400 font-medium text-sm mb-1">
+                                  All slots are booked for this date
+                                </p>
+                                <p className="text-xs text-amber-600 dark:text-amber-500">
+                                  Please try selecting a different date
+                                </p>
+                              </div>
+                            )}
                           </div>
                         ) : (
                           <div className="text-center py-6 border-2 border-dashed border-slate-200 dark:border-slate-700 rounded-lg">
@@ -1019,13 +1123,20 @@ export default function MentorshipPage() {
                 </Button>
                 <Button 
                   onClick={handlePurchaseAndEnroll}
-                  disabled={purchasing || !selectedTimeSlot}
+                  disabled={purchasing || 
+                           !selectedTimeSlot || 
+                           isTimeSlotBooked(selectedMentorship, selectedTimeSlot)}
                   className="bg-teal-600 hover:bg-teal-700"
                 >
                   {purchasing ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                       Processing...
+                    </>
+                  ) : isTimeSlotBooked(selectedMentorship, selectedTimeSlot) ? (
+                    <>
+                      <X className="mr-2 h-4 w-4" />
+                      Slot Already Booked
                     </>
                   ) : (
                     <>
