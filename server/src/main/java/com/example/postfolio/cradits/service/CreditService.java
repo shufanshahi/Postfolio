@@ -3,6 +3,8 @@ package com.example.postfolio.cradits.service;
 import com.example.postfolio.cradits.dto.AddCreditRequest;
 import com.example.postfolio.cradits.dto.CreditResponse;
 import com.example.postfolio.cradits.dto.MakePurchaseRequest;
+import com.example.postfolio.cradits.dto.TransferCreditRequest;
+import com.example.postfolio.cradits.dto.TransferCreditResponse;
 import com.example.postfolio.cradits.entity.Credit;
 import com.example.postfolio.cradits.repository.CreditRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -10,6 +12,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.Optional;
 
 @Service
@@ -121,6 +124,84 @@ public class CreditService {
     public BigDecimal getCurrentBalance(Long profileId) {
         Optional<Credit> creditOptional = creditRepository.findByProfileId(profileId);
         return creditOptional.map(Credit::getTotalCredit).orElse(BigDecimal.ZERO);
+    }
+    
+    /**
+     * Transfer credit from one profile to another
+     * @param request the transfer request
+     * @return TransferCreditResponse containing transfer details and updated balances
+     * @throws RuntimeException if insufficient balance, profiles not found, or amount is invalid
+     */
+    public TransferCreditResponse transferCredit(TransferCreditRequest request) {
+        // Validate inputs
+        validateAmount(request.getAmount());
+        
+        if (request.getFromProfileId() == null) {
+            throw new RuntimeException("From profile ID cannot be null");
+        }
+        if (request.getToProfileId() == null) {
+            throw new RuntimeException("To profile ID cannot be null");
+        }
+        if (request.getFromProfileId().equals(request.getToProfileId())) {
+            throw new RuntimeException("Cannot transfer credit to the same profile");
+        }
+        
+        LocalDateTime transferDateTime = LocalDateTime.now();
+        String transferDescription = request.getDescription() != null && !request.getDescription().trim().isEmpty() 
+                                   ? request.getDescription() 
+                                   : "Credit transfer";
+        
+        // Get or create from profile credit account
+        Optional<Credit> fromCreditOptional = creditRepository.findByProfileId(request.getFromProfileId());
+        Credit fromCredit;
+        if (fromCreditOptional.isPresent()) {
+            fromCredit = fromCreditOptional.get();
+        } else {
+            throw new RuntimeException("Credit account not found for sender profile ID: " + request.getFromProfileId());
+        }
+        
+        // Check if sender has sufficient balance
+        if (fromCredit.getTotalCredit().compareTo(request.getAmount()) < 0) {
+            throw new RuntimeException("Insufficient credit balance. Available: " + fromCredit.getTotalCredit() + 
+                                     ", Required: " + request.getAmount());
+        }
+        
+        // Get or create to profile credit account
+        Optional<Credit> toCreditOptional = creditRepository.findByProfileId(request.getToProfileId());
+        Credit toCredit;
+        if (toCreditOptional.isPresent()) {
+            toCredit = toCreditOptional.get();
+        } else {
+            // Create new credit account for receiver if doesn't exist
+            toCredit = new Credit(request.getToProfileId());
+            toCredit.addTransaction("Account created");
+        }
+        
+        // Perform the transfer
+        String fromTransactionDesc = "Transfer out to Profile ID " + request.getToProfileId() + " - " + transferDescription;
+        String toTransactionDesc = "Transfer in from Profile ID " + request.getFromProfileId() + " - " + transferDescription;
+        
+        // Deduct from sender
+        fromCredit.deductCredit(request.getAmount(), fromTransactionDesc);
+        
+        // Add to receiver
+        toCredit.addCredit(request.getAmount(), toTransactionDesc);
+        
+        // Save both credit accounts
+        Credit savedFromCredit = creditRepository.save(fromCredit);
+        Credit savedToCredit = creditRepository.save(toCredit);
+        
+        // Create and return response
+        return new TransferCreditResponse(
+            request.getFromProfileId(),
+            request.getToProfileId(),
+            request.getAmount(),
+            transferDescription,
+            savedFromCredit.getTotalCredit(),
+            savedToCredit.getTotalCredit(),
+            transferDateTime,
+            "SUCCESS"
+        );
     }
     
     /**

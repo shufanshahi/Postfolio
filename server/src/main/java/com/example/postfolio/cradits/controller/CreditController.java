@@ -3,6 +3,8 @@ package com.example.postfolio.cradits.controller;
 import com.example.postfolio.cradits.dto.AddCreditRequest;
 import com.example.postfolio.cradits.dto.CreditResponse;
 import com.example.postfolio.cradits.dto.MakePurchaseRequest;
+import com.example.postfolio.cradits.dto.TransferCreditRequest;
+import com.example.postfolio.cradits.dto.TransferCreditResponse;
 import com.example.postfolio.cradits.service.CreditService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -102,6 +104,42 @@ public class CreditController {
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(createErrorResponse("Failed to process purchase: " + e.getMessage()));
+        }
+    }
+    
+    /**
+     * Transfer credit between profiles
+     * @param request the transfer request
+     * @return ResponseEntity containing transfer details and updated balances
+     */
+    @PostMapping("/transfer")
+    public ResponseEntity<?> transferCredit(@RequestBody TransferCreditRequest request) {
+        try {
+            // Validate request
+            if (request.getFromProfileId() == null) {
+                return ResponseEntity.badRequest()
+                        .body(createErrorResponse("From profile ID is required"));
+            }
+            if (request.getToProfileId() == null) {
+                return ResponseEntity.badRequest()
+                        .body(createErrorResponse("To profile ID is required"));
+            }
+            if (request.getAmount() == null) {
+                return ResponseEntity.badRequest()
+                        .body(createErrorResponse("Amount is required"));
+            }
+            if (request.getDescription() == null || request.getDescription().trim().isEmpty()) {
+                request.setDescription("Credit transfer");
+            }
+            
+            TransferCreditResponse transferResponse = creditService.transferCredit(request);
+            return ResponseEntity.ok(transferResponse);
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest()
+                    .body(createErrorResponse(e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(createErrorResponse("Failed to process transfer: " + e.getMessage()));
         }
     }
     
