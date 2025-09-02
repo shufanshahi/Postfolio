@@ -178,8 +178,8 @@ public class CreditService {
         }
         
         // Perform the transfer
-        String fromTransactionDesc = "Transfer out to Profile ID " + request.getToProfileId() + " - " + transferDescription;
-        String toTransactionDesc = "Transfer in from Profile ID " + request.getFromProfileId() + " - " + transferDescription;
+        String fromTransactionDesc =  transferDescription;
+        String toTransactionDesc =  transferDescription;
         
         // Deduct from sender
         fromCredit.deductCredit(request.getAmount(), fromTransactionDesc);

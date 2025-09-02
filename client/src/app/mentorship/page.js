@@ -201,24 +201,26 @@ export default function MentorshipPage() {
       setError('');
       const token = localStorage.getItem('token');
 
-      // Step 1: Purchase credits
-      const purchaseData = {
-        profileId: userProfile.id,
+      // Step 1: Transfer credits from user to mentor
+      const transferData = {
+        fromProfileId: userProfile.id,
+        toProfileId: selectedMentorship.profileId,
         amount: selectedMentorship.price,
-        description: selectedMentorship.name
+        description: `Payment for mentorship: ${selectedMentorship.name}`
       };
 
-      const purchaseResponse = await fetch('http://localhost:8080/api/credits/purchase', {
+      const transferResponse = await fetch('http://localhost:8080/api/credits/transfer', {
         method: 'POST',
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify(purchaseData)
+        body: JSON.stringify(transferData)
       });
 
-      if (!purchaseResponse.ok) {
-        throw new Error('Payment failed. Please check your balance or payment method.');
+      if (!transferResponse.ok) {
+        const errorData = await transferResponse.json();
+        throw new Error(errorData.message || 'Transfer failed. Please check your balance.');
       }
 
       // Step 2: Enroll in mentorship
@@ -269,10 +271,10 @@ export default function MentorshipPage() {
       // Show success message
       setError(''); // Clear any previous errors
       // You might want to show a success toast here instead
-      alert('Successfully enrolled in mentorship!');
+      alert('Successfully transferred payment and enrolled in mentorship!');
 
     } catch (err) {
-      setError(err.message || 'Failed to complete purchase and enrollment');
+      setError(err.message || 'Failed to complete transfer and enrollment');
     } finally {
       setPurchasing(false);
     }
