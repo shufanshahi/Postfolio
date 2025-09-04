@@ -685,20 +685,61 @@ export default function MentorshipPage() {
                     <div className="flex items-center gap-2">
                       <Clock className="h-4 w-4 text-slate-500" />
                       <span className="text-sm font-medium text-slate-600 dark:text-slate-400">
-                        Available Times
+                        Next Available Times
                       </span>
                     </div>
                     <div className="flex flex-wrap gap-1">
-                      {mentorship.availableTimes.slice(0, 3).map((time, index) => (
-                        <Badge key={index} variant="outline" className="text-xs px-2 py-1">
-                          {formatDateTime(time)}
-                        </Badge>
-                      ))}
-                      {mentorship.availableTimes.length > 3 && (
-                        <Badge variant="outline" className="text-xs px-2 py-1">
-                          +{mentorship.availableTimes.length - 3} more
-                        </Badge>
-                      )}
+                      {(() => {
+                        const now = new Date();
+                        let upcomingTimes = [];
+                        
+                        if (mentorship.repeatStatus) {
+                          // For recurring mentorships, generate next 2 available slots from today
+                          const today = new Date();
+                          const nextWeek = new Date(today);
+                          nextWeek.setDate(today.getDate() + 7);
+                          
+                          // Check next 14 days for recurring slots
+                          for (let i = 0; i < 14 && upcomingTimes.length < 2; i++) {
+                            const checkDate = new Date(today);
+                            checkDate.setDate(today.getDate() + i);
+                            const dateKey = checkDate.toISOString().split('T')[0];
+                            
+                            // Generate slots for this date based on original pattern
+                            const slotsForDate = generateRepeatedSlotsForDate(mentorship, dateKey);
+                            const futureSlots = slotsForDate.filter(slot => new Date(slot) > now);
+                            
+                            upcomingTimes = [...upcomingTimes, ...futureSlots];
+                          }
+                          
+                          upcomingTimes = upcomingTimes.slice(0, 2);
+                        } else {
+                          // For one-time mentorships, filter future times
+                          upcomingTimes = mentorship.availableTimes
+                            .filter(time => new Date(time) > now)
+                            .sort((a, b) => new Date(a) - new Date(b))
+                            .slice(0, 2);
+                        }
+                        
+                        return upcomingTimes.length > 0 ? (
+                          <>
+                            {upcomingTimes.map((time, index) => (
+                              <Badge key={index} variant="outline" className="text-xs px-2 py-1">
+                                {formatDateTime(time)}
+                              </Badge>
+                            ))}
+                            {(mentorship.repeatStatus || mentorship.availableTimes.filter(time => new Date(time) > now).length > 2) && (
+                              <Badge variant="outline" className="text-xs px-2 py-1">
+                                +more times
+                              </Badge>
+                            )}
+                          </>
+                        ) : (
+                          <Badge variant="outline" className="text-xs px-2 py-1 text-slate-400">
+                            No upcoming slots
+                          </Badge>
+                        );
+                      })()}
                     </div>
                   </div>
                 )}
