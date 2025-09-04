@@ -31,6 +31,9 @@ const gradientPanel = 'bg-gradient-to-br from-teal-50/70 via-white/50 to-indigo-
 const subtleCard = 'bg-gradient-to-br from-teal-50/65 via-white/55 to-indigo-50/60 dark:from-slate-800/70 dark:via-slate-800/60 dark:to-slate-800/70 backdrop-blur-md border border-teal-900/5 dark:border-slate-700/60 hover:border-teal-500/30 dark:hover:border-teal-400/30 transition-colors';
 
 export default function MyMentorshipPage() {
+  const [statusFilter, setStatusFilter] = useState('all');
+  // Modern status dropdown state
+  const [showStatusDropdown, setShowStatusDropdown] = useState(false);
   const router = useRouter();
   const params = useParams();
   const { id: profileId } = params;
@@ -135,11 +138,12 @@ export default function MyMentorshipPage() {
     const query = searchQuery.toLowerCase();
     const mentorshipName = mentorship.name?.toLowerCase() || '';
     const specialization = mentorship.specialization?.toLowerCase() || '';
-    const status = mentorship.status?.toLowerCase() || '';
-    
-    return mentorshipName.includes(query) || 
-           specialization.includes(query) || 
-           status.includes(query);
+    const status = mentorship.status?.toUpperCase() || '';
+    const statusMatch = statusFilter === 'all' || status === statusFilter;
+    return (
+      (mentorshipName.includes(query) || specialization.includes(query) || status.toLowerCase().includes(query))
+      && statusMatch
+    );
   });
 
   if (loading) {
@@ -236,16 +240,13 @@ export default function MyMentorshipPage() {
           
           <Card className={`${subtleCard} p-4`}>
             <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-amber-100 dark:bg-amber-900/30">
-                <DollarSign className="h-5 w-5 text-amber-600 dark:text-amber-400" />
+              <div className="p-2 rounded-lg bg-red-100 dark:bg-red-900/30">
+                <Clock className="h-5 w-5 text-red-600 dark:text-red-400" />
               </div>
               <div>
-                <p className="text-sm text-slate-600 dark:text-slate-400">Avg. Price</p>
+                <p className="text-sm text-slate-600 dark:text-slate-400">Inactive</p>
                 <p className="text-2xl font-bold text-slate-800 dark:text-slate-100">
-                  ${mentorships.length > 0 ? 
-                    (mentorships.reduce((sum, m) => sum + (m.price || 0), 0) / mentorships.length).toFixed(0) : 
-                    '0'
-                  }
+                  {mentorships.filter(m => m.status?.toUpperCase() === 'INACTIVE').length}
                 </p>
               </div>
             </div>
@@ -254,12 +255,60 @@ export default function MyMentorshipPage() {
 
         {/* Filter info */}
         <div className="flex items-center gap-4">
+          {/* Modern Status Filter Dropdown */}
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-medium text-slate-700 dark:text-slate-200">Status:</span>
+            <div className="relative">
+              <button
+                type="button"
+                className="flex items-center gap-2 rounded-full border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-1 text-sm shadow-sm hover:border-teal-400 focus:outline-none focus:ring-2 focus:ring-teal-300 transition-colors min-w-[120px]"
+                onClick={() => setShowStatusDropdown(v => !v)}
+                aria-haspopup="listbox"
+                aria-expanded={showStatusDropdown ? 'true' : 'false'}
+              >
+                {statusFilter === 'all' && 'All Statuses'}
+                {statusFilter === 'ACTIVE' && 'Active'}
+                {statusFilter === 'INACTIVE' && 'Inactive'}
+                <svg className="ml-2 h-4 w-4 text-slate-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" /></svg>
+              </button>
+              {showStatusDropdown && (
+                <ul
+                  className="absolute z-10 mt-2 w-full rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-lg py-1 text-sm"
+                  role="listbox"
+                >
+                  <li
+                    className={`px-4 py-2 cursor-pointer hover:bg-teal-50 dark:hover:bg-teal-900/20 rounded ${statusFilter === 'all' ? 'font-semibold text-teal-700 dark:text-teal-300' : 'text-slate-700 dark:text-slate-200'}`}
+                    onClick={() => { setStatusFilter('all'); setShowStatusDropdown(false); }}
+                    role="option"
+                    aria-selected={statusFilter === 'all'}
+                  >
+                    All Statuses
+                  </li>
+                  <li
+                    className={`px-4 py-2 cursor-pointer hover:bg-emerald-50 dark:hover:bg-emerald-900/20 rounded ${statusFilter === 'ACTIVE' ? 'font-semibold text-emerald-700 dark:text-emerald-300' : 'text-slate-700 dark:text-slate-200'}`}
+                    onClick={() => { setStatusFilter('ACTIVE'); setShowStatusDropdown(false); }}
+                    role="option"
+                    aria-selected={statusFilter === 'ACTIVE'}
+                  >
+                    Active
+                  </li>
+                  <li
+                    className={`px-4 py-2 cursor-pointer hover:bg-red-50 dark:hover:bg-red-900/20 rounded ${statusFilter === 'INACTIVE' ? 'font-semibold text-red-700 dark:text-red-300' : 'text-slate-700 dark:text-slate-200'}`}
+                    onClick={() => { setStatusFilter('INACTIVE'); setShowStatusDropdown(false); }}
+                    role="option"
+                    aria-selected={statusFilter === 'INACTIVE'}
+                  >
+                    Inactive
+                  </li>
+                </ul>
+              )}
+            </div>
+          </div>
           <Badge variant="secondary" className="text-xs">
             {filteredMentorships.length} mentorship{filteredMentorships.length !== 1 ? 's' : ''} found
           </Badge>
-        </div>
-
-        {/* Error Alert */}
+  </div>
+  {/* Error Alert */}
         {error && (
           <Alert className={`${subtleCard} border-red-200 dark:border-red-800`}>
             <AlertDescription className="text-red-600 dark:text-red-400">
@@ -375,7 +424,7 @@ export default function MyMentorshipPage() {
                       className="text-xs ml-2 hover:bg-amber-50 hover:text-amber-700 hover:border-amber-300 dark:hover:bg-amber-900/20"
                       onClick={() => router.push(`/mentees/${mentorship.id}`)}
                     >
-                      Details
+                      Enrolled
                     </Button>
                   </div>
                 </div>

@@ -436,10 +436,10 @@ export default function MyMentorshipPage() {
                         <Button 
                           size="sm" 
                           variant="outline"
-                          className="text-xs hover:bg-teal-50 hover:text-teal-700 hover:border-teal-300 dark:hover:bg-teal-900/20"
-                          onClick={() => router.push(`/mentorship`)}
+                          className="text-xs hover:bg-indigo-50 hover:text-indigo-700 hover:border-indigo-300 dark:hover:bg-indigo-900/20"
+                          onClick={() => router.push(`/user/${enrollment.mentorship.profileId}`)}
                         >
-                          View Mentorship
+                          Mentor
                         </Button>
                       )}
                     </div>

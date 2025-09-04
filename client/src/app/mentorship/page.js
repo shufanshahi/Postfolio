@@ -680,7 +680,7 @@ export default function MentorshipPage() {
                   )}
                 </div>
 
-                {/* {mentorship.availableTimes && mentorship.availableTimes.length > 0 && (
+                {mentorship.availableTimes && mentorship.availableTimes.length > 0 && (
                   <div className="space-y-2">
                     <div className="flex items-center gap-2">
                       <Clock className="h-4 w-4 text-slate-500" />
@@ -701,7 +701,7 @@ export default function MentorshipPage() {
                       )}
                     </div>
                   </div>
-                )} */}
+                )}
 
                 <div className="flex items-center justify-between pt-2">
                   <div className="flex items-center gap-4 text-xs text-slate-500 dark:text-slate-400">
@@ -712,14 +712,19 @@ export default function MentorshipPage() {
                     <div className="flex items-center gap-1">
                       <Star className="h-3 w-3 text-amber-500" />
                       <span className="font-medium text-slate-700 dark:text-slate-300">
-                        {mentorship.rating > 0 ? mentorship.rating.toFixed(1) : 'No ratings yet'}
+                        {mentorship.rating > 0 ? mentorship.rating.toFixed(1) : 'No ratings'}
                       </span>
                     </div>
                   </div>
                   
-                  <Button size="sm" className="bg-teal-600 hover:bg-teal-700 text-xs" onClick={() => handleViewDetails(mentorship)}>
-                    View Details
-                  </Button>
+                  <div className="flex gap-2">
+                    <Button size="sm" className="bg-teal-600 hover:bg-teal-700 text-xs" onClick={() => handleViewDetails(mentorship)}>
+                      View Details
+                    </Button>
+                    <Button size="sm" variant="outline" className="text-xs hover:bg-indigo-50 hover:text-indigo-700 hover:border-indigo-300 dark:hover:bg-indigo-900/20" onClick={() => window.location.href = `http://localhost:3000/user/${mentorship.profileId}` }>
+                      Mentor
+                    </Button>
+                  </div>
                 </div>
               </CardContent>
             </Card>
