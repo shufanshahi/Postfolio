@@ -240,7 +240,8 @@ export default function NearbyJobs() {
 
       if (response.ok) {
         alert("Application submitted successfully!");
-        // Refresh jobs to update applicant status
+        // Clear selected job and refresh jobs to update applicant status
+        setSelectedJob(null);
         refreshJobs();
       } else {
         const errorText = await response.text();
@@ -348,7 +349,7 @@ export default function NearbyJobs() {
           </Card>
         </div> */}
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-[calc(100vh-400px)]">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-[calc(100vh-320px)]">
           {/* Map Section */}
           <div className="lg:col-span-2">
             <Card className={`${subtleCard} h-full`}>
@@ -414,13 +415,6 @@ export default function NearbyJobs() {
                                   {job.status}
                                 </Badge>
                               </div>
-                              {/* <Button 
-                                size="sm" 
-                                onClick={() => setSelectedJob(job)}
-                                className="w-full mt-3 bg-teal-600 hover:bg-teal-700"
-                              >
-                                View Details
-                              </Button> */}
                             </div>
                           </Popup>
                         </Marker>
@@ -450,7 +444,7 @@ export default function NearbyJobs() {
                   )}
                 </CardTitle>
               </CardHeader>
-              <CardContent className="overflow-y-auto max-h-[calc(100vh-500px)]">
+              <CardContent className="overflow-y-auto max-h-[calc(100vh-420px)]">
                 {selectedJob ? (
                   <div className="space-y-6 text-slate-700 dark:text-slate-300">
                     {/* Header */}
