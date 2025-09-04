@@ -5,7 +5,10 @@ import "leaflet/dist/leaflet.css";
 import L from "leaflet";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { MapPin, Briefcase, DollarSign, Calendar, Users, Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
+import Navbar from '@/components/Navbar';
 
 // Fix for default markers in React Leaflet
 delete L.Icon.Default.prototype._getIconUrl;
@@ -17,7 +20,7 @@ L.Icon.Default.mergeOptions({
 
 // Custom job marker icon
 const jobMarkerIcon = new L.Icon({
-  iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',
+  iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png',
   shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
   iconSize: [25, 41],
   iconAnchor: [12, 41],
@@ -34,6 +37,10 @@ const currentLocationIcon = new L.Icon({
   popupAnchor: [1, -34],
   shadowSize: [41, 41]
 });
+
+// Design tokens matching dashboard theme
+const gradientPanel = 'bg-gradient-to-br from-teal-50/70 via-white/50 to-indigo-50/70 dark:from-slate-800/60 dark:via-slate-800/50 dark:to-slate-800/60 backdrop-blur-xl border border-white/40 dark:border-slate-700/50 shadow-sm';
+const subtleCard = 'bg-gradient-to-br from-teal-50/65 via-white/55 to-indigo-50/60 dark:from-slate-800/70 dark:via-slate-800/60 dark:to-slate-800/70 backdrop-blur-md border border-teal-900/5 dark:border-slate-700/60 hover:border-teal-500/30 dark:hover:border-teal-400/30 transition-colors';
 
 export default function NearbyJobs() {
   const router = useRouter();
@@ -148,7 +155,7 @@ export default function NearbyJobs() {
 
         const jobsData = await response.json();
         
-        // Filter jobs that have valid location data and user hasn't applied to
+        // Filter jobs that have valid location data, user hasn't applied to, and are OPEN
         const jobsWithLocation = jobsData.filter(job => {
           const coords = parseLocation(job.location);
           const hasValidLocation = coords !== null;
@@ -156,7 +163,10 @@ export default function NearbyJobs() {
           // Don't show jobs the user has already applied to
           const hasNotApplied = !job.applicantIds?.includes(profile?.id);
           
-          return hasValidLocation && hasNotApplied;
+          // Only show OPEN jobs
+          const isOpen = job.status === 'OPEN';
+          
+          return hasValidLocation && hasNotApplied && isOpen;
         });
 
         setJobs(jobsWithLocation);
@@ -199,7 +209,10 @@ export default function NearbyJobs() {
           // Don't show jobs the user has already applied to
           const hasNotApplied = !job.applicantIds?.includes(userProfile?.id);
           
-          return hasValidLocation && hasNotApplied;
+          // Only show OPEN jobs
+          const isOpen = job.status === 'OPEN';
+          
+          return hasValidLocation && hasNotApplied && isOpen;
         });
         setJobs(jobsWithLocation);
       }
@@ -243,36 +256,104 @@ export default function NearbyJobs() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-900 flex items-center justify-center">
-        <div className="text-white text-xl">Loading nearby jobs...</div>
+      <div className="min-h-screen relative overflow-hidden flex items-center justify-center bg-[radial-gradient(circle_at_30%_20%,theme(colors.teal.100)_0%,theme(colors.teal.50)_35%,theme(colors.white)_70%)] dark:bg-[radial-gradient(circle_at_30%_20%,oklch(0.3_0.05_210)_0%,oklch(0.22_0.025_250)_60%)]">
+        <div className="absolute inset-0 -z-10 opacity-40 [mask-image:radial-gradient(circle_at_center,white,transparent)]">
+          <div className="absolute top-10 left-1/4 h-64 w-64 bg-teal-300/30 rounded-full blur-3xl animate-pulse" />
+          <div className="absolute bottom-10 right-1/4 h-72 w-72 bg-indigo-300/30 rounded-full blur-3xl animate-pulse [animation-delay:200ms]" />
+        </div>
+        <div className="text-center animate-in fade-in zoom-in duration-500">
+          <Loader2 className="h-9 w-9 animate-spin text-teal-600 dark:text-teal-300 mx-auto mb-4" />
+          <p className="text-sm font-medium text-slate-600 dark:text-slate-300 tracking-wide">Loading nearby jobs...</p>
+        </div>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gray-900 flex items-center justify-center">
-        <div className="text-red-400 text-xl">Error: {error}</div>
+      <div className="min-h-screen relative overflow-hidden flex items-center justify-center bg-[radial-gradient(circle_at_30%_20%,theme(colors.teal.100)_0%,theme(colors.teal.50)_35%,theme(colors.white)_70%)] dark:bg-[radial-gradient(circle_at_30%_20%,oklch(0.3_0.05_210)_0%,oklch(0.22_0.025_250)_60%)]">
+        <div className="text-center">
+          <div className="rounded-full bg-red-100 dark:bg-red-900/30 w-20 h-20 mx-auto mb-4 flex items-center justify-center">
+            <MapPin className="h-8 w-8 text-red-500" />
+          </div>
+          <h3 className="text-lg font-medium text-slate-700 dark:text-slate-300 mb-2">Error Loading Jobs</h3>
+          <p className="text-red-600 dark:text-red-400">{error}</p>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-900 p-4">
-      <div className="max-w-7xl mx-auto">
-        <div className="mb-6">
-          <h1 className="text-3xl font-bold text-white mb-2">Nearby Jobs</h1>
-          <p className="text-gray-400">
-            Found {jobs.length} jobs with location data on the map
+    <div className="min-h-screen relative overflow-hidden">
+      {/* Background gradients matching dashboard */}
+      <div className="pointer-events-none select-none absolute inset-0 -z-10">
+        <div className="absolute -top-24 -left-10 h-[38rem] w-[38rem] bg-gradient-to-br from-teal-200 via-teal-100 to-white dark:from-teal-600/30 dark:via-indigo-600/20 dark:to-transparent blur-3xl opacity-70" />
+        <div className="absolute top-1/3 -right-32 h-[34rem] w-[34rem] bg-gradient-to-tr from-indigo-200 via-white to-amber-100 dark:from-indigo-700/30 dark:via-transparent dark:to-teal-700/20 blur-3xl opacity-60" />
+      </div>
+      
+      <Navbar />
+      
+      <div className="max-w-7xl mx-auto py-10 px-6 space-y-10">
+        {/* Header Section */}
+        <div className="space-y-2">
+          <h1 className="text-4xl font-semibold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-teal-700 via-indigo-700 to-amber-600 dark:from-teal-200 dark:via-indigo-200 dark:to-amber-200">
+            Nearby Jobs
+          </h1>
+          <p className="text-slate-600 dark:text-slate-300 text-sm md:text-base flex items-center gap-2">
+            <span className="inline-flex h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+            Found {jobs.length} open job{jobs.length !== 1 ? 's' : ''} with location data
           </p>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-[calc(100vh-200px)]">
+        {/* Stats Cards */}
+        {/* <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <Card className={`${subtleCard} p-4`}>
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-emerald-100 dark:bg-emerald-900/30">
+                <Briefcase className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
+              </div>
+              <div>
+                <p className="text-sm text-slate-600 dark:text-slate-400">Available Jobs</p>
+                <p className="text-2xl font-bold text-slate-800 dark:text-slate-100">{jobs.length}</p>
+              </div>
+            </div>
+          </Card>
+          
+          <Card className={`${subtleCard} p-4`}>
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-blue-100 dark:bg-blue-900/30">
+                <MapPin className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+              </div>
+              <div>
+                <p className="text-sm text-slate-600 dark:text-slate-400">Your Location</p>
+                <p className="text-2xl font-bold text-slate-800 dark:text-slate-100">
+                  {userLocation ? '📍' : '❓'}
+                </p>
+              </div>
+            </div>
+          </Card>
+          
+          <Card className={`${subtleCard} p-4`}>
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-indigo-100 dark:bg-indigo-900/30">
+                <Users className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />
+              </div>
+              <div>
+                <p className="text-sm text-slate-600 dark:text-slate-400">Total Applicants</p>
+                <p className="text-2xl font-bold text-slate-800 dark:text-slate-100">
+                  {jobs.reduce((total, job) => total + (job.applicantIds?.length || 0), 0)}
+                </p>
+              </div>
+            </div>
+          </Card>
+        </div> */}
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-[calc(100vh-400px)]">
           {/* Map Section */}
           <div className="lg:col-span-2">
-            <Card className="bg-gray-800 border-gray-700 h-full">
+            <Card className={`${subtleCard} h-full`}>
               <CardContent className="p-0 h-full">
-                <div className="h-full rounded-lg overflow-hidden">
+                <div className="h-full rounded-2xl overflow-hidden">
                   <MapContainer
                     center={userLocation ? [userLocation.lat, userLocation.lng] : mapCenter}
                     zoom={userLocation ? 15 : 12}
@@ -291,8 +372,9 @@ export default function NearbyJobs() {
                         icon={currentLocationIcon}
                       >
                         <Popup>
-                          <div className="text-center">
-                            <strong>Your Location</strong>
+                          <div className="text-center p-2">
+                            <strong className="text-blue-600">Your Location</strong>
+                            <p className="text-sm text-slate-600 mt-1">You are here</p>
                           </div>
                         </Popup>
                       </Marker>
@@ -313,26 +395,32 @@ export default function NearbyJobs() {
                           }}
                         >
                           <Popup>
-                            <div className="max-w-xs">
-                              <h3 className="font-bold text-lg mb-2">{job.title}</h3>
-                              <p className="text-gray-600 mb-1">
-                                <strong>Position:</strong> {job.position}
-                              </p>
-                              <p className="text-gray-600 mb-1">
-                                <strong>Salary:</strong> {job.minSalary && job.maxSalary 
-                                  ? `${job.minSalary} - ${job.maxSalary}` 
-                                  : 'Not specified'}
-                              </p>
-                              <p className="text-gray-600 mb-3">
-                                <strong>Status:</strong> {job.status}
-                              </p>
-                              <Button 
+                            <div className="max-w-xs p-2">
+                              <h3 className="font-bold text-lg mb-2 text-slate-800">{job.title}</h3>
+                              <div className="space-y-2">
+                                <div className="flex items-center gap-2">
+                                  <Briefcase className="h-4 w-4 text-teal-600" />
+                                  <span className="text-sm text-slate-600">{job.position}</span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  <DollarSign className="h-4 w-4 text-emerald-600" />
+                                  <span className="text-sm text-slate-600">
+                                    {job.minSalary && job.maxSalary 
+                                      ? `${job.minSalary} - ${job.maxSalary}` 
+                                      : 'Salary not specified'}
+                                  </span>
+                                </div>
+                                <Badge className="bg-emerald-100 text-emerald-700 text-xs">
+                                  {job.status}
+                                </Badge>
+                              </div>
+                              {/* <Button 
                                 size="sm" 
-                                onClick={() => handleApplyJob(job.jobId)}
-                                className="w-full"
+                                onClick={() => setSelectedJob(job)}
+                                className="w-full mt-3 bg-teal-600 hover:bg-teal-700"
                               >
                                 View Details
-                              </Button>
+                              </Button> */}
                             </div>
                           </Popup>
                         </Marker>
@@ -346,98 +434,149 @@ export default function NearbyJobs() {
 
           {/* Job Details Sidebar */}
           <div className="lg:col-span-1">
-            <Card className="bg-gray-800 border-gray-700 h-full">
-              <CardHeader>
-                <CardTitle className="text-white">
-                  {selectedJob ? 'Job Details' : 'Select a job on the map'}
+            <Card className={`${subtleCard} h-full`}>
+              <CardHeader className="pb-4">
+                <CardTitle className="text-slate-800 dark:text-slate-100 flex items-center gap-2">
+                  {selectedJob ? (
+                    <>
+                      <Briefcase className="h-5 w-5 text-teal-600" />
+                      Job Details
+                    </>
+                  ) : (
+                    <>
+                      <MapPin className="h-5 w-5 text-slate-500" />
+                      Select a job on the map
+                    </>
+                  )}
                 </CardTitle>
               </CardHeader>
-              <CardContent className="overflow-y-auto max-h-[calc(100vh-300px)]">
+              <CardContent className="overflow-y-auto max-h-[calc(100vh-500px)]">
                 {selectedJob ? (
-                  <div className="space-y-4 text-gray-300">
-                    <div>
-                      <h3 className="text-xl font-bold text-white mb-2">
+                  <div className="space-y-6 text-slate-700 dark:text-slate-300">
+                    {/* Header */}
+                    <div className="space-y-2">
+                      <h3 className="text-xl font-bold text-slate-800 dark:text-slate-100">
                         {selectedJob.title}
                       </h3>
-                      <p className="text-gray-400">{selectedJob.position}</p>
-                    </div>
-
-                    <div>
-                      <h4 className="font-semibold text-white mb-1">Description</h4>
-                      <p className="text-sm">{selectedJob.description}</p>
-                    </div>
-
-                    <div>
-                      <h4 className="font-semibold text-white mb-1">Salary Range</h4>
-                      <p className="text-sm">
-                        {selectedJob.minSalary && selectedJob.maxSalary 
-                          ? `${selectedJob.minSalary} - ${selectedJob.maxSalary}` 
-                          : 'Not specified'}
+                      <p className="text-slate-600 dark:text-slate-400 flex items-center gap-2">
+                        <Briefcase className="h-4 w-4" />
+                        {selectedJob.position}
                       </p>
-                    </div>
-
-                    <div>
-                      <h4 className="font-semibold text-white mb-1">Required Skills</h4>
-                      <p className="text-sm">{selectedJob.requiredSkills}</p>
-                    </div>
-
-                    <div>
-                      <h4 className="font-semibold text-white mb-1">Required Experience</h4>
-                      <p className="text-sm">{selectedJob.requiredExperience}</p>
-                    </div>
-
-                    <div>
-                      <h4 className="font-semibold text-white mb-1">Required Education</h4>
-                      <p className="text-sm">{selectedJob.requiredEducation}</p>
-                    </div>
-
-                    <div>
-                      <h4 className="font-semibold text-white mb-1">Location</h4>
-                      <p className="text-sm">{selectedJob.location}</p>
-                    </div>
-
-                    <div>
-                      <h4 className="font-semibold text-white mb-1">Posted Date</h4>
-                      <p className="text-sm">{selectedJob.datePosted}</p>
-                    </div>
-
-                    <div>
-                      <h4 className="font-semibold text-white mb-1">End Date</h4>
-                      <p className="text-sm">{selectedJob.endDate}</p>
-                    </div>
-
-                    <div>
-                      <h4 className="font-semibold text-white mb-1">Status</h4>
-                      <span className={`inline-block px-2 py-1 rounded text-xs font-semibold ${
-                        selectedJob.status === 'OPEN' 
-                          ? 'bg-green-600 text-white' 
-                          : 'bg-red-600 text-white'
-                      }`}>
+                      <Badge className="bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300">
                         {selectedJob.status}
-                      </span>
+                      </Badge>
                     </div>
 
-                    <div>
-                      <h4 className="font-semibold text-white mb-1">Applicants</h4>
-                      <p className="text-sm">
-                        {selectedJob.applicantIds?.length || 0} people have applied
-                      </p>
+                    {/* Quick Stats */}
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className={`${gradientPanel} p-3 rounded-lg`}>
+                        <div className="flex items-center gap-2 mb-1">
+                          <DollarSign className="h-4 w-4 text-emerald-600" />
+                          <span className="text-xs font-medium text-slate-600 dark:text-slate-400">Salary</span>
+                        </div>
+                        <p className="text-sm font-semibold text-slate-800 dark:text-slate-100">
+                          {selectedJob.minSalary && selectedJob.maxSalary 
+                            ? `${selectedJob.minSalary} - ${selectedJob.maxSalary}` 
+                            : 'Not specified'}
+                        </p>
+                      </div>
+                      <div className={`${gradientPanel} p-3 rounded-lg`}>
+                        <div className="flex items-center gap-2 mb-1">
+                          <Users className="h-4 w-4 text-indigo-600" />
+                          <span className="text-xs font-medium text-slate-600 dark:text-slate-400">Applicants</span>
+                        </div>
+                        <p className="text-sm font-semibold text-slate-800 dark:text-slate-100">
+                          {selectedJob.applicantIds?.length || 0}
+                        </p>
+                      </div>
                     </div>
 
+                    {/* Description */}
+                    <div className="space-y-2">
+                      <h4 className="font-semibold text-slate-800 dark:text-slate-100 flex items-center gap-2">
+                        <span className="h-2 w-2 rounded-full bg-teal-500" />
+                        Description
+                      </h4>
+                      <p className="text-sm leading-relaxed">{selectedJob.description}</p>
+                    </div>
+
+                    {/* Requirements */}
+                    <div className="space-y-4">
+                      <div>
+                        <h4 className="font-semibold text-slate-800 dark:text-slate-100 mb-2">Required Skills</h4>
+                        <p className="text-sm bg-slate-50 dark:bg-slate-800/50 p-2 rounded-lg">{selectedJob.requiredSkills}</p>
+                      </div>
+
+                      <div>
+                        <h4 className="font-semibold text-slate-800 dark:text-slate-100 mb-2">Experience</h4>
+                        <p className="text-sm bg-slate-50 dark:bg-slate-800/50 p-2 rounded-lg">{selectedJob.requiredExperience}</p>
+                      </div>
+
+                      <div>
+                        <h4 className="font-semibold text-slate-800 dark:text-slate-100 mb-2">Education</h4>
+                        <p className="text-sm bg-slate-50 dark:bg-slate-800/50 p-2 rounded-lg">{selectedJob.requiredEducation}</p>
+                      </div>
+                    </div>
+
+                    {/* Location & Dates */}
+                    <div className="space-y-3">
+                      <div className="flex items-start gap-3">
+                        <MapPin className="h-4 w-4 text-slate-500 mt-0.5" />
+                        <div>
+                          <h4 className="font-semibold text-slate-800 dark:text-slate-100 text-sm">Location</h4>
+                          <p className="text-sm text-slate-600 dark:text-slate-400">{selectedJob.location}</p>
+                        </div>
+                      </div>
+
+                      <div className="flex items-start gap-3">
+                        <Calendar className="h-4 w-4 text-slate-500 mt-0.5" />
+                        <div>
+                          <h4 className="font-semibold text-slate-800 dark:text-slate-100 text-sm">Posted</h4>
+                          <p className="text-sm text-slate-600 dark:text-slate-400">{selectedJob.datePosted}</p>
+                        </div>
+                      </div>
+
+                      <div className="flex items-start gap-3">
+                        <Calendar className="h-4 w-4 text-red-500 mt-0.5" />
+                        <div>
+                          <h4 className="font-semibold text-slate-800 dark:text-slate-100 text-sm">Application Deadline</h4>
+                          <p className="text-sm text-slate-600 dark:text-slate-400">{selectedJob.endDate}</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Apply Button */}
                     <Button 
                       onClick={() => handleApplyJob(selectedJob.jobId)}
-                      className="w-full mt-4"
+                      className="w-full bg-teal-600 hover:bg-teal-700 disabled:opacity-50"
                       disabled={selectedJob.status !== 'OPEN' || applying || 
                         (userProfile && selectedJob.applicantIds?.includes(userProfile.id))}
                     >
-                      {applying ? 'Applying...' : 
-                       userProfile && selectedJob.applicantIds?.includes(userProfile.id) ? 'Already Applied' :
-                       selectedJob.status === 'OPEN' ? 'Apply for Job' : 'Job Closed'}
+                      {applying ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Applying...
+                        </>
+                      ) : userProfile && selectedJob.applicantIds?.includes(userProfile.id) ? (
+                        'Already Applied'
+                      ) : selectedJob.status === 'OPEN' ? (
+                        'Apply for Job'
+                      ) : (
+                        'Job Closed'
+                      )}
                     </Button>
                   </div>
                 ) : (
-                  <div className="text-gray-400 text-center py-8">
-                    <p>Click on any red marker on the map to view job details</p>
+                  <div className="text-center py-12">
+                    <div className="rounded-full bg-slate-100 dark:bg-slate-800 w-16 h-16 mx-auto mb-4 flex items-center justify-center">
+                      <MapPin className="h-6 w-6 text-slate-400" />
+                    </div>
+                    <h3 className="text-sm font-medium text-slate-600 dark:text-slate-400 mb-2">
+                      No job selected
+                    </h3>
+                    <p className="text-xs text-slate-500 dark:text-slate-500">
+                      Click on any green marker on the map to view job details
+                    </p>
                   </div>
                 )}
               </CardContent>
