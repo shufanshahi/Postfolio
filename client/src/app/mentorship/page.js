@@ -710,8 +710,10 @@ export default function MentorshipPage() {
                       <span>{mentorship.enrolledProfileIds?.length || 0} enrolled</span>
                     </div>
                     <div className="flex items-center gap-1">
-                      <Heart className="h-3 w-3" />
-                      <span>{Math.floor(Math.random() * 50) + 10} likes</span>
+                      <Star className="h-3 w-3 text-amber-500" />
+                      <span className="font-medium text-slate-700 dark:text-slate-300">
+                        {mentorship.rating > 0 ? mentorship.rating.toFixed(1) : 'No ratings yet'}
+                      </span>
                     </div>
                   </div>
                   

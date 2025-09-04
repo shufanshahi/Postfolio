@@ -29,6 +29,7 @@ import {
   Users,
   Video
 } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 // Design tokens matching dashboard theme
 const gradientPanel = 'bg-gradient-to-br from-teal-50/70 via-white/50 to-indigo-50/70 dark:from-slate-800/60 dark:via-slate-800/50 dark:to-slate-800/60 backdrop-blur-xl border border-white/40 dark:border-slate-700/50 shadow-sm';
@@ -43,6 +44,7 @@ export default function MyMentorshipPage() {
   const [error, setError] = useState('');
   const [enrollments, setEnrollments] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
+  const [enrollmentStatusFilter, setEnrollmentStatusFilter] = useState('all');
 
   // Fetch enrollment data and mentorship details
   useEffect(() => {
@@ -164,12 +166,13 @@ export default function MyMentorshipPage() {
   const filteredEnrollments = enrollments.filter(enrollment => {
     const mentorshipName = enrollment.mentorship?.name?.toLowerCase() || '';
     const specialization = enrollment.mentorship?.specialization?.toLowerCase() || '';
-    const status = enrollment.status?.toLowerCase() || '';
+    const status = enrollment.status?.toUpperCase() || '';
     const query = searchQuery.toLowerCase();
-    
-    return mentorshipName.includes(query) || 
-           specialization.includes(query) || 
-           status.includes(query);
+    const statusMatch = enrollmentStatusFilter === 'all' || status === enrollmentStatusFilter;
+    return (
+      (mentorshipName.includes(query) || specialization.includes(query) || status.toLowerCase().includes(query))
+      && statusMatch
+    );
   });
 
   if (loading) {
@@ -270,9 +273,9 @@ export default function MyMentorshipPage() {
                 <Clock className="h-5 w-5 text-amber-600 dark:text-amber-400" />
               </div>
               <div>
-                <p className="text-sm text-slate-600 dark:text-slate-400">Pending</p>
+                <p className="text-sm text-slate-600 dark:text-slate-400">MISSED</p>
                 <p className="text-2xl font-bold text-slate-800 dark:text-slate-100">
-                  {enrollments.filter(e => e.status?.toLowerCase() === 'pending').length}
+                  {enrollments.filter(e => e.status?.toLowerCase() === 'missed').length}
                 </p>
               </div>
             </div>
@@ -281,6 +284,43 @@ export default function MyMentorshipPage() {
 
         {/* Filter info */}
         <div className="flex items-center gap-4">
+          {/* Modern Enrollment Status Filter Dropdown */}
+          <div className="flex items-center gap-2">
+            <label htmlFor="enrollmentStatusFilter" className="text-sm font-medium text-slate-700 dark:text-slate-200">Status:</label>
+            <Select value={enrollmentStatusFilter} onValueChange={setEnrollmentStatusFilter}>
+              <SelectTrigger className="w-40 rounded-full border-slate-300/60 bg-white/60 dark:bg-slate-800/80 backdrop-blur shadow-sm text-sm">
+                <SelectValue placeholder="Filter by status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Statuses</SelectItem>
+                <SelectItem value="APPROVED">
+                  <span className="inline-flex items-center gap-1 text-emerald-700 dark:text-emerald-400">
+                    <CheckCircle className="h-3 w-3" /> Approved
+                  </span>
+                </SelectItem>
+                <SelectItem value="REFUNDED">
+                  <span className="inline-flex items-center gap-1 text-blue-700 dark:text-blue-400">
+                    <XCircle className="h-3 w-3" /> Refunded
+                  </span>
+                </SelectItem>
+                <SelectItem value="ONGOING">
+                  <span className="inline-flex items-center gap-1 text-indigo-700 dark:text-indigo-400">
+                    <Clock className="h-3 w-3" /> Ongoing
+                  </span>
+                </SelectItem>
+                <SelectItem value="MISSED">
+                  <span className="inline-flex items-center gap-1 text-red-700 dark:text-red-400">
+                    <AlertCircle className="h-3 w-3" /> Missed
+                  </span>
+                </SelectItem>
+                <SelectItem value="COMPLETED">
+                  <span className="inline-flex items-center gap-1 text-amber-700 dark:text-amber-400">
+                    <Star className="h-3 w-3" /> Completed
+                  </span>
+                </SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
           <Badge variant="secondary" className="text-xs">
             {filteredEnrollments.length} enrollment{filteredEnrollments.length !== 1 ? 's' : ''} found
           </Badge>
@@ -373,9 +413,9 @@ export default function MyMentorshipPage() {
 
                 <div className="pt-2 border-t border-slate-200/60 dark:border-slate-700/60">
                   <div className="flex items-center justify-between">
-                    <div className="text-xs text-slate-500 dark:text-slate-400">
+                    {/* <div className="text-xs text-slate-500 dark:text-slate-400">
                       Enrollment ID: {enrollment.id}
-                    </div>
+                    </div> */}
                     
                     <div className="flex items-center gap-2">
                       {enrollment.status?.toLowerCase() === 'ongoing' && (
