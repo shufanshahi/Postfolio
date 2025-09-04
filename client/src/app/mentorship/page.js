@@ -63,6 +63,7 @@ export default function MentorshipPage() {
   const [specializationFilter, setSpecializationFilter] = useState('all');
   const [selectedViewDate, setSelectedViewDate] = useState('');
   const [existingEnrollments, setExistingEnrollments] = useState([]);
+  const [statusFilter, setStatusFilter] = useState('all');
 
   // Create form state
   const [createForm, setCreateForm] = useState({
@@ -467,10 +468,11 @@ export default function MentorshipPage() {
 
   const filteredMentorships = mentorships.filter(mentorship => {
     const matchesSearch = mentorship.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         mentorship.specialization?.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesSpecialization = specializationFilter === '' || specializationFilter === 'all' || 
-                                 mentorship.specialization?.toLowerCase().includes(specializationFilter.toLowerCase());
-    return matchesSearch && matchesSpecialization;
+    mentorship.specialization?.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesSpecialization = specializationFilter === '' || specializationFilter === 'all' ||
+    mentorship.specialization?.toLowerCase().includes(specializationFilter.toLowerCase());
+    const matchesStatus = statusFilter === 'all' || mentorship.status === statusFilter;
+    return matchesSearch && matchesSpecialization && matchesStatus;
   });
 
   // Get unique specializations for filter
@@ -566,7 +568,30 @@ export default function MentorshipPage() {
 
         {/* Filters */}
         <div className="flex items-center gap-4 flex-wrap">
-          <Select value={specializationFilter} onValueChange={setSpecializationFilter}>
+          {/* Modern Status Filter Dropdown */}
+          <div className="flex items-center gap-2">
+            <Label htmlFor="statusFilter" className="text-sm font-medium text-slate-700 dark:text-slate-200">Status:</Label>
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger className="w-36 rounded-full border-slate-300/60 bg-white/60 dark:bg-slate-800/80 backdrop-blur shadow-sm text-sm">
+                <SelectValue placeholder="Filter by status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Statuses</SelectItem>
+                <SelectItem value="ACTIVE">
+                  <span className="inline-flex items-center gap-1 text-emerald-700 dark:text-emerald-400">
+                    <span className="h-2 w-2 rounded-full bg-emerald-500 inline-block" /> Active
+                  </span>
+                </SelectItem>
+                <SelectItem value="INACTIVE">
+                  <span className="inline-flex items-center gap-1 text-slate-500 dark:text-slate-400">
+                    <span className="h-2 w-2 rounded-full bg-slate-400 inline-block" /> Inactive
+                  </span>
+                </SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          
+          {/* <Select value={specializationFilter} onValueChange={setSpecializationFilter}>
             <SelectTrigger className="w-48 rounded-full border-slate-300/60 bg-white/60 backdrop-blur">
               <SelectValue placeholder="Filter by specialization" />
             </SelectTrigger>
@@ -580,7 +605,7 @@ export default function MentorshipPage() {
           
           <Badge variant="secondary" className="text-xs">
             {filteredMentorships.length} mentorship{filteredMentorships.length !== 1 ? 's' : ''} available
-          </Badge>
+          </Badge> */}
         </div>
 
         {/* Error Alert */}
