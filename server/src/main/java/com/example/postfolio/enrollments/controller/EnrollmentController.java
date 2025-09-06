@@ -3,6 +3,7 @@ package com.example.postfolio.enrollments.controller;
 import com.example.postfolio.enrollments.dto.*;
 import com.example.postfolio.enrollments.entity.Enrollment;
 import com.example.postfolio.enrollments.service.EnrollmentService;
+import com.example.postfolio.enrollments.service.EnrollmentStatusSchedulerService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -18,10 +19,13 @@ import java.util.Optional;
 public class EnrollmentController {
     
     private final EnrollmentService enrollmentService;
+    private final EnrollmentStatusSchedulerService schedulerService;
     
     @Autowired
-    public EnrollmentController(EnrollmentService enrollmentService) {
+    public EnrollmentController(EnrollmentService enrollmentService, 
+                              EnrollmentStatusSchedulerService schedulerService) {
         this.enrollmentService = enrollmentService;
+        this.schedulerService = schedulerService;
     }
     
     /**
@@ -214,6 +218,20 @@ public class EnrollmentController {
             return ResponseEntity.badRequest().build();
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+    
+    /**
+     * POST /api/enrollments/update-statuses - Manually trigger enrollment status updates
+     */
+    @PostMapping("/update-statuses")
+    public ResponseEntity<String> updateEnrollmentStatuses() {
+        try {
+            schedulerService.manualUpdateStatuses();
+            return ResponseEntity.ok("Enrollment statuses updated successfully");
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Failed to update enrollment statuses: " + e.getMessage());
         }
     }
 }

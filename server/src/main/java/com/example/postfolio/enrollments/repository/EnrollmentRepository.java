@@ -85,4 +85,14 @@ public interface EnrollmentRepository extends JpaRepository<Enrollment, Long> {
     @Query("SELECT e FROM Enrollment e WHERE e.mentorshipId = :mentorshipId AND e.status IN :statuses")
     List<Enrollment> findByMentorshipIdAndStatusIn(@Param("mentorshipId") Long mentorshipId, 
                                                    @Param("statuses") List<Enrollment.EnrollmentStatus> statuses);
+    
+    /**
+     * Find enrollments by status and time before a specific datetime
+     */
+    List<Enrollment> findByStatusAndTimeBefore(Enrollment.EnrollmentStatus status, LocalDateTime time);
+    
+    /**
+     * Find enrollments by status and time after a specific datetime
+     */
+    List<Enrollment> findByStatusAndTimeAfter(Enrollment.EnrollmentStatus status, LocalDateTime time);
 }
