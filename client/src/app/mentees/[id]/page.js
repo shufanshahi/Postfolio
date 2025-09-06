@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
-import { User, Users, Calendar, Clock, Loader2, ExternalLink, RefreshCw } from 'lucide-react';
+import { User, Users, Calendar, Clock, Loader2, ExternalLink, RefreshCw, Filter } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
@@ -24,6 +24,8 @@ export default function MenteesPage() {
   const [mentorship, setMentorship] = useState(null);
   const [profileNames, setProfileNames] = useState({});
   const [refundingIds, setRefundingIds] = useState(new Set());
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [showStatusDropdown, setShowStatusDropdown] = useState(false);
 
   useEffect(() => {
     async function fetchData() {
@@ -83,6 +85,20 @@ export default function MenteesPage() {
     }
     fetchData();
   }, [id]);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (showStatusDropdown && !event.target.closest('.status-dropdown')) {
+        setShowStatusDropdown(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showStatusDropdown]);
 
   const handleRefund = async (enrollment) => {
     if (!confirm(`Are you sure you want to refund $${enrollment.price} to ${profileNames[enrollment.profileId]}?`)) {
@@ -154,6 +170,19 @@ export default function MenteesPage() {
     window.open(`http://localhost:3000/user/${profileId}`, '_blank');
   };
 
+  // Filter and sort enrollments
+  const filteredAndSortedEnrollments = enrollments
+    .filter(enrollment => {
+      if (statusFilter === 'all') return true;
+      return enrollment.status?.toUpperCase() === statusFilter;
+    })
+    .sort((a, b) => {
+      // Sort by time in descending order (newest first)
+      const timeA = new Date(a.time || 0);
+      const timeB = new Date(b.time || 0);
+      return timeB - timeA;
+    });
+
   const formatDateTime = (dateTimeString) => {
     if (!dateTimeString) return 'Not specified';
     const date = new Date(dateTimeString);
@@ -172,7 +201,11 @@ export default function MenteesPage() {
       case 'approved':
         return 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-300';
       case 'completed':
+        return 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/20 dark:text-indigo-300';
+      case 'ongoing':
         return 'bg-blue-100 text-blue-700 dark:bg-blue-900/20 dark:text-blue-300';
+      case 'missed':
+        return 'bg-orange-100 text-orange-700 dark:bg-orange-900/20 dark:text-orange-300';
       case 'cancelled':
       case 'inactive':
         return 'bg-red-100 text-red-700 dark:bg-red-900/20 dark:text-red-300';
@@ -225,6 +258,92 @@ export default function MenteesPage() {
             </AlertDescription>
           </Alert>
         )}
+        
+        {/* Filter Section */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-medium text-slate-700 dark:text-slate-200">Status:</span>
+              <div className="relative status-dropdown">
+                <button
+                  type="button"
+                  className="flex items-center gap-2 rounded-full border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-1 text-sm shadow-sm hover:border-teal-400 focus:outline-none focus:ring-2 focus:ring-teal-300 transition-colors min-w-[120px]"
+                  onClick={() => setShowStatusDropdown(v => !v)}
+                  aria-haspopup="listbox"
+                  aria-expanded={showStatusDropdown ? 'true' : 'false'}
+                >
+                  <Filter className="h-3 w-3 text-slate-400" />
+                  {statusFilter === 'all' && 'All Statuses'}
+                  {statusFilter === 'APPROVED' && 'Approved'}
+                  {statusFilter === 'REFUNDED' && 'Refunded'}
+                  {statusFilter === 'ONGOING' && 'Ongoing'}
+                  {statusFilter === 'MISSED' && 'Missed'}
+                  {statusFilter === 'COMPLETED' && 'Completed'}
+                  <svg className="ml-2 h-4 w-4 text-slate-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" /></svg>
+                </button>
+                {showStatusDropdown && (
+                  <ul
+                    className="absolute z-10 mt-2 w-full rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-lg py-1 text-sm"
+                    role="listbox"
+                  >
+                    <li
+                      className={`px-4 py-2 cursor-pointer hover:bg-teal-50 dark:hover:bg-teal-900/20 rounded ${statusFilter === 'all' ? 'font-semibold text-teal-700 dark:text-teal-300' : 'text-slate-700 dark:text-slate-200'}`}
+                      onClick={() => { setStatusFilter('all'); setShowStatusDropdown(false); }}
+                      role="option"
+                      aria-selected={statusFilter === 'all'}
+                    >
+                      All Statuses
+                    </li>
+                    <li
+                      className={`px-4 py-2 cursor-pointer hover:bg-emerald-50 dark:hover:bg-emerald-900/20 rounded ${statusFilter === 'APPROVED' ? 'font-semibold text-emerald-700 dark:text-emerald-300' : 'text-slate-700 dark:text-slate-200'}`}
+                      onClick={() => { setStatusFilter('APPROVED'); setShowStatusDropdown(false); }}
+                      role="option"
+                      aria-selected={statusFilter === 'APPROVED'}
+                    >
+                      Approved
+                    </li>
+                    <li
+                      className={`px-4 py-2 cursor-pointer hover:bg-purple-50 dark:hover:bg-purple-900/20 rounded ${statusFilter === 'REFUNDED' ? 'font-semibold text-purple-700 dark:text-purple-300' : 'text-slate-700 dark:text-slate-200'}`}
+                      onClick={() => { setStatusFilter('REFUNDED'); setShowStatusDropdown(false); }}
+                      role="option"
+                      aria-selected={statusFilter === 'REFUNDED'}
+                    >
+                      Refunded
+                    </li>
+                    <li
+                      className={`px-4 py-2 cursor-pointer hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded ${statusFilter === 'ONGOING' ? 'font-semibold text-blue-700 dark:text-blue-300' : 'text-slate-700 dark:text-slate-200'}`}
+                      onClick={() => { setStatusFilter('ONGOING'); setShowStatusDropdown(false); }}
+                      role="option"
+                      aria-selected={statusFilter === 'ONGOING'}
+                    >
+                      Ongoing
+                    </li>
+                    <li
+                      className={`px-4 py-2 cursor-pointer hover:bg-orange-50 dark:hover:bg-orange-900/20 rounded ${statusFilter === 'MISSED' ? 'font-semibold text-orange-700 dark:text-orange-300' : 'text-slate-700 dark:text-slate-200'}`}
+                      onClick={() => { setStatusFilter('MISSED'); setShowStatusDropdown(false); }}
+                      role="option"
+                      aria-selected={statusFilter === 'MISSED'}
+                    >
+                      Missed
+                    </li>
+                    <li
+                      className={`px-4 py-2 cursor-pointer hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded ${statusFilter === 'COMPLETED' ? 'font-semibold text-indigo-700 dark:text-indigo-300' : 'text-slate-700 dark:text-slate-200'}`}
+                      onClick={() => { setStatusFilter('COMPLETED'); setShowStatusDropdown(false); }}
+                      role="option"
+                      aria-selected={statusFilter === 'COMPLETED'}
+                    >
+                      Completed
+                    </li>
+                  </ul>
+                )}
+              </div>
+            </div>
+          </div>
+          <div className="text-sm text-slate-500 dark:text-slate-400">
+            {filteredAndSortedEnrollments.length} enrollment{filteredAndSortedEnrollments.length !== 1 ? 's' : ''} found
+          </div>
+        </div>
+
         {/* List View of Enrollments */}
         <Card className={`${subtleCard} p-6`}>
           <CardHeader className="pb-4">
@@ -232,14 +351,19 @@ export default function MenteesPage() {
             <CardDescription className="text-slate-600 dark:text-slate-400 text-sm">Status and scheduled time for each mentee</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            {enrollments.length === 0 ? (
+            {filteredAndSortedEnrollments.length === 0 ? (
               <div className="text-center py-8">
                 <Users className="h-8 w-8 mx-auto text-slate-400 mb-4" />
-                <p className="text-slate-500">No enrollments found for this mentorship.</p>
+                <p className="text-slate-500">
+                  {statusFilter === 'all' 
+                    ? 'No enrollments found for this mentorship.' 
+                    : `No ${statusFilter.toLowerCase()} enrollments found.`
+                  }
+                </p>
               </div>
             ) : (
               <ul className="divide-y divide-slate-200 dark:divide-slate-700">
-                {enrollments.map((enrollment) => (
+                {filteredAndSortedEnrollments.map((enrollment) => (
                   <li key={enrollment.id} className="py-4 flex items-center justify-between">
                     <div className="flex items-center gap-4">
                       <Avatar className="h-10 w-10 ring-2 ring-white/40 shadow-sm">
