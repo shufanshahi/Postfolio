@@ -3,6 +3,7 @@ package com.example.postfolio.profile.service;
 import com.example.postfolio.profile.dto.EducationSummaryDto;
 import com.example.postfolio.profile.dto.SchoolDto;
 import com.example.postfolio.profile.dto.UniversityDto;
+import com.example.postfolio.profile.dto.UniversityDegreeSummaryDto;
 import com.example.postfolio.profile.dto.WorkDto;
 import com.example.postfolio.profile.entity.Profile;
 import com.example.postfolio.profile.entity.School;
@@ -18,6 +19,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
@@ -181,11 +183,14 @@ public class EducationService {
                 List<SchoolDto> schools = getUserSchools(user);
                 List<UniversityDto> universities = getUserUniversities(user);
                 List<WorkDto> works = getUserWorks(user);
+                List<UniversityDegreeSummaryDto> universityDegreeSummaries = calculateUniversityDegreeSummaries(
+                                universities);
 
                 return EducationSummaryDto.builder()
                                 .schools(schools)
                                 .universities(universities)
                                 .works(works)
+                                .universityDegreeSummaries(universityDegreeSummaries)
                                 .build();
         }
 
@@ -197,12 +202,92 @@ public class EducationService {
                 List<SchoolDto> schools = getUserSchools(user);
                 List<UniversityDto> universities = getUserUniversities(user);
                 List<WorkDto> works = getUserWorks(user);
+                List<UniversityDegreeSummaryDto> universityDegreeSummaries = calculateUniversityDegreeSummaries(
+                                universities);
 
                 return EducationSummaryDto.builder()
                                 .schools(schools)
                                 .universities(universities)
                                 .works(works)
+                                .universityDegreeSummaries(universityDegreeSummaries)
                                 .build();
+        }
+
+        // Calculate university degree summaries with average CGPA
+        private List<UniversityDegreeSummaryDto> calculateUniversityDegreeSummaries(List<UniversityDto> universities) {
+                // Group universities by university name and degree name
+                Map<String, List<UniversityDto>> groupedByDegree = universities.stream()
+                                .collect(Collectors.groupingBy(u -> u.getUniversityName() + "|" + u.getDegreeName()));
+
+                return groupedByDegree.entrySet().stream()
+                                .map(entry -> {
+                                        String[] parts = entry.getKey().split("\\|");
+                                        String universityName = parts[0];
+                                        String degreeName = parts[1];
+                                        List<UniversityDto> semesters = entry.getValue();
+
+                                        // Calculate average CGPA
+                                        Double averageCgpa = calculateAverageCgpa(semesters);
+
+                                        // Count semesters
+                                        int totalSemesters = semesters.size();
+                                        int completedSemesters = (int) semesters.stream()
+                                                        .filter(UniversityDto::getIsCompleted)
+                                                        .count();
+
+                                        // Determine if degree is completed (all 8 semesters completed)
+                                        boolean isCompleted = completedSemesters >= 8;
+
+                                        // Get start and end dates
+                                        var startDate = semesters.stream()
+                                                        .filter(s -> s.getCompletionDate() != null)
+                                                        .map(UniversityDto::getCompletionDate)
+                                                        .min(java.time.LocalDate::compareTo)
+                                                        .orElse(null);
+
+                                        var endDate = semesters.stream()
+                                                        .filter(s -> s.getCompletionDate() != null)
+                                                        .map(UniversityDto::getCompletionDate)
+                                                        .max(java.time.LocalDate::compareTo)
+                                                        .orElse(null);
+
+                                        return UniversityDegreeSummaryDto.builder()
+                                                        .universityName(universityName)
+                                                        .degreeName(degreeName)
+                                                        .averageCgpa(averageCgpa)
+                                                        .totalSemesters(totalSemesters)
+                                                        .completedSemesters(completedSemesters)
+                                                        .startDate(startDate)
+                                                        .endDate(endDate)
+                                                        .isCompleted(isCompleted)
+                                                        .semesters(semesters)
+                                                        .build();
+                                })
+                                .collect(Collectors.toList());
+        }
+
+        // Calculate average CGPA from semester results
+        private Double calculateAverageCgpa(List<UniversityDto> semesters) {
+                List<Double> cgpaValues = semesters.stream()
+                                .map(semester -> {
+                                        try {
+                                                // Try to parse the semester result as a double (CGPA)
+                                                return Double.parseDouble(semester.getSemesterResult());
+                                        } catch (NumberFormatException e) {
+                                                // If it's not a number, return null (will be filtered out)
+                                                return null;
+                                        }
+                                })
+                                .filter(cgpa -> cgpa != null && cgpa > 0) // Filter out null and zero values
+                                .collect(Collectors.toList());
+
+                if (cgpaValues.isEmpty()) {
+                        return null; // No valid CGPA values found
+                }
+
+                // Calculate average
+                double sum = cgpaValues.stream().mapToDouble(Double::doubleValue).sum();
+                return sum / cgpaValues.size();
         }
 
         // Helper methods to convert entities to DTOs

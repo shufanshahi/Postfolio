@@ -323,7 +323,24 @@ function ConnectionsPage() {
                     email: connection.requesterEmail
                 };
 
-            console.log('Starting new chat with:', otherUser);
+            console.log('Starting chat with:', otherUser);
+
+            // First, check if a conversation already exists with this user
+            const existingConversation = conversations.find(conv => {
+                // Check if this conversation involves the other user by comparing emails
+                return conv.otherUserEmail === otherUser.email;
+            });
+
+            if (existingConversation) {
+                console.log('Found existing conversation:', existingConversation);
+                // Select the existing conversation
+                await handleSelectConversation(existingConversation);
+                setIsNewChatModalOpen(false);
+                return;
+            }
+
+            // If no existing conversation, create a new one
+            console.log('Creating new conversation with:', otherUser.email);
 
             const response = await fetch(`${API_BASE_URL}/api/messages/conversations/create?otherUserEmail=${otherUser.email}`, {
                 method: 'POST',
@@ -342,6 +359,7 @@ function ConnectionsPage() {
 
                 // Select the new conversation
                 await handleSelectConversation(newConversation);
+                setIsNewChatModalOpen(false);
             } else {
                 throw new Error('Failed to create conversation');
             }
@@ -573,6 +591,7 @@ function ConnectionsPage() {
                         onClose={() => setIsNewChatModalOpen(false)}
                         connections={connections}
                         onStartChat={handleStartNewChat}
+                        currentUserId={user?.id}
                     />
                 </div>
             </div>

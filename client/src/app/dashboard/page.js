@@ -471,11 +471,7 @@ function FunctionalDashboard() {
                 <CardDescription className="text-slate-600 dark:text-slate-400 text-xs">Engagement summary snapshot</CardDescription>
               </CardHeader>
               <CardContent className="relative space-y-4">
-                <div className="grid grid-cols-2 gap-4 text-[13px]">
-                  <div className="space-y-1">
-                    <p className="text-slate-500 dark:text-slate-400">Profile views</p>
-                    <p className="font-semibold text-slate-800 dark:text-slate-100">+{engagementData?.profileViews || 0}</p>
-                  </div>
+                <div className="grid grid-cols-3 gap-4 text-[13px]">
                   <div className="space-y-1">
                     <p className="text-slate-500 dark:text-slate-400">New connections</p>
                     <p className="font-semibold text-slate-800 dark:text-slate-100">+{engagementData?.newConnections || 0}</p>
