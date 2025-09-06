@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
-import { User, Users, Calendar, Clock, Loader2 } from 'lucide-react';
+import { User, Users, Calendar, Clock, Loader2, ExternalLink, RefreshCw } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
@@ -23,6 +23,7 @@ export default function MenteesPage() {
   const [enrollments, setEnrollments] = useState([]);
   const [mentorship, setMentorship] = useState(null);
   const [profileNames, setProfileNames] = useState({});
+  const [refundingIds, setRefundingIds] = useState(new Set());
 
   useEffect(() => {
     async function fetchData() {
@@ -83,6 +84,76 @@ export default function MenteesPage() {
     fetchData();
   }, [id]);
 
+  const handleRefund = async (enrollment) => {
+    if (!confirm(`Are you sure you want to refund $${enrollment.price} to ${profileNames[enrollment.profileId]}?`)) {
+      return;
+    }
+
+    setRefundingIds(prev => new Set([...prev, enrollment.id]));
+    
+    try {
+      const token = localStorage.getItem('token');
+      
+      // First, transfer credits back to the mentee
+      const transferRes = await fetch('http://localhost:8080/api/credits/transfer', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          fromProfileId: mentorship.profileId,
+          toProfileId: enrollment.profileId,
+          amount: enrollment.price,
+          description: `Refund for ${mentorship.name}`
+        }),
+      });
+
+      if (!transferRes.ok) {
+        throw new Error('Failed to process refund transfer');
+      }
+
+      // Then update enrollment status to REFUNDED
+      const statusRes = await fetch(`http://localhost:8080/api/enrollments/${enrollment.id}/status`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          status: 'REFUNDED'
+        }),
+      });
+
+      if (!statusRes.ok) {
+        throw new Error('Failed to update enrollment status');
+      }
+
+      // Update local state
+      setEnrollments(prev => 
+        prev.map(e => 
+          e.id === enrollment.id 
+            ? { ...e, status: 'REFUNDED' }
+            : e
+        )
+      );
+
+      alert('Refund processed successfully!');
+    } catch (err) {
+      alert(`Failed to process refund: ${err.message}`);
+    } finally {
+      setRefundingIds(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(enrollment.id);
+        return newSet;
+      });
+    }
+  };
+
+  const handleViewProfile = (profileId) => {
+    window.open(`http://localhost:3000/user/${profileId}`, '_blank');
+  };
+
   const formatDateTime = (dateTimeString) => {
     if (!dateTimeString) return 'Not specified';
     const date = new Date(dateTimeString);
@@ -105,6 +176,8 @@ export default function MenteesPage() {
       case 'cancelled':
       case 'inactive':
         return 'bg-red-100 text-red-700 dark:bg-red-900/20 dark:text-red-300';
+      case 'refunded':
+        return 'bg-purple-100 text-purple-700 dark:bg-purple-900/20 dark:text-purple-300';
       case 'pending':
         return 'bg-amber-100 text-amber-700 dark:bg-amber-900/20 dark:text-amber-300';
       default:
@@ -179,7 +252,7 @@ export default function MenteesPage() {
                         <div className="font-medium text-slate-800 dark:text-slate-100">
                           {profileNames[enrollment.profileId] || `Profile ${enrollment.profileId}`}
                         </div>
-                        <div className="text-xs text-slate-500 dark:text-slate-400">Enrollment ID: {enrollment.id}</div>
+                        <div className="text-xs text-slate-500 dark:text-slate-400">Price Paid: {enrollment.price}</div>
                       </div>
                     </div>
                     <div className="flex items-center gap-4">
@@ -188,18 +261,56 @@ export default function MenteesPage() {
                         <Clock className="h-4 w-4" />
                         {formatDateTime(enrollment.time)}
                       </div>
-                      {enrollment.status === 'ONGOING' && (
+                      
+                      <div className="flex items-center gap-2">
+                        {/* Profile Button */}
                         <Button
                           size="sm"
-                          className="ml-2 bg-teal-600 hover:bg-teal-700 text-white"
-                          onClick={() => {
-                            const roomId = `${enrollment.id}`;
-                            router.push(`/mentorvideocall/${roomId}?role=host`);
-                          }}
+                          variant="outline"
+                          className="text-xs hover:bg-blue-50 hover:text-blue-700 hover:border-blue-300 dark:hover:bg-blue-900/20"
+                          onClick={() => handleViewProfile(enrollment.profileId)}
                         >
-                          Join
+                          <ExternalLink className="h-3 w-3 mr-1" />
+                          Profile
                         </Button>
-                      )}
+
+                        {/* Refund Button - only show if not already refunded */}
+                        {enrollment.status !== 'REFUNDED' && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="text-xs hover:bg-red-50 hover:text-red-700 hover:border-red-300 dark:hover:bg-red-900/20"
+                            onClick={() => handleRefund(enrollment)}
+                            disabled={refundingIds.has(enrollment.id)}
+                          >
+                            {refundingIds.has(enrollment.id) ? (
+                              <>
+                                <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                                Refunding...
+                              </>
+                            ) : (
+                              <>
+                                <RefreshCw className="h-3 w-3 mr-1" />
+                                Refund
+                              </>
+                            )}
+                          </Button>
+                        )}
+
+                        {/* Join Button - only for ongoing sessions */}
+                        {enrollment.status === 'ONGOING' && (
+                          <Button
+                            size="sm"
+                            className="bg-teal-600 hover:bg-teal-700 text-white"
+                            onClick={() => {
+                              const roomId = `${enrollment.id}`;
+                              router.push(`/mentorvideocall/${roomId}?role=host`);
+                            }}
+                          >
+                            Join
+                          </Button>
+                        )}
+                      </div>
                     </div>
                   </li>
                 ))}
