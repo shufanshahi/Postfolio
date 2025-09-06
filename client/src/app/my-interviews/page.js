@@ -1,21 +1,24 @@
 "use client";
 import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
+import { useAuth } from '@/contexts/AuthContext';
+import withAuth from '@/components/withAuth';
 import { apiFetch } from '@/lib/api';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { 
-  Calendar, 
-  Clock, 
-  Video, 
-  User, 
+import {
+  Calendar,
+  Clock,
+  Video,
+  User,
   Building,
   ArrowLeft,
   Loader2
 } from "lucide-react";
 
-export default function MyInterviews() {
+function MyInterviews() {
+  const { user } = useAuth();
   const router = useRouter();
   const [profile, setProfile] = useState(null);
   const [interviews, setInterviews] = useState([]);
@@ -25,7 +28,7 @@ export default function MyInterviews() {
   const fetchProfileAndInterviews = useCallback(async () => {
     setLoading(true);
     setError(null);
-    
+
     try {
       const token = localStorage.getItem("token");
       if (!token) {
@@ -40,7 +43,7 @@ export default function MyInterviews() {
         setError("Failed to get user profile. Please try again.");
         return;
       }
-      
+
       const profileData = await profileRes.json();
       setProfile(profileData);
 
@@ -51,7 +54,7 @@ export default function MyInterviews() {
           'Content-Type': 'application/json'
         }
       });
-      
+
       if (!interviewsRes.ok) {
         console.warn("Failed to fetch interviews, using empty array");
         setInterviews([]);
@@ -78,7 +81,7 @@ export default function MyInterviews() {
       REJECTED: { color: "bg-red-600", text: "Rejected" },
       ONGOING: { color: "bg-blue-600", text: "Ongoing" }
     };
-    
+
     const config = statusConfig[status] || statusConfig.PENDING;
     return (
       <Badge className={`${config.color} text-white`}>
@@ -103,7 +106,7 @@ export default function MyInterviews() {
   const handleJoinInterview = async (interview) => {
     try {
       const token = localStorage.getItem("token");
-      
+
       // Get the interview details using profileId and jobId
       const interviewRes = await fetch(`http://localhost:8080/api/interviews/profile/${interview.profileId}/job/${interview.jobId}`, {
         method: "GET",
@@ -112,14 +115,14 @@ export default function MyInterviews() {
           Authorization: `Bearer ${token}`,
         },
       });
-      
+
       if (!interviewRes.ok) {
         alert("Failed to get interview details.");
         return;
       }
-      
+
       const interviewData = await interviewRes.json();
-      
+
       // Use interview ID as room ID and join as participant (not host)
       const roomId = `${interviewData.id}`;
       router.push(`/videoCall/${roomId}?role=participant`);
@@ -166,8 +169,8 @@ export default function MyInterviews() {
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <Button 
-              variant="outline" 
+            <Button
+              variant="outline"
               onClick={() => router.push('/dashboard')}
               className="mb-4 bg-gray-800 border-gray-700 text-white hover:bg-gray-700"
             >
@@ -233,8 +236,8 @@ export default function MyInterviews() {
           <CardHeader>
             <CardTitle className="text-white">Upcoming & Recent Interviews</CardTitle>
             <CardDescription className="text-gray-400">
-              {interviews.length ? 
-                `${interviews.length} interview(s) found` : 
+              {interviews.length ?
+                `${interviews.length} interview(s) found` :
                 "No interviews scheduled"
               }
             </CardDescription>
@@ -249,8 +252,8 @@ export default function MyInterviews() {
             ) : (
               <div className="space-y-4">
                 {interviews.map((interview) => (
-                  <div 
-                    key={interview.id} 
+                  <div
+                    key={interview.id}
                     className="flex items-center justify-between p-4 bg-gray-700 rounded-lg border border-gray-600"
                   >
                     <div className="flex items-center space-x-4">
@@ -289,7 +292,7 @@ export default function MyInterviews() {
                       {getStatusBadge(interview.status)}
                       <div className="flex space-x-2">
                         {interview.status === 'ONGOING' && (
-                          <Button 
+                          <Button
                             size="sm"
                             onClick={() => handleJoinInterview(interview)}
                             className="bg-blue-600 hover:bg-blue-700"
@@ -298,8 +301,8 @@ export default function MyInterviews() {
                             Join
                           </Button>
                         )}
-                        <Button 
-                          variant="outline" 
+                        <Button
+                          variant="outline"
                           size="sm"
                           onClick={() => handleViewDetails(interview.id)}
                           className="bg-gray-600 border-gray-500 text-white hover:bg-gray-500"
@@ -318,3 +321,6 @@ export default function MyInterviews() {
     </div>
   );
 }
+
+
+export default withAuth(MyInterviews);

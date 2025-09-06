@@ -1,6 +1,7 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { useAuth } from '@/contexts/AuthContext';
 
 export default function Register() {
     const [name, setName] = useState('');
@@ -11,6 +12,14 @@ export default function Register() {
     const [error, setError] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const router = useRouter();
+    const { register, isAuthenticated } = useAuth();
+
+    // Redirect if already authenticated
+    useEffect(() => {
+        if (isAuthenticated) {
+            router.push('/dashboard');
+        }
+    }, [isAuthenticated, router]);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -30,24 +39,16 @@ export default function Register() {
         setIsLoading(true);
 
         try {
-            const response = await fetch('http://localhost:8080/api/auth/register', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ name, email, password, role })
-            });
-
-            if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData.message || 'Registration failed');
+            const result = await register(name, email, password, role);
+            if (result.success) {
+                alert(`Registration successful as ${role}`);
+                router.push('/dashboard');
+            } else {
+                setError(result.error || 'Registration failed');
             }
-
-            const data = await response.json();
-            localStorage.setItem('token', data.token);
-            alert(`Registration successful as ${role}`);
-            router.push('/dashboard');
         } catch (error) {
             console.error('Registration failed:', error);
-            setError(error.message || 'Registration failed. Please try again.');
+            setError('Registration failed. Please try again.');
         } finally {
             setIsLoading(false);
         }

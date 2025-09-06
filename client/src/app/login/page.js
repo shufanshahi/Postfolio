@@ -1,32 +1,47 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { useAuth } from '@/contexts/AuthContext';
 
 export default function Login() {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
+    const [error, setError] = useState('');
+    const [isLoading, setIsLoading] = useState(false);
     const router = useRouter();
+    const { login, isAuthenticated } = useAuth();
+
+    // Redirect if already authenticated
+    useEffect(() => {
+        if (isAuthenticated) {
+            router.push('/dashboard');
+        }
+    }, [isAuthenticated, router]);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        setError('');
+        setIsLoading(true);
+
         try {
-            const response = await fetch('http://localhost:8080/api/auth/login', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email, password })
-            });
-            const data = await response.json();
-            localStorage.setItem('token', data.token);
-            console.log(data.token);
-            router.push('/dashboard');
+            const result = await login(email, password);
+            if (result.success) {
+                router.push('/dashboard');
+            } else {
+                setError(result.error || 'Login failed');
+            }
         } catch (error) {
+            setError('Login failed. Please try again.');
             console.error('Login failed:', error);
+        } finally {
+            setIsLoading(false);
         }
     };
 
     return (
         <div>
             <h1>Login</h1>
+            {error && <div style={{ color: 'red', marginBottom: '10px' }}>{error}</div>}
             <form onSubmit={handleSubmit}>
                 <input
                     type="email"
@@ -34,6 +49,7 @@ export default function Login() {
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="Email"
                     required
+                    disabled={isLoading}
                 />
                 <input
                     type="password"
@@ -41,8 +57,11 @@ export default function Login() {
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="Password"
                     required
+                    disabled={isLoading}
                 />
-                <button type="submit">Login</button>
+                <button type="submit" disabled={isLoading}>
+                    {isLoading ? 'Logging in...' : 'Login'}
+                </button>
             </form>
             <a href="/registration">Don't have an account? Register</a>
         </div>

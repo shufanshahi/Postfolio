@@ -1,280 +1,285 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { useAuth } from '@/contexts/AuthContext';
+import withAuth from '@/components/withAuth';
 import Modal from 'react-modal';
 import EducationManagement from "@/components/EducationManagement";
 import WorkManagement from "../../components/WorkManagement";
 
 // Initialize modal only on client side
 if (typeof window !== 'undefined') {
-    Modal.setAppElement('body');
+  Modal.setAppElement('body');
 }
 
-export default function ProfilePage() {
-    const router = useRouter();
-    const [profile, setProfile] = useState(null);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState(null);
-    const [isModalOpen, setIsModalOpen] = useState(false);
-    const [formData, setFormData] = useState({
-        bio: '',
-        birthDate: '',
-        phoneNumber: '',
-        address: '',
-        sscResult: '',
-        hscResult: '',
-        universityResult: '',
-        positionOrInstitue: '',
+function ProfilePage() {
+  const router = useRouter();
+  const { user } = useAuth();
+  const [profile, setProfile] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [formData, setFormData] = useState({
+    bio: '',
+    birthDate: '',
+    phoneNumber: '',
+    address: '',
+    sscResult: '',
+    hscResult: '',
+    universityResult: '',
+    positionOrInstitue: '',
+    profilePicture: null
+  });
+
+  useEffect(() => {
+    if (user) {
+      fetchProfile();
+    }
+  }, [user]);
+
+  const fetchProfile = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      console.log(token);
+      const response = await fetch('http://localhost:8080/api/profile/me', {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (!response.ok) throw new Error('Failed to fetch profile');
+
+      const data = await response.json();
+      setProfile(data);
+
+      setFormData({
+        bio: data.bio || '',
+        birthDate: data.birthDate ? data.birthDate.substring(0, 10) : '',
+        phoneNumber: data.phoneNumber || '',
+        address: data.address || '',
+        sscResult: data.sscResult || '',
+        hscResult: data.hscResult || '',
+        universityResult: data.universityResult || '',
+        positionOrInstitue: data.positionOrInstitue || '',
         profilePicture: null
-    });
+      });
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    useEffect(() => {
-        fetchProfile();
-    }, []);
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+  };
 
-    const fetchProfile = async () => {
-        try {
-            const token = localStorage.getItem('token');
-            console.log(token);
-            const response = await fetch('http://localhost:8080/api/profile/me', {
-                method: 'GET',
-                headers: {
-                    'Authorization': `Bearer ${token}`
-                }
-            });
+  const handleFileChange = (e) => {
+    setFormData(prev => ({ ...prev, profilePicture: e.target.files[0] }));
+  };
 
-            if (!response.ok) throw new Error('Failed to fetch profile');
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      const token = localStorage.getItem('token');
+      const formDataToSend = new FormData();
 
-            const data = await response.json();
-            setProfile(data);
-
-            setFormData({
-                bio: data.bio || '',
-                birthDate: data.birthDate ? data.birthDate.substring(0, 10) : '',
-                phoneNumber: data.phoneNumber || '',
-                address: data.address || '',
-                sscResult: data.sscResult || '',
-                hscResult: data.hscResult || '',
-                universityResult: data.universityResult || '',
-                positionOrInstitue: data.positionOrInstitue || '',
-                profilePicture: null
-            });
-        } catch (err) {
-            setError(err.message);
-        } finally {
-            setLoading(false);
+      Object.entries(formData).forEach(([key, value]) => {
+        if (value !== null && value !== undefined) {
+          formDataToSend.append(key, value);
         }
-    };
+      });
 
-    const handleInputChange = (e) => {
-        const { name, value } = e.target;
-        setFormData(prev => ({ ...prev, [name]: value }));
-    };
+      const response = await fetch('http://localhost:8080/api/profile', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        },
+        body: formDataToSend
+      });
 
-    const handleFileChange = (e) => {
-        setFormData(prev => ({ ...prev, profilePicture: e.target.files[0] }));
-    };
+      if (!response.ok) throw new Error('Failed to update profile');
 
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-        try {
-            const token = localStorage.getItem('token');
-            const formDataToSend = new FormData();
+      setIsModalOpen(false);
+      fetchProfile();
+    } catch (err) {
+      setError(err.message);
+    }
+  };
 
-            Object.entries(formData).forEach(([key, value]) => {
-                if (value !== null && value !== undefined) {
-                    formDataToSend.append(key, value);
-                }
-            });
+  if (loading) return <div className="loading">Loading profile...</div>;
+  if (error) return <div className="error">Error: {error}</div>;
+  if (!profile) return <div>No profile found</div>;
 
-            const response = await fetch('http://localhost:8080/api/profile', {
-                method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${token}`
-                },
-                body: formDataToSend
-            });
-
-            if (!response.ok) throw new Error('Failed to update profile');
-
-            setIsModalOpen(false);
-            fetchProfile();
-        } catch (err) {
-            setError(err.message);
-        }
-    };
-
-    if (loading) return <div className="loading">Loading profile...</div>;
-    if (error) return <div className="error">Error: {error}</div>;
-    if (!profile) return <div>No profile found</div>;
-
-    return (
+  return (
 
 
 
 
-        <div className="profile-container">
-            <EducationManagement/>
-            <WorkManagement/>
-            <h1 className="profile-title">Profile</h1>
+    <div className="profile-container">
+      <EducationManagement />
+      <WorkManagement />
+      <h1 className="profile-title">Profile</h1>
 
-            <button
-                onClick={() => setIsModalOpen(true)}
-                className="update-button"
-            >
-                Update Profile
-            </button>
+      <button
+        onClick={() => setIsModalOpen(true)}
+        className="update-button"
+      >
+        Update Profile
+      </button>
 
-            <div className="profile-section">
-                <div className="profile-picture">
-                    {profile.pictureBase64 ? (
-                        <img
-                            src={`data:image/jpeg;base64,${profile.pictureBase64}`}
-                            alt="Profile"
-                            className="profile-image"
-                        />
-                    ) : (
-                        <div className="profile-image-placeholder">
-                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
-                                <path d="M12 12a4 4 0 100-8 4 4 0 000 8zm0 2c-5.523 0-10 3.582-10 8h20c0-4.418-4.477-8-10-8z" />
-                            </svg>
-                        </div>
-                    )}
-                </div>
-
-                <div className="profile-details">
-                    <section className="info-section">
-                        <h2>Personal Information</h2>
-                        <p><strong>Bio:</strong> {profile.bio || 'Not provided'}</p>
-                        <p><strong>Birth Date:</strong> {profile.birthDate ? new Date(profile.birthDate).toLocaleDateString() : 'Not provided'}</p>
-                        <p><strong>Phone:</strong> {profile.phoneNumber || 'Not provided'}</p>
-                        <p><strong>Address:</strong> {profile.address || 'Not provided'}</p>
-                    </section>
-
-                    <section className="info-section">
-                        <h2>Education</h2>
-                        <p><strong>SSC Result:</strong> {profile.sscResult || 'Not provided'}</p>
-                        <p><strong>HSC Result:</strong> {profile.hscResult || 'Not provided'}</p>
-                        <p><strong>University Result:</strong> {profile.universityResult || 'Not provided'}</p>
-                        <p><strong>Position/Institute:</strong> {profile.positionOrInstitue || 'Not provided'}</p>
-                    </section>
-                </div>
+      <div className="profile-section">
+        <div className="profile-picture">
+          {profile.pictureBase64 ? (
+            <img
+              src={`data:image/jpeg;base64,${profile.pictureBase64}`}
+              alt="Profile"
+              className="profile-image"
+            />
+          ) : (
+            <div className="profile-image-placeholder">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M12 12a4 4 0 100-8 4 4 0 000 8zm0 2c-5.523 0-10 3.582-10 8h20c0-4.418-4.477-8-10-8z" />
+              </svg>
             </div>
+          )}
+        </div>
 
-            <button
-                onClick={() => router.push('/dashboard')}
-                className="back-button"
-            >
-                Back to Dashboard
+        <div className="profile-details">
+          <section className="info-section">
+            <h2>Personal Information</h2>
+            <p><strong>Bio:</strong> {profile.bio || 'Not provided'}</p>
+            <p><strong>Birth Date:</strong> {profile.birthDate ? new Date(profile.birthDate).toLocaleDateString() : 'Not provided'}</p>
+            <p><strong>Phone:</strong> {profile.phoneNumber || 'Not provided'}</p>
+            <p><strong>Address:</strong> {profile.address || 'Not provided'}</p>
+          </section>
+
+          <section className="info-section">
+            <h2>Education</h2>
+            <p><strong>SSC Result:</strong> {profile.sscResult || 'Not provided'}</p>
+            <p><strong>HSC Result:</strong> {profile.hscResult || 'Not provided'}</p>
+            <p><strong>University Result:</strong> {profile.universityResult || 'Not provided'}</p>
+            <p><strong>Position/Institute:</strong> {profile.positionOrInstitue || 'Not provided'}</p>
+          </section>
+        </div>
+      </div>
+
+      <button
+        onClick={() => router.push('/dashboard')}
+        className="back-button"
+      >
+        Back to Dashboard
+      </button>
+
+      <Modal
+        isOpen={isModalOpen}
+        onRequestClose={() => setIsModalOpen(false)}
+        contentLabel="Update Profile"
+        className="modal"
+        overlayClassName="modal-overlay"
+      >
+        <h2>Update Profile</h2>
+        <form onSubmit={handleSubmit} className="profile-form">
+          <div className="form-group">
+            <label>Profile Picture</label>
+            <input
+              type="file"
+              accept="image/*"
+              onChange={handleFileChange}
+            />
+          </div>
+
+          <div className="form-group">
+            <label>Bio</label>
+            <textarea
+              name="bio"
+              value={formData.bio}
+              onChange={handleInputChange}
+            />
+          </div>
+
+          <div className="form-group">
+            <label>Birth Date</label>
+            <input
+              type="date"
+              name="birthDate"
+              value={formData.birthDate}
+              onChange={handleInputChange}
+            />
+          </div>
+
+          <div className="form-group">
+            <label>Phone Number</label>
+            <input
+              type="text"
+              name="phoneNumber"
+              value={formData.phoneNumber}
+              onChange={handleInputChange}
+            />
+          </div>
+
+          <div className="form-group">
+            <label>Address</label>
+            <input
+              type="text"
+              name="address"
+              value={formData.address}
+              onChange={handleInputChange}
+            />
+          </div>
+
+          <div className="form-group">
+            <label>SSC Result</label>
+            <input
+              type="text"
+              name="sscResult"
+              value={formData.sscResult}
+              onChange={handleInputChange}
+            />
+          </div>
+
+          <div className="form-group">
+            <label>HSC Result</label>
+            <input
+              type="text"
+              name="hscResult"
+              value={formData.hscResult}
+              onChange={handleInputChange}
+            />
+          </div>
+
+          <div className="form-group">
+            <label>University Result</label>
+            <input
+              type="text"
+              name="universityResult"
+              value={formData.universityResult}
+              onChange={handleInputChange}
+            />
+          </div>
+
+          <div className="form-group">
+            <label>Position/Institute</label>
+            <input
+              type="text"
+              name="positionOrInstitue"
+              value={formData.positionOrInstitue}
+              onChange={handleInputChange}
+            />
+          </div>
+
+          <div className="form-actions">
+            <button type="button" onClick={() => setIsModalOpen(false)}>
+              Cancel
             </button>
+            <button type="submit">Save Changes</button>
+          </div>
+        </form>
+      </Modal>
 
-            <Modal
-                isOpen={isModalOpen}
-                onRequestClose={() => setIsModalOpen(false)}
-                contentLabel="Update Profile"
-                className="modal"
-                overlayClassName="modal-overlay"
-            >
-                <h2>Update Profile</h2>
-                <form onSubmit={handleSubmit} className="profile-form">
-                    <div className="form-group">
-                        <label>Profile Picture</label>
-                        <input
-                            type="file"
-                            accept="image/*"
-                            onChange={handleFileChange}
-                        />
-                    </div>
-
-                    <div className="form-group">
-                        <label>Bio</label>
-                        <textarea
-                            name="bio"
-                            value={formData.bio}
-                            onChange={handleInputChange}
-                        />
-                    </div>
-
-                    <div className="form-group">
-                        <label>Birth Date</label>
-                        <input
-                            type="date"
-                            name="birthDate"
-                            value={formData.birthDate}
-                            onChange={handleInputChange}
-                        />
-                    </div>
-
-                    <div className="form-group">
-                        <label>Phone Number</label>
-                        <input
-                            type="text"
-                            name="phoneNumber"
-                            value={formData.phoneNumber}
-                            onChange={handleInputChange}
-                        />
-                    </div>
-
-                    <div className="form-group">
-                        <label>Address</label>
-                        <input
-                            type="text"
-                            name="address"
-                            value={formData.address}
-                            onChange={handleInputChange}
-                        />
-                    </div>
-
-                    <div className="form-group">
-                        <label>SSC Result</label>
-                        <input
-                            type="text"
-                            name="sscResult"
-                            value={formData.sscResult}
-                            onChange={handleInputChange}
-                        />
-                    </div>
-
-                    <div className="form-group">
-                        <label>HSC Result</label>
-                        <input
-                            type="text"
-                            name="hscResult"
-                            value={formData.hscResult}
-                            onChange={handleInputChange}
-                        />
-                    </div>
-
-                    <div className="form-group">
-                        <label>University Result</label>
-                        <input
-                            type="text"
-                            name="universityResult"
-                            value={formData.universityResult}
-                            onChange={handleInputChange}
-                        />
-                    </div>
-
-                    <div className="form-group">
-                        <label>Position/Institute</label>
-                        <input
-                            type="text"
-                            name="positionOrInstitue"
-                            value={formData.positionOrInstitue}
-                            onChange={handleInputChange}
-                        />
-                    </div>
-
-                    <div className="form-actions">
-                        <button type="button" onClick={() => setIsModalOpen(false)}>
-                            Cancel
-                        </button>
-                        <button type="submit">Save Changes</button>
-                    </div>
-                </form>
-            </Modal>
-
-            <style jsx>{`
+      <style jsx>{`
         .profile-container {
           max-width: 800px;
           margin: 2rem auto;
@@ -494,6 +499,8 @@ export default function ProfilePage() {
           }
         }
       `}</style>
-        </div>
-    );
+    </div>
+  );
 }
+
+export default withAuth(ProfilePage);

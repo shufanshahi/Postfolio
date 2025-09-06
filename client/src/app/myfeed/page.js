@@ -1,11 +1,14 @@
 "use client"
+import { useAuth } from '@/contexts/AuthContext';
+import withAuth from '@/components/withAuth';
 import Navbar from '@/components/Navbar';
 import React, { useState, useEffect, useRef } from 'react';
 // Reuse design tokens from dashboard for consistent theming
 const gradientPanel = 'bg-gradient-to-br from-teal-50/70 via-white/50 to-indigo-50/70 dark:from-slate-800/60 dark:via-slate-800/50 dark:to-slate-800/60 backdrop-blur-xl border border-white/40 dark:border-slate-700/50 shadow-sm';
 const subtleCard = 'bg-gradient-to-br from-teal-50/65 via-white/55 to-indigo-50/60 dark:from-slate-800/70 dark:via-slate-800/60 dark:to-slate-800/70 backdrop-blur-md border border-teal-900/5 dark:border-slate-700/60 hover:border-teal-500/30 dark:hover:border-teal-400/30 transition-colors';
 
-export default function MyFeedPage() {
+function MyFeedPage() {
+    const { user } = useAuth();
     const [posts, setPosts] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -55,8 +58,8 @@ export default function MyFeedPage() {
             <button
                 onClick={onClick}
                 className={`flex flex-col items-center px-2 py-2 text-xs font-medium w-16 ${isActive
-                        ? 'text-sky-600'
-                        : 'text-slate-600 hover:text-slate-800'
+                    ? 'text-sky-600'
+                    : 'text-slate-600 hover:text-slate-800'
                     }`}
             >
                 {icon}
@@ -284,8 +287,8 @@ export default function MyFeedPage() {
                         <button
                             onClick={() => setFilter('friends')}
                             className={`flex-1 px-5 py-2 rounded-xl text-sm font-medium transition-all duration-300 flex items-center justify-center gap-2 ring-1 ring-transparent ${filter === 'friends'
-                                    ? 'bg-white/70 dark:bg-slate-900/50 text-teal-700 dark:text-teal-300 shadow-sm ring-teal-500/30'
-                                    : 'text-slate-600 dark:text-slate-400 hover:bg-white/50 dark:hover:bg-slate-900/30'
+                                ? 'bg-white/70 dark:bg-slate-900/50 text-teal-700 dark:text-teal-300 shadow-sm ring-teal-500/30'
+                                : 'text-slate-600 dark:text-slate-400 hover:bg-white/50 dark:hover:bg-slate-900/30'
                                 }`}
                         >
                             <Users className="h-4 w-4" />
@@ -294,8 +297,8 @@ export default function MyFeedPage() {
                         <button
                             onClick={() => setFilter('me')}
                             className={`flex-1 px-5 py-2 rounded-xl text-sm font-medium transition-all duration-300 flex items-center justify-center gap-2 ring-1 ring-transparent ${filter === 'me'
-                                    ? 'bg-white/70 dark:bg-slate-900/50 text-teal-700 dark:text-teal-300 shadow-sm ring-teal-500/30'
-                                    : 'text-slate-600 dark:text-slate-400 hover:bg-white/50 dark:hover:bg-slate-900/30'
+                                ? 'bg-white/70 dark:bg-slate-900/50 text-teal-700 dark:text-teal-300 shadow-sm ring-teal-500/30'
+                                : 'text-slate-600 dark:text-slate-400 hover:bg-white/50 dark:hover:bg-slate-900/30'
                                 }`}
                         >
                             <User className="h-4 w-4" />
@@ -454,9 +457,9 @@ export default function MyFeedPage() {
                                             {/* Post Images */}
                                             {post.hasImages && post.images && post.images.length > 0 && (
                                                 <div className={`mb-4 grid gap-3 rounded-xl overflow-hidden ${post.images.length === 1 ? 'grid-cols-1' :
-                                                        post.images.length === 2 ? 'grid-cols-2' :
-                                                            post.images.length === 3 ? 'grid-cols-2' :
-                                                                'grid-cols-2'
+                                                    post.images.length === 2 ? 'grid-cols-2' :
+                                                        post.images.length === 3 ? 'grid-cols-2' :
+                                                            'grid-cols-2'
                                                     }`}>
                                                     {post.images.map((image, index) => (
                                                         <div
@@ -598,3 +601,5 @@ export default function MyFeedPage() {
         </div>
     );
 }
+
+export default withAuth(MyFeedPage);

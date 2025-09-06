@@ -1,5 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
+import { useAuth } from '@/contexts/AuthContext';
+import withAuth from '@/components/withAuth';
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -9,7 +11,8 @@ import { AlertCircle, CheckCircle2, FileText, GraduationCap, Briefcase, User, Lo
 import EducationManagement from "@/components/EducationManagement";
 import WorkManagement from "@/components/WorkManagement";
 
-export default function ProfileManagementPage() {
+function ProfileManagementPage() {
+    const { user } = useAuth();
     const [loading, setLoading] = useState(true);
     const [profileId, setProfileId] = useState(null);
     const [error, setError] = useState(null);
@@ -36,8 +39,10 @@ export default function ProfileManagementPage() {
             }
         };
 
-        fetchProfileId();
-    }, []);
+        if (user) {
+            fetchProfileId();
+        }
+    }, [user]);
 
     if (loading) {
         return (
@@ -92,22 +97,22 @@ export default function ProfileManagementPage() {
                 <div className="max-w-6xl mx-auto">
                     <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
                         <TabsList className="grid w-full grid-cols-3 bg-gray-800/50 border-gray-700/50">
-                            <TabsTrigger 
-                                value="education" 
+                            <TabsTrigger
+                                value="education"
                                 className="data-[state=active]:bg-blue-600 data-[state=active]:text-white text-gray-300"
                             >
                                 <GraduationCap className="h-4 w-4 mr-2" />
                                 Education
                             </TabsTrigger>
-                            <TabsTrigger 
-                                value="work" 
+                            <TabsTrigger
+                                value="work"
                                 className="data-[state=active]:bg-blue-600 data-[state=active]:text-white text-gray-300"
                             >
                                 <Briefcase className="h-4 w-4 mr-2" />
                                 Work Experience
                             </TabsTrigger>
-                            <TabsTrigger 
-                                value="preview" 
+                            <TabsTrigger
+                                value="preview"
                                 className="data-[state=active]:bg-blue-600 data-[state=active]:text-white text-gray-300"
                             >
                                 <FileText className="h-4 w-4 mr-2" />
@@ -167,4 +172,6 @@ export default function ProfileManagementPage() {
             </div>
         </div>
     );
-} 
+}
+
+export default withAuth(ProfileManagementPage);

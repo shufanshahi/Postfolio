@@ -1,11 +1,14 @@
 "use client";
 import { useEffect, useState } from "react";
+import { useAuth } from '@/contexts/AuthContext';
+import withAuth from '@/components/withAuth';
 import { jobServiceFetch } from '@/lib/api';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
-export default function FindJobs() {
+function FindJobs() {
+  const { user } = useAuth();
   const [jobs, setJobs] = useState([]);
   const [filteredJobs, setFilteredJobs] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -73,20 +76,20 @@ export default function FindJobs() {
 
     // Filter by title search
     if (searchTitle.trim()) {
-      filtered = filtered.filter(job => 
+      filtered = filtered.filter(job =>
         job.title.toLowerCase().includes(searchTitle.toLowerCase())
       );
     }
 
     // Filter by salary range
     if (minSalaryFilter) {
-      filtered = filtered.filter(job => 
+      filtered = filtered.filter(job =>
         job.maxSalary >= parseInt(minSalaryFilter)
       );
     }
 
     if (maxSalaryFilter) {
-      filtered = filtered.filter(job => 
+      filtered = filtered.filter(job =>
         job.minSalary <= parseInt(maxSalaryFilter)
       );
     }
@@ -126,8 +129,8 @@ export default function FindJobs() {
       });
       if (profileRes.ok) {
         const profile = await profileRes.json();
-        setJobs(jobs.map(job => 
-          job.jobId === jobId 
+        setJobs(jobs.map(job =>
+          job.jobId === jobId
             ? { ...job, isApplied: true, applicantIds: [...(job.applicantIds || []), profile.id] }
             : job
         ));
@@ -170,8 +173,8 @@ export default function FindJobs() {
       });
       if (profileRes.ok) {
         const profile = await profileRes.json();
-        setJobs(jobs.map(job => 
-          job.jobId === jobId 
+        setJobs(jobs.map(job =>
+          job.jobId === jobId
             ? { ...job, isApplied: false, applicantIds: (job.applicantIds || []).filter(id => id !== profile.id) }
             : job
         ));
@@ -186,7 +189,7 @@ export default function FindJobs() {
     <div className="min-h-screen bg-gray-900 p-6">
       <div className="max-w-4xl mx-auto space-y-8">
         <h1 className="text-3xl font-bold text-white mb-6">Find Jobs</h1>
-        
+
         {/* Filter Section */}
         <Card className="bg-gray-800 border-gray-700">
           <CardContent className="pt-6">
@@ -353,3 +356,6 @@ export default function FindJobs() {
     </div>
   );
 }
+
+
+export default withAuth(FindJobs);

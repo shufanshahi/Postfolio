@@ -1,5 +1,7 @@
 "use client";
 import { useEffect, useState, useCallback } from "react";
+import { useAuth } from '@/contexts/AuthContext';
+import withAuth from '@/components/withAuth';
 import { apiFetch, jobServiceFetch } from '@/lib/api';
 import { useRouter } from "next/navigation";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
@@ -9,7 +11,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import LocationMap from "@/components/LocationMap";
 
-export default function JobPostings() {
+function JobPostings() {
+  const { user } = useAuth();
   const router = useRouter();
   const [jobs, setJobs] = useState([]);
   const [filteredJobs, setFilteredJobs] = useState([]);
@@ -68,7 +71,7 @@ export default function JobPostings() {
 
     // Filter by title search
     if (searchTitle.trim()) {
-      filtered = filtered.filter(job => 
+      filtered = filtered.filter(job =>
         job.title.toLowerCase().includes(searchTitle.toLowerCase())
       );
     }
@@ -107,9 +110,9 @@ export default function JobPostings() {
   };
 
   const handleLocationSelect = (locationData) => {
-    setForm({ 
-      ...form, 
-      location: locationData.address 
+    setForm({
+      ...form,
+      location: locationData.address
     });
   };
 
@@ -128,18 +131,18 @@ export default function JobPostings() {
       router.push("/login");
       return;
     }
-    
+
     // Get user profile to extract userId
     const profileRes = await apiFetch('/api/profile/me');
-    
+
     if (!profileRes.ok) {
       setLoading(false);
       alert("Failed to get user profile. Please try again.");
       return;
     }
-    
+
     const profile = await profileRes.json();
-    
+
     const res = await jobServiceFetch('/api/jobs', {
       method: 'POST',
       body: JSON.stringify({
@@ -150,7 +153,7 @@ export default function JobPostings() {
     });
     if (res.ok) {
       setShowNewJob(false);
-  setForm({ title: "", position: "", description: "", minSalary: "", maxSalary: "", requiredProject: "", requiredExperience: "", requiredSkills: "", requiredEducation: "", endDate: "", location: "" });
+      setForm({ title: "", position: "", description: "", minSalary: "", maxSalary: "", requiredProject: "", requiredExperience: "", requiredSkills: "", requiredEducation: "", endDate: "", location: "" });
       fetchJobs();
     }
     setLoading(false);
@@ -158,8 +161,8 @@ export default function JobPostings() {
 
   const handleDeletePost = async (jobId) => {
     setLoading(true);
-        const token = localStorage.getItem("token");
-        const res = await fetch(`http://localhost:8080/api/jobs/${jobId}`, {
+    const token = localStorage.getItem("token");
+    const res = await fetch(`http://localhost:8080/api/jobs/${jobId}`, {
       method: 'DELETE',
       headers: {
         'Content-Type': 'application/json',
@@ -177,7 +180,7 @@ export default function JobPostings() {
 
   const handleTogglePostStatus = async (jobId, currentStatus) => {
     setLoading(true);
-          const token = localStorage.getItem("token");
+    const token = localStorage.getItem("token");
 
     const newStatus = currentStatus === "CLOSED" ? "OPEN" : "CLOSED";
     const res = await fetch(`http://localhost:8080/api/jobs/${jobId}/status?status=${newStatus}`, {
@@ -416,7 +419,7 @@ export default function JobPostings() {
                     <span className="text-gray-400 text-sm">Posted by: {profileInfo?.name || 'Loading...'}</span>
                   </CardTitle>
                   <CardDescription className="text-gray-400">
-                      <span className="font-semibold">Position:</span> {job.position} <br />
+                    <span className="font-semibold">Position:</span> {job.position} <br />
                     Posted: {job.datePosted} | Ends: {job.endDate}
                   </CardDescription>
                 </div>
@@ -432,19 +435,19 @@ export default function JobPostings() {
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="bg-gray-700 border-gray-600">
-                    <DropdownMenuItem 
+                    <DropdownMenuItem
                       onClick={() => handleViewApplicants(job.jobId)}
                       className="text-gray-300 hover:text-white hover:bg-gray-600"
                     >
                       View Applicants
                     </DropdownMenuItem>
-                    <DropdownMenuItem 
+                    <DropdownMenuItem
                       onClick={() => handleTogglePostStatus(job.jobId, job.status)}
                       className="text-gray-300 hover:text-white hover:bg-gray-600"
                     >
                       {job.status === "CLOSED" ? "Open Post" : "Close Post"}
                     </DropdownMenuItem>
-                    <DropdownMenuItem 
+                    <DropdownMenuItem
                       onClick={() => handleDeletePost(job.jobId)}
                       className="text-gray-300 hover:text-white hover:bg-gray-600"
                     >
@@ -488,7 +491,7 @@ export default function JobPostings() {
           ))}
         </div>
       </div>
-      
+
       <LocationMap
         isOpen={showLocationMap}
         onClose={() => setShowLocationMap(false)}
@@ -497,3 +500,6 @@ export default function JobPostings() {
     </div>
   );
 }
+
+
+export default withAuth(JobPostings);

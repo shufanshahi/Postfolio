@@ -1,5 +1,7 @@
 "use client"
 import React, { useState, useRef, useEffect } from 'react';
+import { useAuth } from '@/contexts/AuthContext';
+import withAuth from '@/components/withAuth';
 import { Upload, FileText, BookOpen, Check, X, ChevronRight, Brain, FileUp, Clock } from 'lucide-react';
 import Navbar from '@/components/Navbar';
 import MCQViewer from '@/components/MCQViewer';
@@ -9,6 +11,7 @@ const gradientPanel = 'bg-gradient-to-br from-teal-50/70 via-white/50 to-indigo-
 const subtleCard = 'bg-gradient-to-br from-teal-50/65 via-white/55 to-indigo-50/60 dark:from-slate-800/70 dark:via-slate-800/60 dark:to-slate-800/70 backdrop-blur-md border border-teal-900/5 dark:border-slate-700/60 hover:border-teal-500/30 dark:hover:border-teal-400/30 transition-colors';
 
 const PreparationPage = () => {
+  const { user } = useAuth();
   const [activeTab, setActiveTab] = useState('upload');
   const [selectedFile, setSelectedFile] = useState(null);
   const [textContent, setTextContent] = useState('');
@@ -339,4 +342,4 @@ const PreparationPage = () => {
   );
 };
 
-export default PreparationPage;
+export default withAuth(PreparationPage);
