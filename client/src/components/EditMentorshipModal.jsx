@@ -66,14 +66,15 @@ export default function EditMentorshipModal({ isOpen, onClose, mentorship, onSav
 
     const addTimeSlot = () => {
         if (newTimeSlot) {
-            // Convert datetime-local format to the required format (YYYY-MM-DD HH:00:00)
+            // Convert datetime-local format to the required format (YYYY-MM-DD HH:MM:00)
             const date = new Date(newTimeSlot);
             const year = date.getFullYear();
             const month = String(date.getMonth() + 1).padStart(2, '0');
             const day = String(date.getDate()).padStart(2, '0');
             const hour = String(date.getHours()).padStart(2, '0');
+            const minute = String(date.getMinutes()).padStart(2, '0');
             
-            const formattedTime = `${year}-${month}-${day} ${hour}:00:00`;
+            const formattedTime = `${year}-${month}-${day} ${hour}:${minute}:00`;
             
             setFormData(prev => ({
                 ...prev,
@@ -302,7 +303,7 @@ export default function EditMentorshipModal({ isOpen, onClose, mentorship, onSav
                         <div>
                             <h3 className="text-lg font-semibold text-slate-800">Available Times</h3>
                             <p className="text-sm text-slate-500 mt-1">
-                                Select date and hour for your mentorship sessions. Minutes will be set to :00 automatically.
+                                Select date and time for your mentorship sessions.
                             </p>
                         </div>
                         
@@ -312,19 +313,9 @@ export default function EditMentorshipModal({ isOpen, onClose, mentorship, onSav
                                     <Input
                                         type="datetime-local"
                                         value={newTimeSlot}
-                                        onChange={(e) => {
-                                            // Automatically set minutes to 00
-                                            const selectedDateTime = e.target.value;
-                                            if (selectedDateTime) {
-                                                const [datePart, timePart] = selectedDateTime.split('T');
-                                                const [hour] = timePart.split(':');
-                                                setNewTimeSlot(`${datePart}T${hour}:00`);
-                                            } else {
-                                                setNewTimeSlot('');
-                                            }
-                                        }}
+                                        onChange={(e) => setNewTimeSlot(e.target.value)}
                                         className="rounded-lg"
-                                        placeholder="Select date and hour"
+                                        placeholder="Select date and time"
                                     />
                                 </div>
                                 <Button
