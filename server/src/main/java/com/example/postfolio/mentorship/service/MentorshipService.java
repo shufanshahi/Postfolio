@@ -324,4 +324,37 @@ public class MentorshipService {
         
         return new MentorshipResponse(savedMentorship);
     }
+    
+    /**
+     * Update mentorship details
+     */
+    public MentorshipResponse updateMentorship(Long mentorshipId, UpdateMentorshipRequest request) {
+        if (mentorshipId == null) {
+            throw new IllegalArgumentException("Mentorship ID cannot be null");
+        }
+        
+        if (request == null) {
+            throw new IllegalArgumentException("Update request cannot be null");
+        }
+        
+        Mentorship mentorship = mentorshipRepository.findById(mentorshipId)
+                .orElseThrow(() -> new RuntimeException("Mentorship not found with ID: " + mentorshipId));
+        
+        // Update mentorship fields
+        mentorship.setName(request.getName());
+        mentorship.setSpecialization(request.getSpecialization());
+        mentorship.setStatus(request.getStatus());
+        mentorship.setPrice(request.getPrice());
+        mentorship.setRepeatStatus(request.getRepeatStatus());
+        
+        // Update available times if provided
+        if (request.getAvailableTimes() != null) {
+            mentorship.setAvailableTimes(request.getAvailableTimes());
+        }
+        
+        // Save updated mentorship
+        Mentorship savedMentorship = mentorshipRepository.save(mentorship);
+        
+        return new MentorshipResponse(savedMentorship);
+    }
 }

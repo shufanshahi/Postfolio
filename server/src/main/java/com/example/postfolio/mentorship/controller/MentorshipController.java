@@ -81,6 +81,25 @@ public class MentorshipController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
+    
+    /**
+     * PUT /api/mentorships/{id} - Update a mentorship
+     */
+    @PutMapping("/{id}")
+    public ResponseEntity<MentorshipResponse> updateMentorship(
+            @PathVariable Long id, 
+            @Valid @RequestBody UpdateMentorshipRequest request) {
+        try {
+            MentorshipResponse mentorship = mentorshipService.updateMentorship(id, request);
+            return ResponseEntity.ok(mentorship);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().build();
+        } catch (RuntimeException e) {
+            return ResponseEntity.notFound().build();
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
 
     /**
      * PUT /api/mentorships/{mentorshipId}/repeat-status - Update repeat status
