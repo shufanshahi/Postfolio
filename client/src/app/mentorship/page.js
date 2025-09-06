@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { apiFetch } from '@/lib/api';
 import {
@@ -64,6 +64,7 @@ export default function MentorshipPage() {
   const [selectedViewDate, setSelectedViewDate] = useState('');
   const [existingEnrollments, setExistingEnrollments] = useState([]);
   const [statusFilter, setStatusFilter] = useState('all');
+  const [mentorshipRatings, setMentorshipRatings] = useState({});
 
   // Create form state
   const [createForm, setCreateForm] = useState({
@@ -78,6 +79,69 @@ export default function MentorshipPage() {
   const [timeSlots, setTimeSlots] = useState([]);
   const [selectedDate, setSelectedDate] = useState('');
   const [selectedTime, setSelectedTime] = useState('');
+
+  const fetchMentorshipRatings = useCallback(async (mentorships) => {
+    try {
+      const token = localStorage.getItem('token');
+      const ratingsMap = {};
+      
+      await Promise.all(
+        mentorships.map(async (mentorship) => {
+          try {
+            const response = await fetch(`http://localhost:8080/api/enrollments/mentorship/${mentorship.id}`, {
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+              }
+            });
+            
+            if (response.ok) {
+              const enrollments = await response.json();
+              const ratings = enrollments
+                .map(e => e.rating)
+                .filter(rating => rating != null && rating > 0);
+              
+              if (ratings.length > 0) {
+                const avgRating = ratings.reduce((sum, rating) => sum + rating, 0) / ratings.length;
+                ratingsMap[mentorship.id] = {
+                  average: Math.round(avgRating * 10) / 10,
+                  count: ratings.length
+                };
+              }
+            }
+          } catch (error) {
+            console.error(`Error fetching ratings for mentorship ${mentorship.id}:`, error);
+          }
+        })
+      );
+      
+      setMentorshipRatings(ratingsMap);
+    } catch (error) {
+      console.error('Error fetching mentorship ratings:', error);
+    }
+  }, []);
+
+  const fetchMentorships = useCallback(async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch('http://localhost:8080/api/mentorships', {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setMentorships(data);
+        
+        // Fetch ratings for all mentorships
+        await fetchMentorshipRatings(data);
+      }
+    } catch (err) {
+      console.error('Failed to fetch mentorships:', err);
+    }
+  }, [fetchMentorshipRatings]);
 
   // Fetch data on component mount
   useEffect(() => {
@@ -117,26 +181,7 @@ export default function MentorshipPage() {
     }
 
     initializePage();
-  }, [router]);
-
-  const fetchMentorships = async () => {
-    try {
-      const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:8080/api/mentorships', {
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        setMentorships(data);
-      }
-    } catch (err) {
-      console.error('Failed to fetch mentorships:', err);
-    }
-  };
+  }, [router, fetchMentorships]);
 
   const handleCreateMentorship = async () => {
     if (!createForm.name || !createForm.specialization || !createForm.price) {
@@ -671,11 +716,14 @@ export default function MentorshipPage() {
                     <span className="text-slate-500 dark:text-slate-400 text-sm">per session</span>
                   </div>
                   
-                  {mentorship.rating > 0 && (
+                  {mentorshipRatings[mentorship.id] && (
                     <div className="flex items-center gap-1">
                       <Star className="h-4 w-4 text-amber-500 fill-current" />
                       <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
-                        {mentorship.rating.toFixed(1)}
+                        {mentorshipRatings[mentorship.id].average}
+                      </span>
+                      <span className="text-xs text-slate-500 dark:text-slate-400">
+                        ({mentorshipRatings[mentorship.id].count} review{mentorshipRatings[mentorship.id].count !== 1 ? 's' : ''})
                       </span>
                     </div>
                   )}
@@ -751,12 +799,12 @@ export default function MentorshipPage() {
                       <Users className="h-3 w-3" />
                       <span>{mentorship.enrolledProfileIds?.length || 0} enrolled</span>
                     </div>
-                    <div className="flex items-center gap-1">
+                    {/* <div className="flex items-center gap-1">
                       <Star className="h-3 w-3 text-amber-500" />
                       <span className="font-medium text-slate-700 dark:text-slate-300">
                         {mentorship.rating > 0 ? mentorship.rating.toFixed(1) : 'No ratings'}
                       </span>
-                    </div>
+                    </div> */}
                   </div>
                   
                   <div className="flex gap-2">
@@ -979,10 +1027,16 @@ export default function MentorshipPage() {
                       <span className="font-medium text-slate-700 dark:text-slate-300">Rating</span>
                     </div>
                     <div className="text-2xl font-bold text-slate-800 dark:text-slate-100">
-                      {selectedMentorship.rating > 0 ? selectedMentorship.rating.toFixed(1) : 'New'}
+                      {mentorshipRatings[selectedMentorship.id] ? mentorshipRatings[selectedMentorship.id].average : 'New'}
                     </div>
                     <div className="text-sm text-slate-500">
-                      {selectedMentorship.rating > 0 ? 'out of 5' : 'mentorship'}
+                      {mentorshipRatings[selectedMentorship.id] ? (
+                        <>
+                          out of 5 ({mentorshipRatings[selectedMentorship.id].count} review{mentorshipRatings[selectedMentorship.id].count !== 1 ? 's' : ''})
+                        </>
+                      ) : (
+                        'mentorship'
+                      )}
                     </div>
                   </Card>
 
