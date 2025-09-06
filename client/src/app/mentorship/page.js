@@ -406,7 +406,8 @@ export default function MentorshipPage() {
         profileId: userProfile.id,
         mentorshipId: selectedMentorship.id,
         status: "APPROVED",
-        time: selectedTimeSlot
+        time: selectedTimeSlot,
+        price: selectedMentorship.price
       };
 
       const enrollmentResponse = await fetch('http://localhost:8080/api/enrollments', {

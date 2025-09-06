@@ -2,6 +2,7 @@ package com.example.postfolio.enrollments.dto;
 
 import com.example.postfolio.enrollments.entity.Enrollment;
 import com.fasterxml.jackson.annotation.JsonFormat;
+import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotNull;
 import java.time.LocalDateTime;
 
@@ -13,6 +14,10 @@ public class CreateEnrollmentRequest {
     @NotNull(message = "Mentorship ID is required")
     private Long mentorshipId;
     
+    @NotNull(message = "Price is required")
+    @DecimalMin(value = "0.0", inclusive = false, message = "Price must be greater than 0")
+    private Double price;
+    
     private Enrollment.EnrollmentStatus status = Enrollment.EnrollmentStatus.APPROVED;
     
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
@@ -21,20 +26,23 @@ public class CreateEnrollmentRequest {
     // Constructors
     public CreateEnrollmentRequest() {}
     
-    public CreateEnrollmentRequest(Long profileId, Long mentorshipId) {
+    public CreateEnrollmentRequest(Long profileId, Long mentorshipId, Double price) {
         this.profileId = profileId;
         this.mentorshipId = mentorshipId;
+        this.price = price;
     }
     
-    public CreateEnrollmentRequest(Long profileId, Long mentorshipId, Enrollment.EnrollmentStatus status) {
+    public CreateEnrollmentRequest(Long profileId, Long mentorshipId, Double price, Enrollment.EnrollmentStatus status) {
         this.profileId = profileId;
         this.mentorshipId = mentorshipId;
+        this.price = price;
         this.status = status;
     }
     
-    public CreateEnrollmentRequest(Long profileId, Long mentorshipId, Enrollment.EnrollmentStatus status, LocalDateTime time) {
+    public CreateEnrollmentRequest(Long profileId, Long mentorshipId, Double price, Enrollment.EnrollmentStatus status, LocalDateTime time) {
         this.profileId = profileId;
         this.mentorshipId = mentorshipId;
+        this.price = price;
         this.status = status;
         this.time = time;
     }
@@ -54,6 +62,14 @@ public class CreateEnrollmentRequest {
     
     public void setMentorshipId(Long mentorshipId) {
         this.mentorshipId = mentorshipId;
+    }
+    
+    public Double getPrice() {
+        return price;
+    }
+    
+    public void setPrice(Double price) {
+        this.price = price;
     }
     
     public Enrollment.EnrollmentStatus getStatus() {
@@ -77,6 +93,7 @@ public class CreateEnrollmentRequest {
         return "CreateEnrollmentRequest{" +
                 "profileId=" + profileId +
                 ", mentorshipId=" + mentorshipId +
+                ", price=" + price +
                 ", status=" + status +
                 ", time=" + time +
                 '}';

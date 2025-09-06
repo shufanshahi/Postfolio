@@ -87,6 +87,7 @@ public class EnrollmentService {
                 request.getProfileId(),
                 request.getMentorshipId(),
                 request.getStatus() != null ? request.getStatus() : Enrollment.EnrollmentStatus.APPROVED,
+                request.getPrice(),
                 request.getTime()
         );
         

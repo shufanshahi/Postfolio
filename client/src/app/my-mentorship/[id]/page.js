@@ -25,6 +25,7 @@ import {
   Alert, AlertDescription
 } from '@/components/ui/alert';
 import Navbar from '@/components/Navbar';
+import EditMentorshipModal from '@/components/EditMentorshipModal';
 
 // Design tokens matching dashboard theme
 const gradientPanel = 'bg-gradient-to-br from-teal-50/70 via-white/50 to-indigo-50/70 dark:from-slate-800/60 dark:via-slate-800/50 dark:to-slate-800/60 backdrop-blur-xl border border-white/40 dark:border-slate-700/50 shadow-sm';
@@ -43,8 +44,10 @@ export default function MyMentorshipPage() {
   const [mentorships, setMentorships] = useState([]);
   const [userProfile, setUserProfile] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
-
-  // Fetch data on component mount
+  
+  // Edit modal state
+  const [editModalOpen, setEditModalOpen] = useState(false);
+  const [editingMentorship, setEditingMentorship] = useState(null);
   useEffect(() => {
     async function initializePage() {
       if (!profileId) return;
@@ -106,6 +109,25 @@ export default function MyMentorshipPage() {
       console.error('Failed to fetch mentorships:', err);
       setError(err.message || 'Failed to fetch your mentorships');
     }
+  };
+
+  // Edit handlers
+  const handleEditMentorship = (mentorship) => {
+    setEditingMentorship(mentorship);
+    setEditModalOpen(true);
+  };
+
+  const handleEditSave = (updatedMentorship) => {
+    setMentorships(prev => 
+      prev.map(m => m.id === updatedMentorship.id ? updatedMentorship : m)
+    );
+    setEditModalOpen(false);
+    setEditingMentorship(null);
+  };
+
+  const handleEditClose = () => {
+    setEditModalOpen(false);
+    setEditingMentorship(null);
   };
 
   const formatDateTime = (dateTimeString) => {
@@ -494,6 +516,7 @@ export default function MyMentorshipPage() {
                       size="sm" 
                       variant="outline"
                       className="text-xs hover:bg-blue-50 hover:text-blue-700 hover:border-blue-300 dark:hover:bg-blue-900/20"
+                      onClick={() => handleEditMentorship(mentorship)}
                     >
                       <Edit className="h-3 w-3 mr-1" />
                       Edit
@@ -538,6 +561,14 @@ export default function MyMentorshipPage() {
           </div>
         )}
       </div>
+      
+      {/* Edit Mentorship Modal */}
+      <EditMentorshipModal
+        isOpen={editModalOpen}
+        onClose={handleEditClose}
+        mentorship={editingMentorship}
+        onSave={handleEditSave}
+      />
     </div>
   );
 }

@@ -10,6 +10,7 @@ public class EnrollmentResponse {
     private Long profileId;
     private Long mentorshipId;
     private Enrollment.EnrollmentStatus status;
+    private Double price;
     
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime time;
@@ -25,6 +26,7 @@ public class EnrollmentResponse {
         this.profileId = enrollment.getProfileId();
         this.mentorshipId = enrollment.getMentorshipId();
         this.status = enrollment.getStatus();
+        this.price = enrollment.getPrice();
         this.time = enrollment.getTime();
         this.updatedAt = enrollment.getUpdatedAt();
     }
@@ -62,6 +64,14 @@ public class EnrollmentResponse {
         this.status = status;
     }
     
+    public Double getPrice() {
+        return price;
+    }
+    
+    public void setPrice(Double price) {
+        this.price = price;
+    }
+    
     public LocalDateTime getTime() {
         return time;
     }
@@ -85,6 +95,7 @@ public class EnrollmentResponse {
                 ", profileId=" + profileId +
                 ", mentorshipId=" + mentorshipId +
                 ", status=" + status +
+                ", price=" + price +
                 ", time=" + time +
                 ", updatedAt=" + updatedAt +
                 '}';

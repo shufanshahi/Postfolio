@@ -22,6 +22,9 @@ public class Enrollment {
     @Column(name = "status", nullable = false)
     private EnrollmentStatus status = EnrollmentStatus.APPROVED;
     
+    @Column(name = "price", nullable = false)
+    private Double price;
+    
     @Column(name = "created_at", nullable = false, updatable = false)
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime time;
@@ -42,18 +45,20 @@ public class Enrollment {
     // Constructors
     public Enrollment() {}
     
-    public Enrollment(Long profileId, Long mentorshipId, EnrollmentStatus status) {
+    public Enrollment(Long profileId, Long mentorshipId, EnrollmentStatus status, Double price) {
         this.profileId = profileId;
         this.mentorshipId = mentorshipId;
         this.status = status;
+        this.price = price;
         this.time = LocalDateTime.now();
         this.updatedAt = LocalDateTime.now();
     }
     
-    public Enrollment(Long profileId, Long mentorshipId, EnrollmentStatus status, LocalDateTime time) {
+    public Enrollment(Long profileId, Long mentorshipId, EnrollmentStatus status, Double price, LocalDateTime time) {
         this.profileId = profileId;
         this.mentorshipId = mentorshipId;
         this.status = status;
+        this.price = price;
         this.time = time != null ? time : LocalDateTime.now();
         this.updatedAt = LocalDateTime.now();
     }
@@ -106,6 +111,14 @@ public class Enrollment {
         this.updatedAt = LocalDateTime.now();
     }
     
+    public Double getPrice() {
+        return price;
+    }
+    
+    public void setPrice(Double price) {
+        this.price = price;
+    }
+    
     public LocalDateTime getTime() {
         return time;
     }
@@ -130,6 +143,7 @@ public class Enrollment {
                 ", profileId=" + profileId +
                 ", mentorshipId=" + mentorshipId +
                 ", status=" + status +
+                ", price=" + price +
                 ", time=" + time +
                 ", updatedAt=" + updatedAt +
                 '}';
