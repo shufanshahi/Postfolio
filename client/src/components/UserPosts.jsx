@@ -5,10 +5,10 @@ import { useNotifications } from '@/hooks/useNotifications';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import CelebrateButtonUserPosts from '@/components/CelebrateButtonUserPosts';
 import {
     MessageSquare,
     Heart,
-    Share2,
     Clock,
     Tag,
     Loader2,
@@ -68,47 +68,6 @@ export default function UserPosts({ profileId }) {
             showError('Error', 'Failed to load posts. Please try again.');
         } finally {
             setLoading(false);
-        }
-    };
-
-    const handleCelebrate = async (postId) => {
-        try {
-            const response = await apiFetch(`/api/posts/${postId}/celebrate`, {
-                method: 'POST'
-            });
-
-            if (response.ok) {
-                const data = await response.json();
-
-                // Update celebrate state
-                setCelebrateStates(prev => ({
-                    ...prev,
-                    [postId]: {
-                        userCelebrated: data.userCelebrated,
-                        celebrationCount: data.celebrationCount
-                    }
-                }));
-
-                // Show appropriate toast with confetti emoji
-                if (data.isCelebrated) {
-                    showSuccess('🎉 Celebrated!', 'You celebrated this post with confetti!');
-                } else {
-                    showInfo('Uncelebrated', 'You removed your celebration');
-                }
-            } else {
-                throw new Error('Failed to toggle celebration');
-            }
-        } catch (err) {
-            showError('Error', 'Failed to celebrate post');
-        }
-    };
-
-    const handleShare = async (postId) => {
-        try {
-            navigator.clipboard.writeText(`${window.location.origin}/post/${postId}`);
-            showInfo('Shared', 'Post link copied to clipboard!');
-        } catch (err) {
-            showError('Error', 'Failed to share post');
         }
     };
 
@@ -207,34 +166,11 @@ export default function UserPosts({ profileId }) {
                             )}
 
                             {/* Interaction Buttons */}
-                            <div className="flex items-center justify-between pt-4 border-t border-gray-200">
-                                <div className="flex items-center gap-6">
-                                    <button
-                                        onClick={() => handleCelebrate(post.id)}
-                                        className={`flex items-center gap-2 transition-all duration-200 ${celebrateState.userCelebrated
-                                                ? 'text-orange-500 scale-110'
-                                                : 'text-gray-600 hover:text-orange-500 hover:scale-105'
-                                            }`}
-                                    >
-                                        <span className={`text-lg ${celebrateState.userCelebrated ? 'animate-bounce' : ''}`}>
-                                            🎉
-                                        </span>
-                                        <span className="text-sm font-medium">
-                                            Celebrate {celebrateState.celebrationCount > 0 && `(${celebrateState.celebrationCount})`}
-                                        </span>
-                                    </button>
-                                    <button className="flex items-center gap-2 text-gray-600 hover:text-sky-600 transition-colors duration-200">
-                                        <MessageSquare className="h-4 w-4" />
-                                        <span className="text-sm">Comment</span>
-                                    </button>
-                                    <button
-                                        onClick={() => handleShare(post.id)}
-                                        className="flex items-center gap-2 text-gray-600 hover:text-purple-600 transition-colors duration-200"
-                                    >
-                                        <Share2 className="h-4 w-4" />
-                                        <span className="text-sm">Share</span>
-                                    </button>
-                                </div>
+                            <div className="flex items-center justify-start pt-4 border-t border-gray-200">
+                                <CelebrateButtonUserPosts
+                                    postId={post.id}
+                                    initialState={celebrateState}
+                                />
                             </div>
                         </CardContent>
                     </Card>

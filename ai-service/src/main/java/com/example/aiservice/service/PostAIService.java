@@ -116,12 +116,20 @@ public class PostAIService {
                 - Example: "Robi,Junior Developer,21 January" or "Google,Software Engineer,none"
 
                 FOR ALL OTHER TYPES (ACHIEVEMENT, PROJECT, SKILL):
-                - Extract ONLY transferable professional skills, technical competencies, and soft skills
+                - Extract ONLY skills that are EXPLICITLY mentioned in the post content
+                - DO NOT infer or assume generic skills like "Problem Solving", "Team Collaboration", "Innovation", "Leadership" unless they are specifically mentioned
+                - Look for: programming languages, frameworks, tools, technologies, specific competencies that are directly stated
                 - DO NOT include: event names, competition names, company names, project names, locations, dates
                 - DO NOT include: generic terms like "competition", "hackathon", "datathon", "contest"
-                - Focus on WHAT SKILLS were demonstrated or used, not WHERE or WHEN
-                - Examples of GOOD tags: "Machine Learning", "Data Analysis", "Python", "React", "Team Leadership"
-                - Examples of BAD tags: "Google Summer of Code", "NASA Space Apps", "Competition", "Hackathon"
+                - DO NOT assume soft skills unless explicitly mentioned (e.g., "I improved my debating skills" → "Debating")
+                - Examples of GOOD extraction:
+                  * "I built a web app using React and Node.js" → "React,Node.js"
+                  * "Used MySQL and Django for the project" → "MySQL,Django"
+                  * "Won debating competition" → "Debating"
+                  * "Learned Python programming" → "Python"
+                - Examples of BAD extraction:
+                  * "Won NASA Space Apps Challenge" → DO NOT add "Problem Solving,Innovation,Team Collaboration"
+                  * "Completed hackathon" → DO NOT add generic skills unless specifically mentioned
 
                 FOR GENERAL TYPE:
                 - Leave tags as empty string
@@ -161,14 +169,32 @@ public class PostAIService {
                 {
                   "summary": "Won first place in AI hackathon",
                   "type": "ACHIEVEMENT",
-                  "tags": "Artificial Intelligence,Problem Solving,Team Collaboration"
+                  "tags": "Artificial Intelligence,Machine Learning"
+                }
+
+                {
+                  "summary": "Won NASA Space Apps Challenge",
+                  "type": "ACHIEVEMENT",
+                  "tags": ""
+                }
+
+                {
+                  "summary": "Won debating competition",
+                  "type": "ACHIEVEMENT",
+                  "tags": "Debating"
                 }
 
                 PROJECT examples:
                 {
                   "summary": "Built e-commerce web application",
                   "type": "PROJECT",
-                  "tags": "Web Development,React,Node.js,Full Stack Development"
+                  "tags": "Web Development,React,Node.js,MySQL"
+                }
+
+                {
+                  "summary": "Developed mobile app using Flutter",
+                  "type": "PROJECT",
+                  "tags": "Flutter,Mobile Development,Dart"
                 }
 
                 GENERAL post example:

@@ -1,11 +1,15 @@
 "use client"
+import { useAuth } from '@/contexts/AuthContext';
+import withAuth from '@/components/withAuth';
 import Navbar from '@/components/Navbar';
+import CelebrateButton from '@/components/CelebrateButton';
 import React, { useState, useEffect, useRef } from 'react';
 // Reuse design tokens from dashboard for consistent theming
 const gradientPanel = 'bg-gradient-to-br from-teal-50/70 via-white/50 to-indigo-50/70 dark:from-slate-800/60 dark:via-slate-800/50 dark:to-slate-800/60 backdrop-blur-xl border border-white/40 dark:border-slate-700/50 shadow-sm';
 const subtleCard = 'bg-gradient-to-br from-teal-50/65 via-white/55 to-indigo-50/60 dark:from-slate-800/70 dark:via-slate-800/60 dark:to-slate-800/70 backdrop-blur-md border border-teal-900/5 dark:border-slate-700/60 hover:border-teal-500/30 dark:hover:border-teal-400/30 transition-colors';
 
-export default function MyFeedPage() {
+function MyFeedPage() {
+    const { user } = useAuth();
     const [posts, setPosts] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -18,6 +22,8 @@ export default function MyFeedPage() {
     const [selectedImages, setSelectedImages] = useState([]);
     const [imagePreviewModal, setImagePreviewModal] = useState({ show: false, image: null });
     const [activeNav, setActiveNav] = useState('feed');
+    const [celebratedPosts, setCelebratedPosts] = useState({});
+    const [showCelebratedModal, setShowCelebratedModal] = useState(false);
     const fileInputRef = useRef(null);
 
     // Icons using the same style as your dashboard
@@ -55,8 +61,8 @@ export default function MyFeedPage() {
             <button
                 onClick={onClick}
                 className={`flex flex-col items-center px-2 py-2 text-xs font-medium w-16 ${isActive
-                        ? 'text-sky-600'
-                        : 'text-slate-600 hover:text-slate-800'
+                    ? 'text-sky-600'
+                    : 'text-slate-600 hover:text-slate-800'
                     }`}
             >
                 {icon}
@@ -111,6 +117,27 @@ export default function MyFeedPage() {
             if (!response.ok) throw new Error('Failed to fetch feed');
             const data = await response.json();
             setPosts(data);
+
+            // Initialize celebration states for each post
+            const initialCelebratedStates = {};
+            for (const post of data) {
+                try {
+                    const celebrateResponse = await fetch(`http://localhost:8080/api/posts/${post.id}/celebration-info`, {
+                        headers: {
+                            'Authorization': `Bearer ${token}`,
+                            'Content-Type': 'application/json'
+                        }
+                    });
+                    if (celebrateResponse.ok) {
+                        const celebrateData = await celebrateResponse.json();
+                        initialCelebratedStates[post.id] = celebrateData.userCelebrated;
+                    }
+                } catch (err) {
+                    console.error('Failed to fetch celebration info for post', post.id);
+                    initialCelebratedStates[post.id] = false;
+                }
+            }
+            setCelebratedPosts(initialCelebratedStates);
         } catch (err) {
             setError(err.message);
         } finally {
@@ -175,6 +202,13 @@ export default function MyFeedPage() {
         }
     };
 
+    const handleCelebrationChange = (postId, isCelebrated) => {
+        setCelebratedPosts(prev => ({
+            ...prev,
+            [postId]: isCelebrated
+        }));
+    };
+
     const handleCelebrate = async (postId) => {
         try {
             const token = localStorage.getItem('token');
@@ -187,6 +221,14 @@ export default function MyFeedPage() {
             });
 
             if (response.ok) {
+                const data = await response.json();
+
+                // Update celebrated posts state
+                setCelebratedPosts(prev => ({
+                    ...prev,
+                    [postId]: data.isCelebrated || !prev[postId]
+                }));
+
                 fetchFeed(); // Refresh to show updated reactions
             }
         } catch (err) {
@@ -270,13 +312,22 @@ export default function MyFeedPage() {
                                 <p className="text-sm text-slate-600 dark:text-slate-400">Latest updates from your network</p>
                             </div>
                         </div>
-                        <button
-                            onClick={() => setShowCreatePost(!showCreatePost)}
-                            className="h-11 px-6 rounded-full bg-teal-600 hover:bg-teal-700 dark:bg-teal-500 dark:hover:bg-teal-400 text-white font-medium shadow-sm text-sm flex items-center gap-2 transition-colors"
-                        >
-                            <Plus className="h-4 w-4" />
-                            {showCreatePost ? 'Close' : 'New Post'}
-                        </button>
+                        <div className="flex items-center gap-3">
+                            <button
+                                onClick={() => setShowCreatePost(!showCreatePost)}
+                                className="h-11 px-6 rounded-full bg-teal-600 hover:bg-teal-700 dark:bg-teal-500 dark:hover:bg-teal-400 text-white font-medium shadow-sm text-sm flex items-center gap-2 transition-colors"
+                            >
+                                <Plus className="h-4 w-4" />
+                                {showCreatePost ? 'Close' : 'New Post'}
+                            </button>
+                            <button
+                                onClick={() => setShowCelebratedModal(true)}
+                                className="h-11 px-6 rounded-full bg-purple-600 hover:bg-purple-700 dark:bg-purple-500 dark:hover:bg-purple-400 text-white font-medium shadow-sm text-sm flex items-center gap-2 transition-colors"
+                            >
+                                <PartyPopper className="h-4 w-4" />
+                                Celebrated Posts
+                            </button>
+                        </div>
                     </div>
 
                     {/* Filter Tabs */}
@@ -284,8 +335,8 @@ export default function MyFeedPage() {
                         <button
                             onClick={() => setFilter('friends')}
                             className={`flex-1 px-5 py-2 rounded-xl text-sm font-medium transition-all duration-300 flex items-center justify-center gap-2 ring-1 ring-transparent ${filter === 'friends'
-                                    ? 'bg-white/70 dark:bg-slate-900/50 text-teal-700 dark:text-teal-300 shadow-sm ring-teal-500/30'
-                                    : 'text-slate-600 dark:text-slate-400 hover:bg-white/50 dark:hover:bg-slate-900/30'
+                                ? 'bg-white/70 dark:bg-slate-900/50 text-teal-700 dark:text-teal-300 shadow-sm ring-teal-500/30'
+                                : 'text-slate-600 dark:text-slate-400 hover:bg-white/50 dark:hover:bg-slate-900/30'
                                 }`}
                         >
                             <Users className="h-4 w-4" />
@@ -294,8 +345,8 @@ export default function MyFeedPage() {
                         <button
                             onClick={() => setFilter('me')}
                             className={`flex-1 px-5 py-2 rounded-xl text-sm font-medium transition-all duration-300 flex items-center justify-center gap-2 ring-1 ring-transparent ${filter === 'me'
-                                    ? 'bg-white/70 dark:bg-slate-900/50 text-teal-700 dark:text-teal-300 shadow-sm ring-teal-500/30'
-                                    : 'text-slate-600 dark:text-slate-400 hover:bg-white/50 dark:hover:bg-slate-900/30'
+                                ? 'bg-white/70 dark:bg-slate-900/50 text-teal-700 dark:text-teal-300 shadow-sm ring-teal-500/30'
+                                : 'text-slate-600 dark:text-slate-400 hover:bg-white/50 dark:hover:bg-slate-900/30'
                                 }`}
                         >
                             <User className="h-4 w-4" />
@@ -454,9 +505,9 @@ export default function MyFeedPage() {
                                             {/* Post Images */}
                                             {post.hasImages && post.images && post.images.length > 0 && (
                                                 <div className={`mb-4 grid gap-3 rounded-xl overflow-hidden ${post.images.length === 1 ? 'grid-cols-1' :
-                                                        post.images.length === 2 ? 'grid-cols-2' :
-                                                            post.images.length === 3 ? 'grid-cols-2' :
-                                                                'grid-cols-2'
+                                                    post.images.length === 2 ? 'grid-cols-2' :
+                                                        post.images.length === 3 ? 'grid-cols-2' :
+                                                            'grid-cols-2'
                                                     }`}>
                                                     {post.images.map((image, index) => (
                                                         <div
@@ -491,29 +542,11 @@ export default function MyFeedPage() {
                                             )}
 
                                             {/* Engagement Bar */}
-                                            <div className="flex items-center justify-between pt-4 border-t border-teal-900/10 dark:border-slate-700/60">
-                                                <button
-                                                    onClick={() => handleCelebrate(post.id)}
-                                                    className="flex items-center gap-1 text-slate-500 dark:text-slate-400 hover:text-teal-600 dark:hover:text-teal-400 text-[11px] font-medium tracking-wide"
-                                                >
-                                                    <PartyPopper className="h-4 w-4" />
-                                                    Celebrate
-                                                </button>
-
-                                                <button className="flex items-center gap-1 text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300 text-[11px] font-medium tracking-wide">
-                                                    <MessageSquare className="h-4 w-4" />
-                                                    Comment
-                                                </button>
-
-                                                <button className="flex items-center gap-1 text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300 text-[11px] font-medium tracking-wide">
-                                                    <Share className="h-4 w-4" />
-                                                    Share
-                                                </button>
-
-                                                <button className="flex items-center gap-1 text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300 text-[11px] font-medium tracking-wide">
-                                                    <Bookmark className="h-4 w-4" />
-                                                    Save
-                                                </button>
+                                            <div className="flex items-center justify-start pt-4 border-t border-teal-900/10 dark:border-slate-700/60">
+                                                <CelebrateButton
+                                                    postId={post.id}
+                                                    onCelebrationChange={handleCelebrationChange}
+                                                />
                                             </div>
 
                                             {/* Reaction Count */}
@@ -594,7 +627,90 @@ export default function MyFeedPage() {
                         </div>
                     </div>
                 )}
+
+                {/* Celebrated Posts Modal */}
+                {showCelebratedModal && (
+                    <div
+                        className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-6"
+                        onClick={() => setShowCelebratedModal(false)}
+                    >
+                        <div
+                            className="relative max-w-2xl w-full max-h-[80vh] bg-gradient-to-br from-teal-50/90 via-white/90 to-indigo-50/90 dark:from-slate-800/90 dark:via-slate-800/80 dark:to-slate-800/90 backdrop-blur-xl border border-white/40 dark:border-slate-700/50 rounded-2xl shadow-2xl"
+                            onClick={(e) => e.stopPropagation()}
+                        >
+                            {/* Modal Header */}
+                            <div className="flex items-center justify-between p-6 border-b border-teal-100/50 dark:border-slate-700/50">
+                                <div className="flex items-center gap-3">
+                                    <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-white shadow-sm">
+                                        <PartyPopper className="h-5 w-5" />
+                                    </div>
+                                    <div>
+                                        <h2 className="text-xl font-semibold text-slate-800 dark:text-slate-100">Celebrated Posts</h2>
+                                        <p className="text-sm text-slate-600 dark:text-slate-400">Posts you've celebrated</p>
+                                    </div>
+                                </div>
+                                <button
+                                    onClick={() => setShowCelebratedModal(false)}
+                                    className="p-2 hover:bg-teal-100/50 dark:hover:bg-slate-700/50 rounded-full transition-colors"
+                                >
+                                    <X className="h-5 w-5 text-slate-500 dark:text-slate-400" />
+                                </button>
+                            </div>
+
+                            {/* Modal Content */}
+                            <div className="p-6 overflow-y-auto max-h-[60vh]">
+                                {Object.keys(celebratedPosts).filter(postId => celebratedPosts[postId]).length === 0 ? (
+                                    <div className="text-center py-12">
+                                        <div className="w-16 h-16 mx-auto mb-4 bg-gradient-to-br from-purple-100 to-pink-100 dark:from-purple-900/30 dark:to-pink-900/30 rounded-full flex items-center justify-center">
+                                            <PartyPopper className="h-8 w-8 text-purple-500" />
+                                        </div>
+                                        <h3 className="text-lg font-semibold text-slate-800 dark:text-slate-100 mb-2">No celebrated posts yet</h3>
+                                        <p className="text-slate-600 dark:text-slate-400">Start celebrating posts to see them here!</p>
+                                    </div>
+                                ) : (
+                                    <div className="space-y-4">
+                                        {posts.filter(post => celebratedPosts[post.id]).map(post => (
+                                            <div key={post.id} className="p-4 bg-white/60 dark:bg-slate-900/40 rounded-xl border border-teal-100/50 dark:border-slate-700/50">
+                                                <div className="flex items-start gap-3">
+                                                    <div className="w-10 h-10 rounded-lg overflow-hidden">
+                                                        {post.profilePictureBase64 ? (
+                                                            <img
+                                                                src={`data:image/jpeg;base64,${post.profilePictureBase64}`}
+                                                                alt="Profile"
+                                                                className="w-full h-full object-cover"
+                                                            />
+                                                        ) : (
+                                                            <div className="w-full h-full bg-gradient-to-br from-teal-500 to-indigo-500 flex items-center justify-center text-white font-bold text-xs">
+                                                                {getInitials(post.profileName)}
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                    <div className="flex-1 min-w-0">
+                                                        <h4 className="font-semibold text-slate-800 dark:text-slate-100 text-sm">
+                                                            {post.profileName || 'Anonymous'}
+                                                        </h4>
+                                                        <p className="text-slate-600 dark:text-slate-300 text-sm mt-1 line-clamp-2">
+                                                            {post.content}
+                                                        </p>
+                                                        <p className="text-slate-500 dark:text-slate-400 text-xs mt-2">
+                                                            {formatDate(post.createdAt)}
+                                                        </p>
+                                                    </div>
+                                                    <div className="text-purple-500">
+                                                        <PartyPopper className="h-5 w-5" />
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                )}
             </div>
         </div>
     );
 }
+
+export default withAuth(MyFeedPage);

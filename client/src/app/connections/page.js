@@ -1,6 +1,8 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { useAuth } from '@/contexts/AuthContext';
+import withAuth from '@/components/withAuth';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
 import { ArrowLeft, Users, UserPlus, Clock, Search, MessageCircle, Send, Image as ImageIcon, Download, Plus, MoreHorizontal } from 'lucide-react';
@@ -24,7 +26,7 @@ const API_BASE_URL = 'http://localhost:8080';
 const gradientPanel = 'bg-gradient-to-br from-teal-50/70 via-white/50 to-indigo-50/70 dark:from-slate-800/60 dark:via-slate-800/50 dark:to-slate-800/60 backdrop-blur-xl border border-white/40 dark:border-slate-700/50 shadow-sm';
 const subtleCard = 'bg-gradient-to-br from-teal-50/65 via-white/55 to-indigo-50/60 dark:from-slate-800/70 dark:via-slate-800/60 dark:to-slate-800/70 backdrop-blur-md border border-teal-900/5 dark:border-slate-700/60 hover:border-teal-500/30 dark:hover:border-teal-400/30 transition-colors';
 
-export default function ConnectionsPage() {
+function ConnectionsPage() {
     const router = useRouter();
     const [activeTab, setActiveTab] = useState('connections');
 
@@ -658,3 +660,5 @@ function SentRequests() {
         </div>
     );
 }
+
+export default withAuth(ConnectionsPage);

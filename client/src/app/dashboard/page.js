@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useAuth } from '@/contexts/AuthContext';
+import withAuth from '@/components/withAuth';
 import { apiFetch } from '@/lib/api';
 import {
   User, Users, FileText, Rss, LogOut, Bell, Search, Video, Briefcase,
@@ -42,8 +44,9 @@ const gradientPanel = 'bg-gradient-to-br from-teal-50/70 via-white/50 to-indigo-
 // Softer, tinted cards matching new palette (reduces stark white feel)
 const subtleCard = 'bg-gradient-to-br from-teal-50/65 via-white/55 to-indigo-50/60 dark:from-slate-800/70 dark:via-slate-800/60 dark:to-slate-800/70 backdrop-blur-md border border-teal-900/5 dark:border-slate-700/60 hover:border-teal-500/30 dark:hover:border-teal-400/30 transition-colors';
 
-export default function FunctionalDashboard() {
+function FunctionalDashboard() {
   const router = useRouter();
+  const { user, logout } = useAuth();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [userData, setUserData] = useState(null);
@@ -58,20 +61,9 @@ export default function FunctionalDashboard() {
     async function initializeDashboard() {
       try {
         setLoading(true);
-        const token = localStorage.getItem('token');
 
-        if (!token) {
-          router.push('/login');
-          return;
-        }
-
-        // Fetch user profile
-        const profileRes = await apiFetch('/api/profile/me');
-        if (!profileRes.ok) {
-          throw new Error('Failed to fetch profile');
-        }
-        const profile = await profileRes.json();
-        setUserData(profile);
+        // Use user from auth context
+        setUserData(user);
 
         // Fetch dashboard statistics
         const statsRes = await apiFetch('/api/dashboard/stats');
@@ -102,18 +94,13 @@ export default function FunctionalDashboard() {
       }
     }
 
-    initializeDashboard();
-  }, [router]);
+    if (user) {
+      initializeDashboard();
+    }
+  }, [user]);
 
   const handleLogout = async () => {
-    try {
-      await apiFetch('/api/auth/logout', { method: 'POST' });
-    } catch (err) {
-      console.error('Logout error:', err);
-    } finally {
-      localStorage.removeItem('token');
-      router.push('/login');
-    }
+    logout();
   };
 
   const handleNavigation = (path) => {
@@ -509,3 +496,5 @@ export default function FunctionalDashboard() {
     </div>
   );
 }
+
+export default withAuth(FunctionalDashboard);

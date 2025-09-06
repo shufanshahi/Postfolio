@@ -1,5 +1,7 @@
 "use client";
 import { useEffect, useState, useCallback } from "react";
+import { useAuth } from '@/contexts/AuthContext';
+import withAuth from '@/components/withAuth';
 import { apiFetch, jobServiceFetch } from '@/lib/api';
 import { useRouter } from "next/navigation";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
@@ -18,7 +20,8 @@ import {
 import LocationMap from "@/components/LocationMap";
 import Navbar from '@/components/Navbar';
 
-export default function JobPostings() {
+function JobPostings() {
+  const { user } = useAuth();
   const router = useRouter();
   const [jobs, setJobs] = useState([]);
   const [filteredJobs, setFilteredJobs] = useState([]);
@@ -77,7 +80,7 @@ export default function JobPostings() {
 
     // Filter by title search
     if (searchTitle.trim()) {
-      filtered = filtered.filter(job => 
+      filtered = filtered.filter(job =>
         job.title.toLowerCase().includes(searchTitle.toLowerCase())
       );
     }
@@ -116,9 +119,9 @@ export default function JobPostings() {
   };
 
   const handleLocationSelect = (locationData) => {
-    setForm({ 
-      ...form, 
-      location: locationData.address 
+    setForm({
+      ...form,
+      location: locationData.address
     });
   };
 
@@ -137,18 +140,18 @@ export default function JobPostings() {
       router.push("/login");
       return;
     }
-    
+
     // Get user profile to extract userId
     const profileRes = await apiFetch('/api/profile/me');
-    
+
     if (!profileRes.ok) {
       setLoading(false);
       alert("Failed to get user profile. Please try again.");
       return;
     }
-    
+
     const profile = await profileRes.json();
-    
+
     const res = await jobServiceFetch('/api/jobs', {
       method: 'POST',
       body: JSON.stringify({
@@ -159,7 +162,7 @@ export default function JobPostings() {
     });
     if (res.ok) {
       setShowNewJob(false);
-  setForm({ title: "", position: "", description: "", minSalary: "", maxSalary: "", requiredProject: "", requiredExperience: "", requiredSkills: "", requiredEducation: "", endDate: "", location: "" });
+      setForm({ title: "", position: "", description: "", minSalary: "", maxSalary: "", requiredProject: "", requiredExperience: "", requiredSkills: "", requiredEducation: "", endDate: "", location: "" });
       fetchJobs();
     }
     setLoading(false);
@@ -167,8 +170,8 @@ export default function JobPostings() {
 
   const handleDeletePost = async (jobId) => {
     setLoading(true);
-        const token = localStorage.getItem("token");
-        const res = await fetch(`http://localhost:8080/api/jobs/${jobId}`, {
+    const token = localStorage.getItem("token");
+    const res = await fetch(`http://localhost:8080/api/jobs/${jobId}`, {
       method: 'DELETE',
       headers: {
         'Content-Type': 'application/json',
@@ -186,7 +189,7 @@ export default function JobPostings() {
 
   const handleTogglePostStatus = async (jobId, currentStatus) => {
     setLoading(true);
-          const token = localStorage.getItem("token");
+    const token = localStorage.getItem("token");
 
     const newStatus = currentStatus === "CLOSED" ? "OPEN" : "CLOSED";
     const res = await fetch(`http://localhost:8080/api/jobs/${jobId}/status?status=${newStatus}`, {
@@ -692,7 +695,7 @@ export default function JobPostings() {
           ))}
         </div>
       </div>
-      
+
       <LocationMap
         isOpen={showLocationMap}
         onClose={() => setShowLocationMap(false)}
@@ -701,3 +704,6 @@ export default function JobPostings() {
     </div>
   );
 }
+
+
+export default withAuth(JobPostings);

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useAuth } from "@/contexts/AuthContext";
 import { LogOut, User, Settings } from "lucide-react";
 import {
   DropdownMenu,
@@ -17,28 +18,10 @@ import NotificationBell from "@/components/NotificationBell";
 
 export default function Navbar() {
   const router = useRouter();
-  const [user, setUser] = useState(null);
-
-  useEffect(() => {
-    async function load() {
-      try {
-        // fetch user profile
-        const profileRes = await apiFetch("/api/profile/me");
-        if (profileRes.ok) {
-          const profile = await profileRes.json();
-          console.log('Profile data in Navbar:', profile);
-          setUser(profile);
-        }
-      } catch (err) {
-        console.error("Navbar fetch error:", err);
-      }
-    }
-    load();
-  }, []);
+  const { user, logout } = useAuth();
 
   const handleLogout = () => {
-    localStorage.removeItem("token");
-    router.push("/login");
+    logout();
   };
 
   return (

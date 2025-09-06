@@ -1,5 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
+import { useAuth } from '@/contexts/AuthContext';
+import withAuth from '@/components/withAuth';
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
@@ -7,7 +9,8 @@ import { Download, AlertCircle, CheckCircle2, FileText, Loader2 } from 'lucide-r
 import CvViewer from "@/component/CvViewer";
 import Navbar from '@/components/Navbar';
 
-export default function CvDownloadButton() {
+function CvDownloadButton() {
+    const { user } = useAuth();
     const [loading, setLoading] = useState(false);
     const [profileId, setProfileId] = useState(null);
     const [error, setError] = useState(null);
@@ -148,3 +151,5 @@ export default function CvDownloadButton() {
         </div>
     );
 }
+
+export default withAuth(CvDownloadButton);
