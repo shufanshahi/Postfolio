@@ -10,10 +10,13 @@ import java.util.Optional;
 
 public interface ProfileRepository extends JpaRepository<Profile, Long> {
     Optional<Profile> findByUser(User user);
-    
+
+    @Query("SELECT p FROM Profile p WHERE p.user.id = :userId")
+    Optional<Profile> findByUserId(@Param("userId") Long userId);
+
     @Query("SELECT p FROM Profile p JOIN FETCH p.user WHERE p.id = :id")
     Optional<Profile> findByIdWithUser(@Param("id") Long id);
-    
+
     @Query("SELECT p FROM Profile p JOIN FETCH p.user WHERE p.user = :user")
     Optional<Profile> findByUserWithUser(@Param("user") User user);
 }
