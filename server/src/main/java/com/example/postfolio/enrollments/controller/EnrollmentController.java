@@ -124,6 +124,25 @@ public class EnrollmentController {
     }
     
     /**
+     * PUT /api/enrollments/{id}/rating - Update enrollment rating
+     */
+    @PutMapping("/{id}/rating")
+    public ResponseEntity<EnrollmentResponse> updateEnrollmentRating(
+            @PathVariable Long id, 
+            @Valid @RequestBody UpdateEnrollmentRatingRequest request) {
+        try {
+            EnrollmentResponse enrollment = enrollmentService.updateEnrollmentRating(id, request);
+            return ResponseEntity.ok(enrollment);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().build();
+        } catch (RuntimeException e) {
+            return ResponseEntity.notFound().build();
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+    
+    /**
      * DELETE /api/enrollments/{id} - Delete enrollment
      */
     @DeleteMapping("/{id}")

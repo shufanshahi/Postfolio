@@ -128,6 +128,26 @@ public class EnrollmentService {
     }
     
     /**
+     * Update enrollment rating
+     */
+    public EnrollmentResponse updateEnrollmentRating(Long id, UpdateEnrollmentRatingRequest request) {
+        if (id == null) {
+            throw new IllegalArgumentException("Enrollment ID cannot be null");
+        }
+        if (request.getRating() != null && (request.getRating() < 1.0 || request.getRating() > 5.0)) {
+            throw new IllegalArgumentException("Rating must be between 1.0 and 5.0");
+        }
+        
+        Enrollment enrollment = enrollmentRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Enrollment not found with id: " + id));
+        
+        enrollment.setRating(request.getRating());
+        Enrollment savedEnrollment = enrollmentRepository.save(enrollment);
+        
+        return new EnrollmentResponse(savedEnrollment);
+    }
+    
+    /**
      * Delete enrollment
      */
     public void deleteEnrollment(Long id) {

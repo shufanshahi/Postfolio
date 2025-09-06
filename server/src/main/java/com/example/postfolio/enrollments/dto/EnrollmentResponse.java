@@ -18,6 +18,8 @@ public class EnrollmentResponse {
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime updatedAt;
     
+    private Double rating; // Rating out of 5, can be null
+    
     // Constructors
     public EnrollmentResponse() {}
     
@@ -29,6 +31,7 @@ public class EnrollmentResponse {
         this.price = enrollment.getPrice();
         this.time = enrollment.getTime();
         this.updatedAt = enrollment.getUpdatedAt();
+        this.rating = enrollment.getRating();
     }
     
     // Getters and Setters
@@ -88,6 +91,14 @@ public class EnrollmentResponse {
         this.updatedAt = updatedAt;
     }
     
+    public Double getRating() {
+        return rating;
+    }
+    
+    public void setRating(Double rating) {
+        this.rating = rating;
+    }
+    
     @Override
     public String toString() {
         return "EnrollmentResponse{" +
@@ -98,6 +109,7 @@ public class EnrollmentResponse {
                 ", price=" + price +
                 ", time=" + time +
                 ", updatedAt=" + updatedAt +
+                ", rating=" + rating +
                 '}';
     }
 }

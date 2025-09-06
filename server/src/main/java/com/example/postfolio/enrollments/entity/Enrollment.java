@@ -33,6 +33,9 @@ public class Enrollment {
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime updatedAt;
     
+    @Column(name = "rating")
+    private Double rating; // Rating out of 5, can be null
+    
     // Enum for status
     public enum EnrollmentStatus {
         APPROVED,
@@ -135,6 +138,15 @@ public class Enrollment {
         this.updatedAt = updatedAt;
     }
     
+    public Double getRating() {
+        return rating;
+    }
+    
+    public void setRating(Double rating) {
+        this.rating = rating;
+        this.updatedAt = LocalDateTime.now();
+    }
+    
     // toString method
     @Override
     public String toString() {
@@ -146,6 +158,7 @@ public class Enrollment {
                 ", price=" + price +
                 ", time=" + time +
                 ", updatedAt=" + updatedAt +
+                ", rating=" + rating +
                 '}';
     }
 }
