@@ -45,6 +45,11 @@ export default function MyMentorshipPage() {
   const [enrollments, setEnrollments] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [enrollmentStatusFilter, setEnrollmentStatusFilter] = useState('all');
+  const [averageRatings, setAverageRatings] = useState({});
+  const [showRatingModal, setShowRatingModal] = useState(false);
+  const [selectedEnrollment, setSelectedEnrollment] = useState(null);
+  const [userRating, setUserRating] = useState(0);
+  const [submittingRating, setSubmittingRating] = useState(false);
 
   // Fetch enrollment data and mentorship details
   useEffect(() => {
@@ -105,6 +110,9 @@ export default function MyMentorshipPage() {
         );
 
         setEnrollments(enrichedEnrollments);
+        
+        // Fetch average ratings for each mentorship
+        await fetchAverageRatings(enrichedEnrollments);
       } catch (err) {
         console.error('Error fetching enrollment data:', err);
         setError(err.message || 'Failed to load enrollment data');
@@ -115,6 +123,96 @@ export default function MyMentorshipPage() {
 
     fetchEnrollmentData();
   }, [id]);
+
+  // Fetch average ratings for mentorships
+  const fetchAverageRatings = async (enrollments) => {
+    try {
+      const ratingsMap = {};
+      const mentorshipIds = [...new Set(enrollments.map(e => e.mentorshipId))];
+      
+      await Promise.all(
+        mentorshipIds.map(async (mentorshipId) => {
+          try {
+            const response = await fetch(`http://localhost:8080/api/enrollments/mentorship/${mentorshipId}`, {
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+              }
+            });
+            
+            if (response.ok) {
+              const enrollmentData = await response.json();
+              const ratings = enrollmentData
+                .map(e => e.rating)
+                .filter(rating => rating != null && rating > 0);
+              
+              if (ratings.length > 0) {
+                const avgRating = ratings.reduce((sum, rating) => sum + rating, 0) / ratings.length;
+                ratingsMap[mentorshipId] = {
+                  average: Math.round(avgRating * 10) / 10,
+                  count: ratings.length
+                };
+              }
+            }
+          } catch (error) {
+            console.error(`Error fetching ratings for mentorship ${mentorshipId}:`, error);
+          }
+        })
+      );
+      
+      setAverageRatings(ratingsMap);
+    } catch (error) {
+      console.error('Error fetching average ratings:', error);
+    }
+  };
+
+  // Handle rating submission
+  const handleRatingSubmit = async () => {
+    if (!selectedEnrollment || userRating === 0) return;
+    
+    try {
+      setSubmittingRating(true);
+      const response = await fetch(`http://localhost:8080/api/enrollments/${selectedEnrollment.id}/rating`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: JSON.stringify({ rating: userRating })
+      });
+      
+      if (response.ok) {
+        const updatedEnrollment = await response.json();
+        
+        // Update the enrollment in state
+        setEnrollments(prev => 
+          prev.map(e => e.id === updatedEnrollment.id ? { ...e, ...updatedEnrollment } : e)
+        );
+        
+        // Refresh average ratings
+        await fetchAverageRatings(enrollments);
+        
+        // Close modal
+        setShowRatingModal(false);
+        setSelectedEnrollment(null);
+        setUserRating(0);
+      } else {
+        throw new Error('Failed to submit rating');
+      }
+    } catch (error) {
+      console.error('Error submitting rating:', error);
+      setError('Failed to submit rating. Please try again.');
+    } finally {
+      setSubmittingRating(false);
+    }
+  };
+
+  // Open rating modal
+  const openRatingModal = (enrollment) => {
+    setSelectedEnrollment(enrollment);
+    setUserRating(enrollment.rating || 0);
+    setShowRatingModal(true);
+  };
 
   const formatDateTime = (dateTimeString) => {
     if (!dateTimeString) return 'Not specified';
@@ -409,6 +507,64 @@ export default function MyMentorshipPage() {
                       </div>
                     </div>
                   )}
+
+                  {/* Rating Section */}
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Star className="h-4 w-4 text-amber-500" />
+                      <div>
+                        <p className="text-sm font-medium text-slate-700 dark:text-slate-300">Rating</p>
+                        <div className="flex items-center gap-2">
+                          {/* User's Rating */}
+                          {enrollment.rating ? (
+                            <div className="flex items-center gap-1">
+                              <span className="text-xs text-slate-600 dark:text-slate-400">Your rating:</span>
+                              <div className="flex">
+                                {[1, 2, 3, 4, 5].map((star) => (
+                                  <Star
+                                    key={star}
+                                    className={`h-3 w-3 ${
+                                      star <= enrollment.rating
+                                        ? 'text-amber-400 fill-current'
+                                        : 'text-slate-300'
+                                    }`}
+                                  />
+                                ))}
+                              </div>
+                            </div>
+                          ) : (
+                            <span className="text-xs text-slate-500 dark:text-slate-400">Not rated</span>
+                          )}
+                          
+                          {/* Average Rating */}
+                          {averageRatings[enrollment.mentorshipId] && (
+                            <div className="flex items-center gap-1 ml-2">
+                              <span className="text-xs text-slate-500 dark:text-slate-400">•</span>
+                              <span className="text-xs text-slate-600 dark:text-slate-400">
+                                Avg: {averageRatings[enrollment.mentorshipId].average}/5
+                              </span>
+                              <span className="text-xs text-slate-500 dark:text-slate-400">
+                                ({averageRatings[enrollment.mentorshipId].count} review{averageRatings[enrollment.mentorshipId].count !== 1 ? 's' : ''})
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                    
+                    {/* Rate Button - Only show if enrollment can be rated */}
+                    
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="text-xs hover:bg-amber-50 hover:text-amber-700 hover:border-amber-300 dark:hover:bg-amber-900/20"
+                        onClick={() => openRatingModal(enrollment)}
+                      >
+                        <Star className="h-3 w-3 mr-1" />
+                        {enrollment.rating ? 'Update' : 'Rate'}
+                      </Button>
+                
+                  </div>
                 </div>
 
                 <div className="pt-2 border-t border-slate-200/60 dark:border-slate-700/60">
@@ -475,6 +631,78 @@ export default function MyMentorshipPage() {
           </div>
         )}
       </div>
+
+      {/* Rating Modal */}
+      {showRatingModal && selectedEnrollment && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl max-w-md w-full p-6 space-y-4 animate-in zoom-in duration-200">
+            <div className="text-center">
+              <h3 className="text-lg font-semibold text-slate-800 dark:text-slate-100 mb-2">
+                Rate Your Experience
+              </h3>
+              <p className="text-sm text-slate-600 dark:text-slate-400 mb-4">
+                How was your mentorship session with &ldquo;{selectedEnrollment.mentorship?.name}&rdquo;?
+              </p>
+              
+              {/* Star Rating */}
+              <div className="flex justify-center gap-2 mb-6">
+                {[1, 2, 3, 4, 5].map((star) => (
+                  <button
+                    key={star}
+                    type="button"
+                    onClick={() => setUserRating(star)}
+                    className="transition-colors hover:scale-110 transform duration-200"
+                  >
+                    <Star
+                      className={`h-8 w-8 ${
+                        star <= userRating
+                          ? 'text-amber-400 fill-current'
+                          : 'text-slate-300 hover:text-amber-300'
+                      }`}
+                    />
+                  </button>
+                ))}
+              </div>
+              
+              {userRating > 0 && (
+                <p className="text-sm text-slate-600 dark:text-slate-400 mb-4">
+                  You selected {userRating} star{userRating !== 1 ? 's' : ''}
+                </p>
+              )}
+            </div>
+            
+            {/* Action Buttons */}
+            <div className="flex gap-3">
+              <Button
+                variant="outline"
+                className="flex-1"
+                onClick={() => {
+                  setShowRatingModal(false);
+                  setSelectedEnrollment(null);
+                  setUserRating(0);
+                }}
+                disabled={submittingRating}
+              >
+                Cancel
+              </Button>
+              <Button
+                className="flex-1 bg-amber-600 hover:bg-amber-700"
+                onClick={handleRatingSubmit}
+                disabled={userRating === 0 || submittingRating}
+              >
+                {submittingRating ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Submitting...
+                  </>
+                ) : (
+                  'Submit Rating'
+                )}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
