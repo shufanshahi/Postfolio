@@ -567,6 +567,7 @@ function ConnectionsPage() {
                                                         conversation={selectedConversation}
                                                         onSendMessage={handleSendMessage}
                                                         loading={messagingLoading}
+                                                        currentUser={user}
                                                     />
                                                 </div>
                                             ) : (

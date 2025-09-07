@@ -5,12 +5,12 @@ import { Badge } from './ui/badge';
 import { Button } from './ui/button';
 import { MessageCircle, UserPlus } from 'lucide-react';
 
-const ConversationsList = ({ 
-  conversations, 
-  onSelectConversation, 
+const ConversationsList = ({
+  conversations,
+  onSelectConversation,
   selectedConversationId,
   onStartNewChat,
-  showNewChatButton = true 
+  showNewChatButton = true
 }) => {
   const formatTime = (timestamp) => {
     const date = new Date(timestamp);
@@ -73,24 +73,23 @@ const ConversationsList = ({
           </Button>
         </div>
       )}
-      
+
       <div className="flex-1 overflow-y-auto">
         {conversations.map((conversation) => (
           <div
             key={conversation.id}
-            className={`p-4 border-b cursor-pointer hover:bg-muted/50 transition-colors ${
-              selectedConversationId === conversation.id ? 'bg-muted' : ''
-            }`}
+            className={`p-4 border-b cursor-pointer hover:bg-muted/50 transition-colors ${selectedConversationId === conversation.id ? 'bg-muted' : ''
+              }`}
             onClick={() => onSelectConversation(conversation)}
           >
             <div className="flex items-center space-x-3">
               <Avatar className="w-12 h-12">
-                <AvatarImage src={conversation.otherUserAvatar} />
-                <AvatarFallback>
+                <AvatarImage src={conversation.otherUserAvatar ? `data:image/jpeg;base64,${conversation.otherUserAvatar}` : undefined} />
+                <AvatarFallback className="bg-gradient-to-br from-teal-500 via-indigo-500 to-amber-500 text-white">
                   {conversation.otherUserName?.charAt(0)?.toUpperCase()}
                 </AvatarFallback>
               </Avatar>
-              
+
               <div className="flex-1 min-w-0">
                 <div className="flex items-center justify-between">
                   <h3 className="font-semibold truncate">
@@ -100,12 +99,12 @@ const ConversationsList = ({
                     {formatTime(conversation.lastMessageAt)}
                   </span>
                 </div>
-                
+
                 <div className="flex items-center justify-between mt-1">
                   <p className="text-sm text-muted-foreground truncate">
                     {getMessagePreview(conversation)}
                   </p>
-                  
+
                   {conversation.unreadCount > 0 && (
                     <Badge variant="destructive" className="ml-2">
                       {conversation.unreadCount}

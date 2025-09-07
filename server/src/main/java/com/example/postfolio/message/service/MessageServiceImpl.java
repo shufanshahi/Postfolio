@@ -240,6 +240,7 @@ public class MessageServiceImpl implements MessageService {
                                 .id(conversation.getId())
                                 .otherUserId(otherUser.getId())
                                 .otherUserName(otherUser.getName())
+                                .otherUserEmail(otherUser.getEmail())
                                 .otherUserAvatar(otherUser.getProfile() != null
                                                 ? otherUser.getProfile().getPictureBase64()
                                                 : null)

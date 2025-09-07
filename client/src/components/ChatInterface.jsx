@@ -16,7 +16,8 @@ import {
 const ChatInterface = ({
   conversation,
   onSendMessage,
-  loading = false
+  loading = false,
+  currentUser = null
 }) => {
   const [message, setMessage] = useState('');
   const [selectedImage, setSelectedImage] = useState(null);
@@ -91,12 +92,10 @@ const ChatInterface = ({
   const getOtherUser = () => {
     if (!conversation) return null;
 
-    // This assumes the conversation has otherUserEmail or similar field
-    // You might need to adjust based on your actual data structure
     return {
       name: conversation.otherUserName || 'User',
-      email: conversation.otherUserEmail || 'user@example.com',
-      profilePicture: conversation.otherUserProfilePicture
+      email: conversation.otherUserEmail || '',
+      profilePicture: conversation.otherUserAvatar
     };
   };
 
@@ -118,8 +117,8 @@ const ChatInterface = ({
       <div className="p-4 border-b bg-card flex-shrink-0">
         <div className="flex items-center space-x-3">
           <Avatar>
-            <AvatarImage src={otherUser?.profilePicture} />
-            <AvatarFallback>
+            <AvatarImage src={otherUser?.profilePicture ? `data:image/jpeg;base64,${otherUser.profilePicture}` : undefined} />
+            <AvatarFallback className="bg-gradient-to-br from-teal-500 via-indigo-500 to-amber-500 text-white">
               {otherUser?.name?.charAt(0)?.toUpperCase()}
             </AvatarFallback>
           </Avatar>
@@ -134,53 +133,69 @@ const ChatInterface = ({
       <div className="flex-1 overflow-hidden">
         <ScrollArea className="h-full p-4" ref={scrollRef}>
           <div className="space-y-4">
-            {conversation.messages?.map((msg) => (
-              <div
-                key={msg.id}
-                className={`flex ${msg.senderId === conversation.otherUserId ? 'justify-start' : 'justify-end'}`}
-              >
-                <div className={`max-w-xs lg:max-w-md ${msg.senderId === conversation.otherUserId ? 'order-1' : 'order-2'}`}>
-                  {msg.senderId === conversation.otherUserId && (
-                    <Avatar className="w-6 h-6 mb-1">
-                      <AvatarImage src={msg.senderAvatar} />
-                      <AvatarFallback className="text-xs">
-                        {msg.senderName?.charAt(0)?.toUpperCase()}
-                      </AvatarFallback>
-                    </Avatar>
-                  )}
+            {conversation.messages?.map((msg) => {
+              const isOtherUser = msg.senderId === conversation.otherUserId;
+              const isCurrentUser = !isOtherUser;
 
-                  <div className={`rounded-lg p-3 ${msg.senderId === conversation.otherUserId
-                    ? 'bg-muted'
-                    : 'bg-primary text-primary-foreground'
-                    }`}>
-                    {msg.type === 'IMAGE' && msg.imageData ? (
-                      <div className="space-y-2">
-                        <img
-                          src={msg.imageData}
-                          alt="Shared image"
-                          className="max-w-full rounded"
-                        />
-                        {msg.content && (
-                          <p className="text-sm">{msg.content}</p>
+              return (
+                <div
+                  key={msg.id}
+                  className={`flex ${isOtherUser ? 'justify-start' : 'justify-end'}`}
+                >
+                  <div className={`max-w-xs lg:max-w-md flex items-end space-x-2 ${isOtherUser ? 'flex-row' : 'flex-row-reverse space-x-reverse'}`}>
+                    {/* Profile Picture */}
+                    <Avatar className="w-8 h-8 flex-shrink-0">
+                      {isOtherUser ? (
+                        <>
+                          <AvatarImage src={conversation.otherUserAvatar ? `data:image/jpeg;base64,${conversation.otherUserAvatar}` : undefined} />
+                          <AvatarFallback className="text-xs bg-gradient-to-br from-teal-500 via-indigo-500 to-amber-500 text-white">
+                            {conversation.otherUserName?.charAt(0)?.toUpperCase() || 'U'}
+                          </AvatarFallback>
+                        </>
+                      ) : (
+                        <>
+                          <AvatarImage src={currentUser?.pictureBase64 ? `data:image/jpeg;base64,${currentUser.pictureBase64}` : undefined} />
+                          <AvatarFallback className="text-xs bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500 text-white">
+                            {currentUser?.name?.charAt(0)?.toUpperCase() || 'M'}
+                          </AvatarFallback>
+                        </>
+                      )}
+                    </Avatar>
+
+                    {/* Message Bubble */}
+                    <div className={`rounded-lg p-3 ${isOtherUser
+                      ? 'bg-muted'
+                      : 'bg-primary text-primary-foreground'
+                      }`}>
+                      {msg.type === 'IMAGE' && msg.imageData ? (
+                        <div className="space-y-2">
+                          <img
+                            src={msg.imageData}
+                            alt="Shared image"
+                            className="max-w-full rounded"
+                          />
+                          {msg.content && (
+                            <p className="text-sm">{msg.content}</p>
+                          )}
+                        </div>
+                      ) : (
+                        <p className="text-sm">{msg.content}</p>
+                      )}
+
+                      <div className={`text-xs mt-2 ${isOtherUser
+                        ? 'text-muted-foreground'
+                        : 'text-primary-foreground/70'
+                        }`}>
+                        {formatTimestamp(msg.timestamp)}
+                        {msg.isRead && (
+                          <span className="ml-2">✓✓</span>
                         )}
                       </div>
-                    ) : (
-                      <p className="text-sm">{msg.content}</p>
-                    )}
-
-                    <div className={`text-xs mt-2 ${msg.senderId === conversation.otherUserId
-                      ? 'text-muted-foreground'
-                      : 'text-primary-foreground/70'
-                      }`}>
-                      {formatTimestamp(msg.timestamp)}
-                      {msg.isRead && (
-                        <span className="ml-2">✓✓</span>
-                      )}
                     </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </ScrollArea>
       </div>
