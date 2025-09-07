@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import {
   Users, Calendar, DollarSign, Star, Clock, 
@@ -44,10 +44,77 @@ export default function MyMentorshipPage() {
   const [mentorships, setMentorships] = useState([]);
   const [userProfile, setUserProfile] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [mentorshipRatings, setMentorshipRatings] = useState({});
   
   // Edit modal state
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [editingMentorship, setEditingMentorship] = useState(null);
+
+  const fetchMentorshipRatings = useCallback(async (mentorships) => {
+    try {
+      const token = localStorage.getItem('token');
+      const ratingsMap = {};
+      
+      await Promise.all(
+        mentorships.map(async (mentorship) => {
+          try {
+            const response = await fetch(`http://localhost:8080/api/enrollments/mentorship/${mentorship.id}`, {
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+              }
+            });
+            
+            if (response.ok) {
+              const enrollments = await response.json();
+              const ratings = enrollments
+                .map(e => e.rating)
+                .filter(rating => rating != null && rating > 0);
+              
+              if (ratings.length > 0) {
+                const avgRating = ratings.reduce((sum, rating) => sum + rating, 0) / ratings.length;
+                ratingsMap[mentorship.id] = {
+                  average: Math.round(avgRating * 10) / 10,
+                  count: ratings.length
+                };
+              }
+            }
+          } catch (error) {
+            console.error(`Error fetching ratings for mentorship ${mentorship.id}:`, error);
+          }
+        })
+      );
+      
+      setMentorshipRatings(ratingsMap);
+    } catch (error) {
+      console.error('Error fetching mentorship ratings:', error);
+    }
+  }, []);
+
+  const fetchMyMentorships = useCallback(async (profileId, token) => {
+    try {
+      const response = await fetch(`http://localhost:8080/api/mentorships/profile/${profileId}`, {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setMentorships(data);
+        
+        // Fetch ratings for all mentorships
+        await fetchMentorshipRatings(data);
+      } else {
+        throw new Error('Failed to fetch your mentorships');
+      }
+    } catch (err) {
+      console.error('Failed to fetch mentorships:', err);
+      setError(err.message || 'Failed to fetch your mentorships');
+    }
+  }, [fetchMentorshipRatings]);
+
   useEffect(() => {
     async function initializePage() {
       if (!profileId) return;
@@ -88,28 +155,7 @@ export default function MyMentorshipPage() {
     }
 
     initializePage();
-  }, [profileId, router]);
-
-  const fetchMyMentorships = async (profileId, token) => {
-    try {
-      const response = await fetch(`http://localhost:8080/api/mentorships/profile/${profileId}`, {
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        setMentorships(data);
-      } else {
-        throw new Error('Failed to fetch your mentorships');
-      }
-    } catch (err) {
-      console.error('Failed to fetch mentorships:', err);
-      setError(err.message || 'Failed to fetch your mentorships');
-    }
-  };
+  }, [profileId, router, fetchMyMentorships]);
 
   // Edit handlers
   const handleEditMentorship = (mentorship) => {
@@ -425,11 +471,14 @@ export default function MyMentorshipPage() {
                     <span className="text-slate-500 dark:text-slate-400 text-sm">per session</span>
                   </div>
                   
-                  {mentorship.rating > 0 && (
+                  {mentorshipRatings[mentorship.id] && (
                     <div className="flex items-center gap-1">
                       <Star className="h-4 w-4 text-amber-500 fill-current" />
                       <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
-                        {mentorship.rating.toFixed(1)}
+                        {mentorshipRatings[mentorship.id].average}
+                      </span>
+                      <span className="text-xs text-slate-500 dark:text-slate-400">
+                        ({mentorshipRatings[mentorship.id].count} review{mentorshipRatings[mentorship.id].count !== 1 ? 's' : ''})
                       </span>
                     </div>
                   )}

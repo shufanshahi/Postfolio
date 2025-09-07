@@ -53,26 +53,26 @@ export default function VideoCallPage() {
   useEffect(() => {
     const fetchInterviewData = async () => {
       try {
-        const token = localStorage.getItem("token");
-        if (!token) {
-          setError("You are not logged in. Please login first.");
-          return;
-        }
+        // const token = localStorage.getItem("token");
+        // if (!token) {
+        //   setError("You are not logged in. Please login first.");
+        //   return;
+        // }
 
-        const res = await fetch(`http://localhost:8080/api/interviews/${roomId}`, {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-        });
+        // const res = await fetch(`http://localhost:8080/api/interviews/${roomId}`, {
+        //   method: "GET",
+        //   headers: {
+        //     "Content-Type": "application/json",
+        //     Authorization: `Bearer ${token}`,
+        //   },
+        // });
 
-        if (res.ok) {
-          const data = await res.json();
-          setInterviewData(data);
-        } else {
-          setError("Failed to fetch interview information.");
-        }
+        // if (res.ok) {
+        //   const data = await res.json();
+        //   setInterviewData(data);
+        // } else {
+        //   setError("Failed to fetch interview information.");
+        // }
       } catch (error) {
         console.error("Error fetching interview data:", error);
         setError("Error fetching interview information.");
@@ -265,28 +265,47 @@ export default function VideoCallPage() {
 
   const hangUp = async () => {
     try {
-    //   // If the user is a host, update interview status to COMPLETED and redirect to job-applicants
-    //   if (role === "host" && interviewData) {
-    //     const token = localStorage.getItem("token");
-    //     if (token) {
-    //       try {
-    //         await fetch(`http://localhost:8080/api/interviews/update-status?profileId=${interviewData.profileId}&jobId=${interviewData.jobId}&status=COMPLETED`, {
-    //           method: "PUT",
-    //           headers: {
-    //             "Content-Type": "application/json",
-    //             Authorization: `Bearer ${token}`,
-    //           },
-    //         });
-    //       } catch (error) {
-    //         console.error("Error updating interview status:", error);
-    //       }
-    //     }
-    //     // Redirect to job-applicants page with the jobId
-    //     router.push(`/job-applicants/${interviewData.jobId}`);
-    //   } else {
-    //     // For participants or when interview data is not available, go to a default page
-    //     router.push("/dashboard");
-    //   }
+      // Stop all media tracks (camera and microphone)
+      if (localStreamRef.current) {
+        localStreamRef.current.getTracks().forEach((track) => {
+          track.stop();
+        });
+      }
+
+      // Update enrollment status to COMPLETED
+      const token = localStorage.getItem("token");
+      if (token && roomId) {
+        try {
+          await fetch(`http://localhost:8080/api/enrollments/${roomId}/status`, {
+            method: "PUT",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify({ status: "COMPLETED" }),
+          });
+        } catch (error) {
+          console.error("Error updating enrollment status:", error);
+        }
+      }
+
+      // Close WebRTC connection
+      if (pcRef.current) {
+        pcRef.current.close();
+      }
+
+      // Disconnect socket
+      if (socketRef.current) {
+        socketRef.current.emit("leave", { roomId });
+        socketRef.current.disconnect();
+      }
+
+      // Redirect based on role
+      if (role === "host") {
+        router.push("/mentorship");
+      } else {
+        router.push("/mentorship");
+      }
     } catch (error) {
       console.error("Error during hangup:", error);
       router.push("/dashboard");
@@ -532,12 +551,12 @@ export default function VideoCallPage() {
               <span className="text-white font-medium">Room: {roomId}</span>
               <span className="text-white/60">•</span>
               <span className="text-white/60">{role === 'host' ? 'Host' : 'Participant'}</span>
-              {interviewData && (
+              {/* {interviewData && (
                 <>
                   <span className="text-white/60">•</span>
                   <span className="text-white/60">Job ID: {interviewData.jobId}</span>
                 </>
-              )}
+              )} */}
               {connected && (
                 <>
                   <span className="text-white/60">•</span>
