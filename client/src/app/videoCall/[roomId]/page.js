@@ -265,6 +265,13 @@ export default function VideoCallPage() {
 
   const hangUp = async () => {
     try {
+      // Stop all media tracks (camera and microphone)
+      if (localStreamRef.current) {
+        localStreamRef.current.getTracks().forEach((track) => {
+          track.stop();
+        });
+      }
+
       // If the user is a host, update interview status to COMPLETED and redirect to job-applicants
       if (role === "host" && interviewData) {
         const token = localStorage.getItem("token");
