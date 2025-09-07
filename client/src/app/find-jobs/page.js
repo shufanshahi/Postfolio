@@ -8,9 +8,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { 
-  Search, Filter, MapPin, DollarSign, Calendar, Users, 
-  Briefcase, Clock, Award, TrendingUp, Eye, X, 
+import {
+  Search, Filter, MapPin, DollarSign, Calendar, Users,
+  Briefcase, Clock, Award, TrendingUp, Eye, X,
   CheckCircle, AlertCircle, Loader2, Star
 } from "lucide-react";
 import Navbar from '@/components/Navbar';
@@ -24,6 +24,63 @@ function FindJobs() {
   const [statusFilter, setStatusFilter] = useState("ALL");
   const [minSalaryFilter, setMinSalaryFilter] = useState("");
   const [maxSalaryFilter, setMaxSalaryFilter] = useState("");
+  const [refreshingCache, setRefreshingCache] = useState(false);
+
+  const handleRefreshCache = async () => {
+    setRefreshingCache(true);
+    try {
+      const response = await jobServiceFetch('/api/jobs/cache/refresh', {
+        method: 'POST'
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        alert(result.message || "Job matching cache refreshed successfully!");
+
+        // Refetch jobs after cache refresh
+        const token = localStorage.getItem("token");
+        if (token) {
+          const profileRes = await fetch('http://localhost:8080/api/profile/me', {
+            method: 'GET',
+            headers: {
+              'Authorization': `Bearer ${token}`,
+            },
+          });
+          if (profileRes.ok) {
+            const profile = await profileRes.json();
+
+            const res = await jobServiceFetch('/api/jobs/matched');
+            if (res.ok) {
+              const jobsData = await res.json();
+              const jobsWithEmployerInfo = await Promise.all(
+                jobsData.map(async (job) => {
+                  const employerRes = await fetch(`http://localhost:8080/api/profile/${job.employerId}`, {
+                    method: 'GET',
+                    headers: {
+                      'Authorization': `Bearer ${token}`,
+                    },
+                  });
+                  const employer = employerRes.ok ? await employerRes.json() : { name: 'Unknown' };
+                  return { ...job, employerName: employer.name };
+                })
+              );
+              const withAppliedFlag = jobsWithEmployerInfo.map(job => ({ ...job, isApplied: job.applicantIds?.includes(profile.id) }));
+              withAppliedFlag.sort((a, b) => (b?.matchingScore?.totalScore || 0) - (a?.matchingScore?.totalScore || 0));
+              setJobs(withAppliedFlag);
+            }
+          }
+        }
+      } else {
+        const error = await response.json();
+        alert(error.message || "Failed to refresh cache");
+      }
+    } catch (error) {
+      console.error('Error refreshing cache:', error);
+      alert("Failed to refresh cache. Please try again.");
+    } finally {
+      setRefreshingCache(false);
+    }
+  };
 
   useEffect(() => {
     async function fetchJobs() {
@@ -232,7 +289,7 @@ function FindJobs() {
                 <Filter className="h-5 w-5 text-teal-600 dark:text-teal-400" />
                 <h3 className="text-lg font-semibold text-slate-800 dark:text-slate-100">Smart Filters</h3>
               </div>
-              
+
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                 {/* Search by Title */}
                 <div className="space-y-2">
@@ -302,22 +359,45 @@ function FindJobs() {
                   <Eye className="h-4 w-4" />
                   Showing {filteredJobs.length} of {jobs.length} jobs
                 </div>
-                {(searchTitle || statusFilter !== "ALL" || minSalaryFilter || maxSalaryFilter) && (
+                <div className="flex items-center gap-2">
+                  {/* Refresh Cache Button */}
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => {
-                      setSearchTitle("");
-                      setStatusFilter("ALL");
-                      setMinSalaryFilter("");
-                      setMaxSalaryFilter("");
-                    }}
-                    className="bg-white/60 dark:bg-slate-700/60 backdrop-blur border-slate-300/60 dark:border-slate-600/60 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-600/80 rounded-xl"
+                    onClick={handleRefreshCache}
+                    disabled={refreshingCache}
+                    className="bg-white/70 dark:bg-slate-700/70 backdrop-blur border-slate-200/60 dark:border-slate-600/60 hover:border-teal-500 dark:hover:border-teal-400 text-slate-700 dark:text-slate-300"
                   >
-                    <X className="h-4 w-4 mr-2" />
-                    Clear Filters
+                    {refreshingCache ? (
+                      <>
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        Refreshing...
+                      </>
+                    ) : (
+                      <>
+                        <TrendingUp className="h-4 w-4 mr-2" />
+                        Refresh Scores
+                      </>
+                    )}
                   </Button>
-                )}
+                  {/* Clear Filters Button */}
+                  {(searchTitle || statusFilter !== "ALL" || minSalaryFilter || maxSalaryFilter) && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        setSearchTitle("");
+                        setStatusFilter("ALL");
+                        setMinSalaryFilter("");
+                        setMaxSalaryFilter("");
+                      }}
+                      className="bg-white/60 dark:bg-slate-700/60 backdrop-blur border-slate-300/60 dark:border-slate-600/60 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-600/80 rounded-xl"
+                    >
+                      <X className="h-4 w-4 mr-2" />
+                      Clear Filters
+                    </Button>
+                  )}
+                </div>
               </div>
             </div>
           </CardContent>
@@ -331,14 +411,14 @@ function FindJobs() {
               <p className="text-slate-600 dark:text-slate-400">Discovering opportunities for you...</p>
             </div>
           )}
-          
+
           {!loading && filteredJobs.length === 0 && jobs.length === 0 && (
             <div className="text-center py-12">
               <Briefcase className="h-12 w-12 text-slate-400 mx-auto mb-4" />
               <p className="text-slate-600 dark:text-slate-400">No jobs available at the moment.</p>
             </div>
           )}
-          
+
           {!loading && filteredJobs.length === 0 && jobs.length > 0 && (
             <div className="text-center py-12">
               <Search className="h-12 w-12 text-slate-400 mx-auto mb-4" />
@@ -347,12 +427,12 @@ function FindJobs() {
           )}
 
           {filteredJobs.map((job) => (
-            <Card 
-              key={job.jobId} 
+            <Card
+              key={job.jobId}
               className="group overflow-hidden cursor-pointer relative rounded-2xl bg-gradient-to-br from-teal-50/65 via-white/55 to-indigo-50/60 dark:from-slate-800/70 dark:via-slate-800/60 dark:to-slate-800/70 backdrop-blur-md border border-teal-900/5 dark:border-slate-700/60 hover:border-teal-500/30 dark:hover:border-teal-400/30 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg"
             >
               <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-gradient-to-br from-teal-50/70 via-transparent to-amber-50/60 dark:from-teal-500/10 dark:to-indigo-500/10" />
-              
+
               <CardHeader className="relative pb-4">
                 <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
                   <div className="space-y-3">
@@ -384,12 +464,12 @@ function FindJobs() {
                       </div>
                     </div>
                   </div>
-                  
+
                   <div className="flex flex-col items-end gap-3">
-                    <Badge 
+                    <Badge
                       variant={job.status === 'OPEN' ? 'default' : 'secondary'}
-                      className={job.status === 'OPEN' 
-                        ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300" 
+                      className={job.status === 'OPEN'
+                        ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300"
                         : "bg-slate-100 text-slate-700 dark:bg-slate-700/60 dark:text-slate-300"
                       }
                     >
@@ -425,7 +505,7 @@ function FindJobs() {
                       </p>
                     </div>
                   </div>
-                  
+
                   <div className="space-y-3">
                     <div>
                       <span className="text-sm font-medium text-slate-700 dark:text-slate-300">Experience Required:</span>
@@ -457,7 +537,7 @@ function FindJobs() {
                       </div>
                     )}
                   </div>
-                  
+
                   <div className="flex items-center gap-3">
                     <Button
                       variant="outline"
@@ -468,7 +548,7 @@ function FindJobs() {
                       <TrendingUp className="h-4 w-4 mr-2" />
                       Mock Interview
                     </Button>
-                    
+
                     {job.status !== "CLOSED" && (
                       job.isApplied ? (
                         <Button

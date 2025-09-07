@@ -69,7 +69,7 @@ public class JobMatchingAIService {
         promptBuilder
                 .append("Please analyze the job-candidate match and provide analysis in this EXACT JSON format:\n");
         promptBuilder.append("{\n");
-        promptBuilder.append("  \"score\": 75,\n");
+        promptBuilder.append("  \"score\": any number between 0 and 100,\n");
         promptBuilder.append("  \"explanation\": \"Overall match analysis summary\",\n");
         promptBuilder.append("  \"strengths\": \"Key strengths and matching qualifications\",\n");
         promptBuilder.append("  \"gaps\": \"Areas where candidate falls short\",\n");

@@ -59,7 +59,11 @@ export default function Navbar() {
                 <DropdownMenuTrigger asChild>
                   <button className="flex items-center gap-3 rounded-full pl-1 pr-3 py-1.5 hover:bg-teal-50/80 dark:hover:bg-teal-500/10 transition-colors group ring-1 ring-transparent hover:ring-teal-500/30 dark:hover:ring-teal-400/30">
                     <Avatar className="h-9 w-9 ring-2 ring-white/70 dark:ring-slate-800 shadow-sm group-hover:shadow-teal-500/20 transition-shadow">
-                      <AvatarImage src={user?.avatar || '/avatar-placeholder.jpg'} />
+                      <AvatarImage
+                        src={user?.pictureBase64 ? `data:image/jpeg;base64,${user.pictureBase64}` : undefined}
+                        alt="Profile Picture"
+                        className="object-cover"
+                      />
                       <AvatarFallback className="bg-gradient-to-br from-teal-500 via-indigo-500 to-amber-400 text-[11px] text-white font-semibold">
                         {user?.name ? user.name.split(' ').map(n => n[0]).join('') : 'U'}
                       </AvatarFallback>

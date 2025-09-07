@@ -42,12 +42,14 @@ public class JobMatchingService {
             // Check Redis cache first
             MatchingResult cached = cacheService.getCachedResult(cacheKey);
             if (cached != null) {
-                log.debug("Using cached score for job {} and profile {}", job.getJobId(), applicant.getId());
+                log.debug("Using cached score for job {} and profile {}: {}", job.getJobId(), applicant.getId(),
+                        cached.getTotalScore());
                 return cached;
             }
 
             // Calculate new score using AI microservice
-            log.info("Calculating new score for job {} and profile {}", job.getJobId(), applicant.getId());
+            log.info("Calculating new score for job {} and profile {} - calling AI service", job.getJobId(),
+                    applicant.getId());
             ApplicantProfileDTO profileDTO = buildApplicantProfile(applicant);
 
             // Create request for AI service
@@ -65,7 +67,10 @@ public class JobMatchingService {
                     .build();
 
             // Call AI microservice
+            log.info("Sending request to AI service for job {} and profile {}", job.getJobId(), applicant.getId());
             JobMatchingResponse aiResponse = jobMatchingAIServiceManager.matchJobSync(aiRequest);
+            log.info("Received response from AI service: score={}, success={}", aiResponse.getScore(),
+                    aiResponse.isSuccess());
 
             // Convert AI response to MatchingResult
             MatchingResult result = MatchingResult.builder()
@@ -75,11 +80,15 @@ public class JobMatchingService {
 
             // Cache the result in Redis
             cacheService.cacheResult(cacheKey, result);
+            log.info("Cached new score for job {} and profile {}: {}", job.getJobId(), applicant.getId(),
+                    result.getTotalScore());
             return result;
 
         } catch (Exception e) {
             log.error("Job matching failed for job: {} and applicant: {}", job.getJobId(), applicant.getId(), e);
-            return createFallbackResult(e.getMessage());
+            MatchingResult fallback = createFallbackResult(e.getMessage());
+            log.warn("Returning fallback score: {}", fallback.getTotalScore());
+            return fallback;
         }
     }
 
