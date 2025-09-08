@@ -351,25 +351,16 @@ export default function PreviousMockInterviewPage() {
 
       // Prepare question-answer pairs for evaluation
       const questionAnswers = [];
-      
       // Filter out only the custom interview responses (not the setup responses)
       const customResponses = responses.filter(response => 
         response.questionId && response.questionId.startsWith('custom_')
       );
-      
-      console.log('Total responses:', responses.length);
-      console.log('Custom responses:', customResponses.length);
-      console.log('Custom interview questions:', customInterviewData.questions?.length || 0);
 
-      console.log('Custom Interview Data:', customInterviewData.questions);
-      console.log('Custom Responses:', customResponses);
-      
       // Match custom questions with custom responses
       if (customInterviewData.questions && customResponses.length > 0) {
         for (let i = 0; i < customInterviewData.questions.length && i < customResponses.length; i++) {
           const question = customInterviewData.questions[i];
           const response = customResponses[i+1];
-          
           if (question && response && response.transcript && response.transcript !== "[No speech detected]") {
             questionAnswers.push({
               question: question.question,
@@ -379,14 +370,12 @@ export default function PreviousMockInterviewPage() {
         }
       }
 
-      console.log('Question-answer pairs for evaluation:', questionAnswers);
-
       if (questionAnswers.length === 0) {
-        console.error('No valid question-answer pairs found');
         throw new Error('No valid question-answer pairs found for evaluation');
       }
 
-      const response = await fetch('http://localhost:8080/api/interviews/evaluate', {
+      // 1. Evaluate interview
+      const evalRes = await fetch('http://localhost:8080/api/interviews/evaluate', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -397,17 +386,72 @@ export default function PreviousMockInterviewPage() {
         }),
       });
 
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+      if (!evalRes.ok) {
+        throw new Error(`HTTP error! status: ${evalRes.status}`);
       }
 
-      const evaluationData = await response.json();
-      console.log('Evaluation data received:', evaluationData);
+      const evaluationData = await evalRes.json();
       setEvaluationResults(evaluationData);
       setShowEvaluation(true);
 
+      // 2. Get profileId from /api/profile/me
+      let profileId = null;
+      try {
+        const profileRes = await fetch('http://localhost:8080/api/profile/me', {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        if (!profileRes.ok) {
+          throw new Error('Failed to fetch profile info');
+        }
+        const profileData = await profileRes.json();
+        profileId = profileData.id;
+      } catch (e) {
+        profileId = null;
+      }
+      // fallback: if not found, skip posting progress
+      if (!profileId) {
+        console.warn('No profileId found from /api/profile/me, skipping interview progress post');
+        return;
+      }
+
+      console.log('Profile ID for progress:', profileId);
+
+      // Use mockInterviewId from params (string), parse to int
+      let mockId = mockInterviewId;
+      if (typeof mockId === 'string') {
+        mockId = parseInt(mockId, 10);
+      }
+
+
+      // Format time as 'YYYY-MM-DDTHH:mm:00' (no ms, no Z, always :00 seconds)
+      const dateObj = new Date();
+      const pad = (n) => n.toString().padStart(2, '0');
+      const formattedTime = `${dateObj.getFullYear()}-${pad(dateObj.getMonth()+1)}-${pad(dateObj.getDate())}T${pad(dateObj.getHours())}:${pad(dateObj.getMinutes())}:00`;
+
+      // Compose body for progress
+      const progressBody = {
+        profileId: profileId,
+        mockInterviewId: mockId,
+        time: formattedTime,
+        score: evaluationData.rating,
+        weaknesses: [],
+        improvements: []
+      };
+
+      console.log('Posting interview progress:', progressBody);
+
+      await fetch('http://localhost:8080/api/interview-progress', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify(progressBody),
+      });
+
     } catch (err) {
-      console.error('Evaluation error:', err);
       setError(`Failed to evaluate interview: ${err.message}`);
     } finally {
       setIsEvaluating(false);
