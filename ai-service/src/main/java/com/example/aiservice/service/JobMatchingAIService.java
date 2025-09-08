@@ -59,12 +59,24 @@ public class JobMatchingAIService {
         promptBuilder.append("Location: ").append(request.getJobLocation()).append("\n\n");
 
         promptBuilder.append("CANDIDATE PROFILE:\n");
-        promptBuilder.append("Bio: ").append(request.getProfileBio()).append("\n");
-        promptBuilder.append("Position: ").append(request.getProfilePosition()).append("\n");
         promptBuilder.append("Skills: ").append(request.getProfileSkills()).append("\n");
-        promptBuilder.append("Education: ").append(request.getProfileEducation()).append("\n");
         promptBuilder.append("Work Experience: ").append(request.getProfileWorkExperience()).append("\n");
-        promptBuilder.append("Location: ").append(request.getProfileLocation()).append("\n\n");
+
+        // Education details from education service
+        promptBuilder.append("EDUCATION BACKGROUND:\n");
+        if (request.getSscResult() != null && !request.getSscResult().isEmpty()) {
+            promptBuilder.append("SSC Result: ").append(request.getSscResult()).append("\n");
+        }
+        if (request.getHscResult() != null && !request.getHscResult().isEmpty()) {
+            promptBuilder.append("HSC Result: ").append(request.getHscResult()).append("\n");
+        }
+        if (request.getDegreeName() != null && !request.getDegreeName().isEmpty()) {
+            promptBuilder.append("Degree: ").append(request.getDegreeName()).append("\n");
+        }
+        if (request.getCgpa() != null && !request.getCgpa().isEmpty()) {
+            promptBuilder.append("CGPA: ").append(request.getCgpa()).append("\n");
+        }
+        promptBuilder.append("\n");
 
         promptBuilder
                 .append("Please analyze the job-candidate match and provide analysis in this EXACT JSON format:\n");
@@ -78,11 +90,31 @@ public class JobMatchingAIService {
         promptBuilder.append("IMPORTANT: Replace the score with your calculated match percentage (0-100).\n");
         promptBuilder.append("Guidelines:\n");
         promptBuilder.append("- Score should be between 0 and 100 (integer value)\n");
-        promptBuilder.append("- Consider skills match, experience level, location compatibility\n");
+        promptBuilder.append(
+                "- Consider skills match, experience level, location compatibility, and educational background\n");
+        promptBuilder
+                .append("- Educational qualifications should be weighted appropriately based on job requirements\n");
         promptBuilder.append("- Provide specific, actionable insights\n");
         promptBuilder.append("- Only return the JSON, no additional text");
 
-        return promptBuilder.toString();
+        // Console log the prompt information for debugging
+        String finalPrompt = promptBuilder.toString();
+        log.info("=== JOB MATCHING PROMPT DETAILS ===");
+        log.info("Job ID: {}", request.getJobId());
+        log.info("Profile ID: {}", request.getProfileId());
+        log.info("Job Title: {}", request.getJobTitle());
+        log.info("Job Skills: {}", request.getJobSkills());
+        log.info("Profile Skills: {}", request.getProfileSkills());
+        log.info("SSC Result: {}", request.getSscResult());
+        log.info("HSC Result: {}", request.getHscResult());
+        log.info("Degree Name: {}", request.getDegreeName());
+        log.info("CGPA: {}", request.getCgpa());
+        log.info("Work Experience: {}", request.getProfileWorkExperience());
+        log.info("=== FULL PROMPT SENT TO GEMINI ===");
+        log.info("{}", finalPrompt);
+        log.info("=== END OF PROMPT ===");
+
+        return finalPrompt;
     }
 
     private JobMatchingResponse parseJobMatchingResponse(String response, JobMatchingRequest request) {

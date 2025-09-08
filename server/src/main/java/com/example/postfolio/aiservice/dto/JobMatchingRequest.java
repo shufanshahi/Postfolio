@@ -27,4 +27,10 @@ public class JobMatchingRequest implements Serializable {
     private String profileEducation;
     private String profileWorkExperience;
     private String profileLocation;
+
+    // Education details from education service
+    private String sscResult;
+    private String hscResult;
+    private String degreeName;
+    private String cgpa;
 }

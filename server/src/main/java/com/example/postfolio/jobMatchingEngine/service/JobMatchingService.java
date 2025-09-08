@@ -53,6 +53,12 @@ public class JobMatchingService {
                     applicant.getId());
             ApplicantProfileDTO profileDTO = buildApplicantProfile(applicant);
 
+            // Extract education details for AI service
+            String sscResult = extractSSCResult(applicant);
+            String hscResult = extractHSCResult(applicant);
+            String degreeName = extractDegreeName(applicant);
+            String cgpa = extractCGPA(applicant);
+
             // Create request for AI service
             JobMatchingRequest aiRequest = JobMatchingRequest.builder()
                     .jobId(job.getJobId())
@@ -60,11 +66,15 @@ public class JobMatchingService {
                     .jobTitle(job.getTitle())
                     .jobDescription(job.getDescription())
                     .jobRequirements(job.getDescription()) // Extract from description
-                    .profileBio(applicant.getBio())
-                    .profilePosition(applicant.getPositionOrInstitue())
+                    .jobSkills(job.getRequiredSkills()) // Add job skills
+                    .jobExperience(job.getRequiredExperience()) // Add job experience
+                    .jobLocation(job.getLocation()) // Add job location
                     .profileSkills(String.join(", ", profileDTO.getSkills()))
-                    .profileEducation(String.join("; ", profileDTO.getEducation()))
                     .profileWorkExperience(String.join("; ", profileDTO.getExperiences()))
+                    .sscResult(sscResult)
+                    .hscResult(hscResult)
+                    .degreeName(degreeName)
+                    .cgpa(cgpa)
                     .build();
 
             // Call AI microservice
@@ -236,6 +246,59 @@ public class JobMatchingService {
                 .projects(groupedEntries.getOrDefault(CvType.PROJECT, new ArrayList<>()))
                 .achievements(groupedEntries.getOrDefault(CvType.ACHIEVEMENT, new ArrayList<>()))
                 .build();
+    }
+
+    // Helper methods to extract specific education data for AI service
+    private String extractSSCResult(Profile applicant) {
+        if (applicant.getSchools() == null)
+            return null;
+
+        return applicant.getSchools().stream()
+                .filter(school -> school.getClassLevel() == 10 || "SSC".equalsIgnoreCase(school.getResultType()))
+                .map(school -> school.getResult())
+                .findFirst()
+                .orElse(null);
+    }
+
+    private String extractHSCResult(Profile applicant) {
+        if (applicant.getSchools() == null)
+            return null;
+
+        return applicant.getSchools().stream()
+                .filter(school -> school.getClassLevel() == 12 || "HSC".equalsIgnoreCase(school.getResultType()))
+                .map(school -> school.getResult())
+                .findFirst()
+                .orElse(null);
+    }
+
+    private String extractDegreeName(Profile applicant) {
+        if (applicant.getUniversities() == null)
+            return null;
+
+        return applicant.getUniversities().stream()
+                .filter(uni -> uni.getIsCompleted() != null && uni.getIsCompleted())
+                .map(uni -> uni.getDegreeName())
+                .findFirst()
+                .orElse(applicant.getUniversities().stream()
+                        .map(uni -> uni.getDegreeName())
+                        .findFirst()
+                        .orElse(null));
+    }
+
+    private String extractCGPA(Profile applicant) {
+        if (applicant.getUniversities() == null)
+            return null;
+
+        // For completed degrees, try to calculate overall CGPA or get latest semester
+        // result
+        return applicant.getUniversities().stream()
+                .filter(uni -> uni.getIsCompleted() != null && uni.getIsCompleted())
+                .max((u1, u2) -> u1.getSemesterNumber().compareTo(u2.getSemesterNumber()))
+                .map(uni -> uni.getSemesterResult())
+                .orElse(applicant.getUniversities().stream()
+                        .max((u1, u2) -> u1.getSemesterNumber().compareTo(u2.getSemesterNumber()))
+                        .map(uni -> uni.getSemesterResult())
+                        .orElse(null));
     }
 
     private MatchingResult createFallbackResult(String errorMessage) {
