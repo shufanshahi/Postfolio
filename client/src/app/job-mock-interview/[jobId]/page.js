@@ -539,24 +539,27 @@ export default function JobMockInterviewPage() {
           </div>
         </div>
 
+        {/* Loading State - Centered in page */}
+        {loadingJobData && (
+          <div className="flex items-center justify-center min-h-[60vh]">
+            <Card className={`rounded-2xl ${subtleCard} shadow-lg max-w-md w-full`}>
+              <CardContent className="p-8 text-center">
+                <Loader2 className="w-16 h-16 text-teal-600 dark:text-teal-400 animate-spin mx-auto mb-6" />
+                <h3 className="text-2xl font-semibold text-slate-800 dark:text-slate-100 mb-3">
+                  Loading Job Details
+                </h3>
+                <p className="text-slate-600 dark:text-slate-400">
+                  Retrieving job information and preparing your interview...
+                </p>
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
         {/* Configuration and Status Grid */}
-        {!customInterviewData && (
+        {!customInterviewData && !loadingJobData && (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
             <div className="lg:col-span-2 space-y-10">
-              {/* Loading State */}
-              {loadingJobData && (
-                <Card className={`rounded-2xl ${subtleCard} shadow-lg`}>
-                  <CardContent className="p-8 text-center">
-                    <Loader2 className="w-12 h-12 text-teal-600 dark:text-teal-400 animate-spin mx-auto mb-4" />
-                    <h3 className="text-xl font-semibold text-slate-800 dark:text-slate-100 mb-2">
-                      Loading Job Details
-                    </h3>
-                    <p className="text-slate-600 dark:text-slate-400">
-                      Retrieving job information and preparing your interview...
-                    </p>
-                  </CardContent>
-                </Card>
-              )}
 
               {/* Interview Setup Form */}
               {!loadingJobData && !jobData && (
@@ -1080,27 +1083,31 @@ export default function JobMockInterviewPage() {
           </Card>
         )}
 
+        {/* Processing States - Centered in page */}
+        {(isGeneratingCustomInterview || isTranscribing) && (
+          <div className="flex items-center justify-center min-h-[60vh]">
+            <Card className={`rounded-2xl ${subtleCard} shadow-lg max-w-md w-full`}>
+              <CardContent className="p-8 text-center">
+                <Loader2 className="w-16 h-16 text-teal-600 dark:text-teal-400 animate-spin mx-auto mb-6" />
+                <h3 className="text-2xl font-semibold text-slate-800 dark:text-slate-100 mb-3">
+                  {isTranscribing
+                    ? 'Processing Your Responses'
+                    : 'Generating Job-Specific Questions'}
+                </h3>
+                <p className="text-slate-600 dark:text-slate-400">
+                  {isTranscribing
+                    ? 'Analyzing your audio responses and converting them to text...'
+                    : `Creating customized interview questions for ${jobData?.position || 'this role'}...`}
+                </p>
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
         {/* Content Area - Two Column Layout for Other Content */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
-          <div className="lg:col-span-2 space-y-8">
-            {/* Processing States */}
-            {(isGeneratingCustomInterview || isTranscribing) && (
-              <Card className={`rounded-2xl ${subtleCard} shadow-lg`}>
-                <CardContent className="p-8 text-center">
-                  <Loader2 className="w-12 h-12 text-teal-600 dark:text-teal-400 animate-spin mx-auto mb-4" />
-                  <h3 className="text-xl font-semibold text-slate-800 dark:text-slate-100 mb-2">
-                    {isTranscribing
-                      ? 'Processing Your Responses'
-                      : 'Generating Job-Specific Questions'}
-                  </h3>
-                  <p className="text-slate-600 dark:text-slate-400">
-                    {isTranscribing
-                      ? 'Analyzing your audio responses and converting them to text...'
-                      : `Creating customized interview questions for ${jobData?.position || 'this role'}...`}
-                  </p>
-                </CardContent>
-              </Card>
-            )}
+        {!isGeneratingCustomInterview && !isTranscribing && (
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
+            <div className="lg:col-span-2 space-y-8">
 
             {/* Current Custom Question */}
             {customInterviewStarted && (
@@ -1154,23 +1161,26 @@ export default function JobMockInterviewPage() {
                 </CardContent>
               </Card>
             )}
-
-            {/* Loading during evaluation */}
-            {(isEvaluating || (customInterviewComplete && !customInterviewStarted && !showEvaluation && !isTranscribing)) && (
-              <Card className={`rounded-2xl ${subtleCard} shadow-lg`}>
-                <CardContent className="p-8 text-center">
-                  <Loader2 className="w-12 h-12 text-green-600 dark:text-green-400 animate-spin mx-auto mb-4" />
-                  <h3 className="text-xl font-semibold text-slate-800 dark:text-slate-100 mb-2">
-                    {isEvaluating ? 'Evaluating Interview Performance' : 'Preparing Evaluation'}
-                  </h3>
-                  <p className="text-slate-600 dark:text-slate-400">
-                    {isEvaluating ? 'Analyzing your responses and generating feedback...' : 'This may take a few moments'}
-                  </p>
-                </CardContent>
-              </Card>
-            )}
           </div>
         </div>
+        )}
+
+        {/* Evaluation Loading - Centered in page */}
+        {(isEvaluating || (customInterviewComplete && !customInterviewStarted && !showEvaluation && !isTranscribing)) && (
+          <div className="flex items-center justify-center min-h-[60vh]">
+            <Card className={`rounded-2xl ${subtleCard} shadow-lg max-w-md w-full`}>
+              <CardContent className="p-8 text-center">
+                <Loader2 className="w-16 h-16 text-green-600 dark:text-green-400 animate-spin mx-auto mb-6" />
+                <h3 className="text-2xl font-semibold text-slate-800 dark:text-slate-100 mb-3">
+                  {isEvaluating ? 'Evaluating Interview Performance' : 'Preparing Evaluation'}
+                </h3>
+                <p className="text-slate-600 dark:text-slate-400">
+                  {isEvaluating ? 'Analyzing your responses and generating feedback...' : 'This may take a few moments'}
+                </p>
+              </CardContent>
+            </Card>
+          </div>
+        )}
 
         {/* Error Display */}
         {error && (
