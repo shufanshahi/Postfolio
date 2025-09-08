@@ -14,7 +14,7 @@ public interface SchoolRepository extends JpaRepository<School, Long> {
 
     List<School> findByProfileAndClassLevel(Profile profile, Integer classLevel);
 
-    List<School> findByProfileAndResultType(Profile profile, String resultType);
-
     List<School> findByProfileAndSchoolNameOrderByClassLevelAsc(Profile profile, String schoolName);
+
+    List<School> findByProfileAndSchoolNameAndClassLevel(Profile profile, String schoolName, Integer classLevel);
 }

@@ -255,7 +255,7 @@ public class JobMatchingService {
             return null;
 
         return applicant.getSchools().stream()
-                .filter(school -> school.getClassLevel() == 10 || "SSC".equalsIgnoreCase(school.getResultType()))
+                .filter(school -> school.getClassLevel() == 10)
                 .map(school -> school.getResult())
                 .findFirst()
                 .orElse(null);
@@ -266,7 +266,7 @@ public class JobMatchingService {
             return null;
 
         return applicant.getSchools().stream()
-                .filter(school -> school.getClassLevel() == 12 || "HSC".equalsIgnoreCase(school.getResultType()))
+                .filter(school -> school.getClassLevel() == 12)
                 .map(school -> school.getResult())
                 .findFirst()
                 .orElse(null);

@@ -1,13 +1,9 @@
 package com.example.postfolio.profile.entity;
 
-
-
 import com.example.postfolio.profile.entity.Profile;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
-
-import java.time.LocalDate;
 
 @Entity
 @Table(name = "schools")
@@ -27,20 +23,11 @@ public class School {
     @Column(name = "class_level", nullable = false)
     private Integer classLevel; // 1 to 12
 
-    @Column(name = "academic_year", nullable = false)
+    @Column(name = "academic_year")
     private String academicYear; // e.g., "2020-2021"
 
-    @Column(name = "result", nullable = false)
+    @Column(name = "result")
     private String result; // GPA or Grade
-
-    @Column(name = "result_type")
-    private String resultType; // "SSC", "HSC", or regular class result
-
-    @Column(name = "completion_date")
-    private LocalDate completionDate;
-
-    @Column(name = "certificate_url")
-    private String certificateUrl;
 
     @ManyToOne
     @JoinColumn(name = "profile_id", nullable = false)

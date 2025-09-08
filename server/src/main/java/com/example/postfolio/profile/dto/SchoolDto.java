@@ -1,10 +1,6 @@
 package com.example.postfolio.profile.dto;
 
-
-
 import lombok.*;
-
-import java.time.LocalDate;
 
 @Data
 @NoArgsConstructor
@@ -17,9 +13,6 @@ public class SchoolDto {
     private Integer classLevel;
     private String academicYear;
     private String result;
-    private String resultType;
-    private LocalDate completionDate;
-    private String certificateUrl;
     private String displayName;
 
     // Helper method to get display name

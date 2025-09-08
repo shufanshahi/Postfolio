@@ -42,9 +42,6 @@ public class EducationService {
                                 .classLevel(schoolDto.getClassLevel())
                                 .academicYear(schoolDto.getAcademicYear())
                                 .result(schoolDto.getResult())
-                                .resultType(schoolDto.getResultType())
-                                .completionDate(schoolDto.getCompletionDate())
-                                .certificateUrl(schoolDto.getCertificateUrl())
                                 .profile(profile)
                                 .build();
 
@@ -76,9 +73,6 @@ public class EducationService {
                 school.setClassLevel(schoolDto.getClassLevel());
                 school.setAcademicYear(schoolDto.getAcademicYear());
                 school.setResult(schoolDto.getResult());
-                school.setResultType(schoolDto.getResultType());
-                school.setCompletionDate(schoolDto.getCompletionDate());
-                school.setCertificateUrl(schoolDto.getCertificateUrl());
 
                 School updatedSchool = schoolRepository.save(school);
                 return convertToDto(updatedSchool);
@@ -96,6 +90,40 @@ public class EducationService {
                 }
 
                 schoolRepository.delete(school);
+        }
+
+        public SchoolDto addClassResult(Long schoolId, Integer classLevel, String academicYear, String result,
+                        User user) {
+                Profile profile = profileRepository.findByUser(user)
+                                .orElseThrow(() -> new RuntimeException("Profile not found for user"));
+
+                // Check if the school exists and belongs to the user
+                School school = schoolRepository.findById(schoolId)
+                                .orElseThrow(() -> new RuntimeException("School not found"));
+
+                if (!school.getProfile().getId().equals(profile.getId())) {
+                        throw new RuntimeException("Unauthorized access");
+                }
+
+                // Check if a school entry already exists for this class level
+                List<School> existingSchools = schoolRepository.findByProfileAndSchoolNameAndClassLevel(
+                                profile, school.getSchoolName(), classLevel);
+
+                if (!existingSchools.isEmpty()) {
+                        throw new RuntimeException("Result for this class level already exists for this school");
+                }
+
+                // Create a new school entry for this specific class
+                School newClassEntry = School.builder()
+                                .schoolName(school.getSchoolName())
+                                .classLevel(classLevel)
+                                .academicYear(academicYear)
+                                .result(result)
+                                .profile(profile)
+                                .build();
+
+                School savedSchool = schoolRepository.save(newClassEntry);
+                return convertToDto(savedSchool);
         }
 
         // University operations
@@ -298,9 +326,6 @@ public class EducationService {
                                 .classLevel(school.getClassLevel())
                                 .academicYear(school.getAcademicYear())
                                 .result(school.getResult())
-                                .resultType(school.getResultType())
-                                .completionDate(school.getCompletionDate())
-                                .certificateUrl(school.getCertificateUrl())
                                 .displayName(school.getDisplayName())
                                 .build();
         }

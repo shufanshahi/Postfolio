@@ -51,6 +51,18 @@ public class EducationController {
         return ResponseEntity.noContent().build();
     }
 
+    // Add class result to school
+    @PostMapping("/schools/{schoolId}/classes")
+    public ResponseEntity<SchoolDto> addClassResult(@PathVariable Long schoolId,
+            @RequestParam Integer classLevel,
+            @RequestParam String academicYear,
+            @RequestParam String result,
+            Authentication authentication) {
+        User user = (User) authentication.getPrincipal();
+        SchoolDto updatedSchool = educationService.addClassResult(schoolId, classLevel, academicYear, result, user);
+        return ResponseEntity.ok(updatedSchool);
+    }
+
     // University endpoints
     @PostMapping("/universities")
     public ResponseEntity<UniversityDto> createUniversity(@RequestBody UniversityDto universityDto,

@@ -4,8 +4,8 @@ import { Plus, Edit, Trash2 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from './ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from './ui/alert-dialog';
-import EducationTimeline from './EducationTimeline';
-import EducationForm from './EducationForm';
+import SimpleEducationTimeline from './SimpleEducationTimeline';
+import SimpleEducationForm from './SimpleEducationForm';
 
 const EducationManagement = ({ userId }) => {
     const [showForm, setShowForm] = useState(false);
@@ -79,7 +79,7 @@ const EducationManagement = ({ userId }) => {
                                 {editData ? 'Edit Education Entry' : 'Add New Education Entry'}
                             </DialogTitle>
                         </DialogHeader>
-                        <EducationForm
+                        <SimpleEducationForm
                             onSuccess={handleSuccess}
                             editData={editData}
                         />
@@ -88,14 +88,14 @@ const EducationManagement = ({ userId }) => {
             </div>
 
             {/* Education Timeline */}
-            <EducationTimeline
+            <SimpleEducationTimeline
                 key={refreshKey}
                 userId={userId}
                 onEdit={handleEdit}
                 onDelete={handleDelete}
             />
 
-   
+
         </div>
     );
 };
