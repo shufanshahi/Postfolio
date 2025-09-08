@@ -1104,63 +1104,63 @@ export default function JobMockInterviewPage() {
           </div>
         )}
 
+        {/* Current Custom Question - Full Width */}
+        {customInterviewStarted && !isGeneratingCustomInterview && !isTranscribing && (
+          <Card className={`rounded-2xl ${gradientPanel} shadow-lg`}>
+            <div className="absolute inset-0 bg-gradient-to-br from-purple-100/40 via-transparent to-indigo-100/40 dark:from-purple-500/10 dark:to-indigo-500/10" />
+            <CardHeader className="relative pb-4">
+              <CardTitle className="flex items-center gap-3 text-slate-800 dark:text-slate-100 text-xl">
+                <Award className="h-6 w-6 text-purple-600 dark:text-purple-400" />
+                {getCurrentCustomQuestion()?.title || 'Loading...'}
+              </CardTitle>
+              <CardDescription className="text-slate-600 dark:text-slate-400">
+                {getCurrentCustomQuestion()?.question || 'Loading question...'}
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="relative space-y-6">
+              {isPlayingQuestion && (
+                <Alert className="border-purple-200 bg-purple-50 dark:border-purple-700 dark:bg-purple-900/20">
+                  <Volume2 className="h-4 w-4 text-purple-600 dark:text-purple-400" />
+                  <AlertDescription className="text-purple-700 dark:text-purple-300">
+                    AI is asking your job-specific question. Take your time to think and respond.
+                  </AlertDescription>
+                </Alert>
+              )}
+
+              {!isPlayingQuestion && !isRecording && !isTranscribing && (
+                <Alert className="border-green-200 bg-green-50 dark:border-green-700 dark:bg-green-900/20">
+                  <CheckCircle className="h-4 w-4 text-green-600 dark:text-green-400" />
+                  <AlertDescription className="text-green-700 dark:text-green-300">
+                    Question completed. Ready to record your response?
+                  </AlertDescription>
+                </Alert>
+              )}
+
+              {isRecording && (
+                <Alert className="border-red-200 bg-red-50 dark:border-red-700 dark:bg-red-900/20">
+                  <Mic className="h-4 w-4 text-red-600 dark:text-red-400" />
+                  <AlertDescription className="text-red-700 dark:text-red-300">
+                    Recording your response to this job-specific question.
+                  </AlertDescription>
+                </Alert>
+              )}
+
+              {isTranscribing && (
+                <Alert className="border-amber-200 bg-amber-50 dark:border-amber-700 dark:bg-amber-900/20">
+                  <Loader2 className="h-4 w-4 text-amber-600 dark:text-amber-400 animate-spin" />
+                  <AlertDescription className="text-amber-700 dark:text-amber-300">
+                    Processing your response for detailed evaluation.
+                  </AlertDescription>
+                </Alert>
+              )}
+            </CardContent>
+          </Card>
+        )}
+
         {/* Content Area - Two Column Layout for Other Content */}
         {!isGeneratingCustomInterview && !isTranscribing && (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
             <div className="lg:col-span-2 space-y-8">
-
-            {/* Current Custom Question */}
-            {customInterviewStarted && (
-              <Card className={`rounded-2xl ${gradientPanel} shadow-lg`}>
-                <div className="absolute inset-0 bg-gradient-to-br from-purple-100/40 via-transparent to-indigo-100/40 dark:from-purple-500/10 dark:to-indigo-500/10" />
-                <CardHeader className="relative pb-4">
-                  <CardTitle className="flex items-center gap-3 text-slate-800 dark:text-slate-100 text-xl">
-                    <Award className="h-6 w-6 text-purple-600 dark:text-purple-400" />
-                    {getCurrentCustomQuestion()?.title || 'Loading...'}
-                  </CardTitle>
-                  <CardDescription className="text-slate-600 dark:text-slate-400">
-                    {getCurrentCustomQuestion()?.question || 'Loading question...'}
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="relative space-y-6">
-                  {isPlayingQuestion && (
-                    <Alert className="border-purple-200 bg-purple-50 dark:border-purple-700 dark:bg-purple-900/20">
-                      <Volume2 className="h-4 w-4 text-purple-600 dark:text-purple-400" />
-                      <AlertDescription className="text-purple-700 dark:text-purple-300">
-                        AI is asking your job-specific question. Take your time to think and respond.
-                      </AlertDescription>
-                    </Alert>
-                  )}
-
-                  {!isPlayingQuestion && !isRecording && !isTranscribing && (
-                    <Alert className="border-green-200 bg-green-50 dark:border-green-700 dark:bg-green-900/20">
-                      <CheckCircle className="h-4 w-4 text-green-600 dark:text-green-400" />
-                      <AlertDescription className="text-green-700 dark:text-green-300">
-                        Question completed. Ready to record your response?
-                      </AlertDescription>
-                    </Alert>
-                  )}
-
-                  {isRecording && (
-                    <Alert className="border-red-200 bg-red-50 dark:border-red-700 dark:bg-red-900/20">
-                      <Mic className="h-4 w-4 text-red-600 dark:text-red-400" />
-                      <AlertDescription className="text-red-700 dark:text-red-300">
-                        Recording your response to this job-specific question.
-                      </AlertDescription>
-                    </Alert>
-                  )}
-
-                  {isTranscribing && (
-                    <Alert className="border-amber-200 bg-amber-50 dark:border-amber-700 dark:bg-amber-900/20">
-                      <Loader2 className="h-4 w-4 text-amber-600 dark:text-amber-400 animate-spin" />
-                      <AlertDescription className="text-amber-700 dark:text-amber-300">
-                        Processing your response for detailed evaluation.
-                      </AlertDescription>
-                    </Alert>
-                  )}
-                </CardContent>
-              </Card>
-            )}
           </div>
         </div>
         )}
