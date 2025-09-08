@@ -24,9 +24,15 @@ import {
 import {
   Alert, AlertDescription
 } from '@/components/ui/alert';
+
 import Navbar from '@/components/Navbar';
+import dynamic from 'next/dynamic';
+const MockInterviewProgressModal = dynamic(() => import('@/components/MockInterviewProgressModal'), { ssr: false });
 
 export default function MockInterviewPage() {
+  // Progress modal state
+  const [progressModalOpen, setProgressModalOpen] = useState(false);
+  const [progressMockInterviewId, setProgressMockInterviewId] = useState(null);
   const router = useRouter();
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [isRecording, setIsRecording] = useState(false);
@@ -1252,7 +1258,6 @@ export default function MockInterviewPage() {
                         </div>
                         <ChevronRight className="h-5 w-5 text-slate-400 group-hover:text-teal-600 dark:group-hover:text-teal-400 transition-colors" />
                       </div>
-                      
                       <div className="space-y-2 text-sm">
                         <div className="flex justify-between">
                           <span className="text-slate-600 dark:text-slate-400">Experience Level:</span>
@@ -1265,19 +1270,37 @@ export default function MockInterviewPage() {
                           </Badge>
                         </div>
                       </div>
-                      
-                      <Button 
-                        className="w-full mt-4 bg-teal-600 hover:bg-teal-700 text-white rounded-lg shadow-sm"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          router.push(`/prev-mock-interview/${mock.id}`);
-                        }}
-                      >
-                        View Details
-                      </Button>
+                      <div className="flex gap-2 mt-4">
+                        <Button 
+                          className="flex-1 bg-teal-600 hover:bg-teal-700 text-white rounded-lg shadow-sm"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            router.push(`/prev-mock-interview/${mock.id}`);
+                          }}
+                        >
+                          View Details
+                        </Button>
+                        <Button
+                          className="flex-1 bg-blue-600 hover:bg-blue-700 text-white rounded-lg shadow-sm"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setProgressMockInterviewId(mock.id);
+                            setProgressModalOpen(true);
+                          }}
+                        >
+                          Progress
+                        </Button>
+                      </div>
                     </CardContent>
                   </Card>
                 ))}
+      {/* Progress Modal */}
+      <MockInterviewProgressModal
+        open={progressModalOpen}
+        onClose={() => setProgressModalOpen(false)}
+        mockInterviewId={progressMockInterviewId}
+        profileId={profileId}
+      />
               </div>
             </CardContent>
           </Card>
