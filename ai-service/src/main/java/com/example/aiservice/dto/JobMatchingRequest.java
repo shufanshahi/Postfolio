@@ -31,6 +31,6 @@ public class JobMatchingRequest implements Serializable {
     // Education details from education service
     private String sscResult;
     private String hscResult;
-    private String degreeName;
-    private String cgpa;
+    private String[] degreeNames; // Changed to array for multiple degrees
+    private String[] cgpas; // Changed to array for multiple degrees
 }

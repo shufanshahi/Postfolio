@@ -10,6 +10,7 @@ import com.example.postfolio.job.entity.Job;
 import com.example.postfolio.jobMatchingEngine.dto.ApplicantProfileDTO;
 import com.example.postfolio.jobMatchingEngine.dto.MatchingResult;
 import com.example.postfolio.profile.entity.Profile;
+import com.example.postfolio.profile.entity.University;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -56,8 +57,8 @@ public class JobMatchingService {
             // Extract education details for AI service
             String sscResult = extractSSCResult(applicant);
             String hscResult = extractHSCResult(applicant);
-            String degreeName = extractDegreeName(applicant);
-            String cgpa = extractCGPA(applicant);
+            String[] degreeNames = extractDegreeNames(applicant);
+            String[] cgpas = extractCGPAs(applicant);
 
             // Create request for AI service
             JobMatchingRequest aiRequest = JobMatchingRequest.builder()
@@ -73,8 +74,8 @@ public class JobMatchingService {
                     .profileWorkExperience(String.join("; ", profileDTO.getExperiences()))
                     .sscResult(sscResult)
                     .hscResult(hscResult)
-                    .degreeName(degreeName)
-                    .cgpa(cgpa)
+                    .degreeNames(degreeNames)
+                    .cgpas(cgpas)
                     .build();
 
             // Call AI microservice
@@ -271,34 +272,40 @@ public class JobMatchingService {
                 .orElse(null);
     }
 
-    private String extractDegreeName(Profile applicant) {
-        if (applicant.getUniversities() == null)
-            return null;
+    private String[] extractDegreeNames(Profile applicant) {
+        if (applicant.getUniversities() == null || applicant.getUniversities().isEmpty()) {
+            return new String[0];
+        }
 
+        // Group universities by degree name and get unique degree names
         return applicant.getUniversities().stream()
-                .filter(uni -> uni.getIsCompleted() != null && uni.getIsCompleted())
                 .map(uni -> uni.getDegreeName())
-                .findFirst()
-                .orElse(applicant.getUniversities().stream()
-                        .map(uni -> uni.getDegreeName())
-                        .findFirst()
-                        .orElse(null));
+                .filter(degreeName -> degreeName != null && !degreeName.isEmpty())
+                .distinct()
+                .toArray(String[]::new);
     }
 
-    private String extractCGPA(Profile applicant) {
-        if (applicant.getUniversities() == null)
-            return null;
+    private String[] extractCGPAs(Profile applicant) {
+        if (applicant.getUniversities() == null || applicant.getUniversities().isEmpty()) {
+            return new String[0];
+        }
 
-        // For completed degrees, try to calculate overall CGPA or get latest semester
-        // result
-        return applicant.getUniversities().stream()
-                .filter(uni -> uni.getIsCompleted() != null && uni.getIsCompleted())
-                .max((u1, u2) -> u1.getSemesterNumber().compareTo(u2.getSemesterNumber()))
-                .map(uni -> uni.getSemesterResult())
-                .orElse(applicant.getUniversities().stream()
-                        .max((u1, u2) -> u1.getSemesterNumber().compareTo(u2.getSemesterNumber()))
-                        .map(uni -> uni.getSemesterResult())
-                        .orElse(null));
+        // Group universities by degree name and calculate CGPA for each degree
+        Map<String, List<University>> degreeGroups = applicant.getUniversities().stream()
+                .filter(uni -> uni.getDegreeName() != null && !uni.getDegreeName().isEmpty())
+                .collect(Collectors.groupingBy(University::getDegreeName));
+
+        return degreeGroups.entrySet().stream()
+                .map(entry -> {
+                    List<University> universities = entry.getValue();
+                    // For each degree, get the latest/highest semester result
+                    return universities.stream()
+                            .filter(uni -> uni.getSemesterResult() != null && !uni.getSemesterResult().isEmpty())
+                            .max((u1, u2) -> u1.getSemesterNumber().compareTo(u2.getSemesterNumber()))
+                            .map(uni -> uni.getSemesterResult())
+                            .orElse("N/A");
+                })
+                .toArray(String[]::new);
     }
 
     private MatchingResult createFallbackResult(String errorMessage) {

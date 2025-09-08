@@ -70,11 +70,24 @@ public class JobMatchingAIService {
         if (request.getHscResult() != null && !request.getHscResult().isEmpty()) {
             promptBuilder.append("HSC Result: ").append(request.getHscResult()).append("\n");
         }
-        if (request.getDegreeName() != null && !request.getDegreeName().isEmpty()) {
-            promptBuilder.append("Degree: ").append(request.getDegreeName()).append("\n");
-        }
-        if (request.getCgpa() != null && !request.getCgpa().isEmpty()) {
-            promptBuilder.append("CGPA: ").append(request.getCgpa()).append("\n");
+
+        // Handle multiple degrees
+        if (request.getDegreeNames() != null && request.getDegreeNames().length > 0) {
+            promptBuilder.append("Degrees:\n");
+            for (int i = 0; i < request.getDegreeNames().length; i++) {
+                String degreeName = request.getDegreeNames()[i];
+                String cgpa = (request.getCgpas() != null && i < request.getCgpas().length)
+                        ? request.getCgpas()[i]
+                        : "N/A";
+
+                if (degreeName != null && !degreeName.isEmpty()) {
+                    promptBuilder.append("  - ").append(degreeName);
+                    if (cgpa != null && !cgpa.isEmpty() && !"N/A".equals(cgpa)) {
+                        promptBuilder.append(" (CGPA: ").append(cgpa).append(")");
+                    }
+                    promptBuilder.append("\n");
+                }
+            }
         }
         promptBuilder.append("\n");
 
@@ -107,8 +120,9 @@ public class JobMatchingAIService {
         log.info("Profile Skills: {}", request.getProfileSkills());
         log.info("SSC Result: {}", request.getSscResult());
         log.info("HSC Result: {}", request.getHscResult());
-        log.info("Degree Name: {}", request.getDegreeName());
-        log.info("CGPA: {}", request.getCgpa());
+        log.info("Degree Names: {}",
+                request.getDegreeNames() != null ? String.join(", ", request.getDegreeNames()) : "None");
+        log.info("CGPAs: {}", request.getCgpas() != null ? String.join(", ", request.getCgpas()) : "None");
         log.info("Work Experience: {}", request.getProfileWorkExperience());
         log.info("=== FULL PROMPT SENT TO GEMINI ===");
         log.info("{}", finalPrompt);
