@@ -360,12 +360,15 @@ export default function PreviousMockInterviewPage() {
       console.log('Total responses:', responses.length);
       console.log('Custom responses:', customResponses.length);
       console.log('Custom interview questions:', customInterviewData.questions?.length || 0);
+
+      console.log('Custom Interview Data:', customInterviewData.questions);
+      console.log('Custom Responses:', customResponses);
       
       // Match custom questions with custom responses
       if (customInterviewData.questions && customResponses.length > 0) {
         for (let i = 0; i < customInterviewData.questions.length && i < customResponses.length; i++) {
           const question = customInterviewData.questions[i];
-          const response = customResponses[i];
+          const response = customResponses[i+1];
           
           if (question && response && response.transcript && response.transcript !== "[No speech detected]") {
             questionAnswers.push({
