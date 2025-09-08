@@ -1321,9 +1321,9 @@ export default function MockInterviewPage() {
                 </CardContent>
               </Card>
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                 {/* Strengths */}
-                {evaluationResults.strengths && evaluationResults.strengths.length > 0 && (
+                {/* {evaluationResults.strengths && evaluationResults.strengths.length > 0 && (
                   <Card className={`rounded-xl ${subtleCard}`}>
                     <CardContent className="p-6">
                       <div className="flex items-center gap-2 mb-4">
@@ -1340,7 +1340,7 @@ export default function MockInterviewPage() {
                       </ul>
                     </CardContent>
                   </Card>
-                )}
+                )} */}
 
                 {/* Areas for Improvement */}
                 {evaluationResults.weaknesses && evaluationResults.weaknesses.length > 0 && (
