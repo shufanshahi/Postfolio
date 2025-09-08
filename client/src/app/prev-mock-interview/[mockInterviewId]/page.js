@@ -3,6 +3,28 @@
 import { useState, useRef, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { AssemblyAI } from "assemblyai";
+import { 
+  Mic, MicOff, Play, PhoneOff, RotateCcw, Video, 
+  CheckCircle, AlertCircle, Clock, Award, Target,
+  Loader2, ChevronRight, ArrowLeft, Bot, User2,
+  Volume2, VolumeX, Settings, Star, Briefcase, Activity
+} from 'lucide-react';
+import {
+  Card, CardHeader, CardTitle, CardDescription, CardContent
+} from '@/components/ui/card';
+import {
+  Button
+} from '@/components/ui/button';
+import {
+  Badge
+} from '@/components/ui/badge';
+import {
+  Progress
+} from '@/components/ui/progress';
+import {
+  Alert, AlertDescription
+} from '@/components/ui/alert';
+import Navbar from '@/components/Navbar';
 
 export default function PreviousMockInterviewPage() {
   const { mockInterviewId } = useParams();
@@ -471,146 +493,189 @@ export default function PreviousMockInterviewPage() {
     } : null;
   };
 
+  // Design tokens (matching dashboard and mockInterview)
+  const gradientPanel = 'bg-gradient-to-br from-teal-50/70 via-white/50 to-indigo-50/70 dark:from-slate-800/60 dark:via-slate-800/50 dark:to-slate-800/60 backdrop-blur-xl border border-white/40 dark:border-slate-700/50 shadow-sm';
+  const subtleCard = 'bg-gradient-to-br from-teal-50/65 via-white/55 to-indigo-50/60 dark:from-slate-800/70 dark:via-slate-800/60 dark:to-slate-800/70 backdrop-blur-md border border-teal-900/5 dark:border-slate-700/60 hover:border-teal-500/30 dark:hover:border-teal-400/30 transition-colors';
+
   return (
-    <div className="min-h-screen bg-gray-900 py-4">
-      <div className="max-w-6xl mx-auto px-4">
-        {/* Show loading while fetching mock interview data */}
-        {loadingMockInterview && (
-          <div className="text-center py-20">
-            <div className="flex items-center justify-center space-x-2 text-blue-400 mb-4">
-              <div className="w-5 h-5 border-2 border-blue-400 border-t-transparent rounded-full animate-spin"></div>
-              <span className="font-medium">Loading mock interview data...</span>
-            </div>
+    <div className="min-h-screen relative overflow-hidden">
+      {/* Background gradient matching dashboard */}
+      <div className="pointer-events-none select-none absolute inset-0 -z-10">
+        <div className="absolute -top-24 -left-10 h-[38rem] w-[38rem] bg-gradient-to-br from-teal-200 via-teal-100 to-white dark:from-teal-600/30 dark:via-indigo-600/20 dark:to-transparent blur-3xl opacity-70" />
+        <div className="absolute top-1/3 -right-32 h-[34rem] w-[34rem] bg-gradient-to-tr from-indigo-200 via-white to-amber-100 dark:from-indigo-700/30 dark:via-transparent dark:to-teal-700/20 blur-3xl opacity-60" />
+      </div>
+      
+      <Navbar />
+      
+      <div className="max-w-7xl mx-auto py-10 px-6 space-y-10">
+        {/* Page Header */}
+        <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-6">
+          <div className="space-y-2">
+            <h1 className="text-4xl font-semibold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-teal-700 via-indigo-700 to-amber-600 dark:from-teal-200 dark:via-indigo-200 dark:to-amber-200">
+              Previous Mock Interview
+            </h1>
+            <p className="text-slate-600 dark:text-slate-300 text-sm md:text-base flex items-center gap-2">
+              <Clock className="h-4 w-4 text-teal-600 dark:text-teal-400" />
+              Review and continue your interview session
+            </p>
           </div>
+          <div className="flex items-center gap-3">
+            <Button 
+              variant="outline" 
+              className="rounded-full border-slate-300/60 bg-white/60 backdrop-blur hover:bg-white shadow-sm text-slate-700 text-sm"
+              onClick={() => router.push('/mockInterview')}
+            >
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Back to Mock Interviews
+            </Button>
+          </div>
+        </div>
+
+        {/* Loading State */}
+        {loadingMockInterview && (
+          <Card className={`rounded-2xl ${subtleCard} shadow-lg`}>
+            <CardContent className="p-8 text-center">
+              <Loader2 className="w-12 h-12 text-teal-600 dark:text-teal-400 animate-spin mx-auto mb-4" />
+              <h3 className="text-xl font-semibold text-slate-800 dark:text-slate-100 mb-2">
+                Loading Interview Data
+              </h3>
+              <p className="text-slate-600 dark:text-slate-400">
+                Retrieving your previous mock interview details...
+              </p>
+            </CardContent>
+          </Card>
         )}
 
         {/* Video Call Interface - Show when custom interview is ready or started */}
         {!loadingMockInterview && customInterviewStarted && (
-          <>
+          <Card className={`rounded-2xl overflow-hidden ${subtleCard} shadow-lg`}>
             {/* Video Call Header */}
-            <div className="bg-gray-800 rounded-t-lg p-4 flex items-center justify-between">
+            <div className="bg-gradient-to-r from-teal-600 via-indigo-600 to-purple-600 dark:from-teal-500 dark:via-indigo-500 dark:to-purple-500 p-4 flex items-center justify-between">
               <div className="flex items-center space-x-4">
-                <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-                <span className="text-white font-medium">AI Mock Interview Session</span>
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 bg-green-400 rounded-full animate-pulse"></div>
+                  <span className="text-white font-medium">AI Interview Session</span>
+                </div>
               </div>
               <div className="flex items-center space-x-2">
-                <div className="text-gray-300 text-sm">
+                <Badge variant="secondary" className="bg-white/20 text-white border-white/30">
                   {customInterviewStarted && (
                     <span>Question {customQuestionIndex + 1} of {customInterviewData?.audioUrls?.length || 0}</span>
                   )}
-                </div>
+                </Badge>
               </div>
             </div>
 
             {/* Main Video Call Interface */}
-            <div className="bg-black rounded-b-lg overflow-hidden">
-              {/* Main Interview Screen */}
-              <div className="relative p-6" style={{ height: '600px' }}>
-                {/* AI Interviewer Main Screen */}
-                <div className={`relative bg-gray-800 rounded-lg overflow-hidden w-full transition-all duration-300 ${
-                  isPlayingQuestion ? 'ring-4 ring-blue-400 shadow-lg shadow-blue-400/50' : ''
-                }`} style={{ height: '100%' }}>
-                  <div className="w-full h-full flex items-center justify-center relative">
-                    <div className="w-48 h-48 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
-                      <svg className="w-24 h-24 text-white" fill="currentColor" viewBox="0 0 24 24">
-                        <path d="M12 2C13.1 2 14 2.9 14 4C14 5.1 13.1 6 12 6C10.9 6 10 5.1 10 4C10 2.9 10.9 2 12 2ZM21 9V7L15 13.5V10C15 8.9 14.1 8 13 8H11C9.9 8 9 8.9 9 10V14C9 15.1 9.9 16 11 16H13C14.1 16 15 15.1 15 14V10.5L21 17V15H22V9H21Z"/>
-                      </svg>
-                    </div>
-                    {isPlayingQuestion && (
-                      <div className="absolute inset-0 bg-blue-400/20 animate-pulse rounded-lg"></div>
-                    )}
-                    
-                    {/* AI Interviewer Label */}
-                    <div className="absolute bottom-6 left-6 bg-black/70 text-white px-4 py-2 rounded-full text-base">
+            <div className="relative p-8" style={{ minHeight: '600px' }}>
+              {/* AI Interviewer Main Screen */}
+              <div className={`relative rounded-2xl overflow-hidden w-full transition-all duration-300 ${
+                isPlayingQuestion 
+                  ? 'ring-4 ring-teal-400 shadow-lg shadow-teal-400/30' 
+                  : 'ring-2 ring-slate-200 dark:ring-slate-700'
+              } bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-800 dark:to-slate-900`} style={{ height: '100%' }}>
+                <div className="w-full h-full flex items-center justify-center relative min-h-[500px]">
+                  {/* AI Avatar */}
+                  <div className="w-48 h-48 bg-gradient-to-br from-teal-500 via-indigo-500 to-purple-600 rounded-full flex items-center justify-center shadow-2xl ring-4 ring-white/30">
+                    <Bot className="w-24 h-24 text-white" />
+                  </div>
+                  
+                  {/* Speaking Animation */}
+                  {isPlayingQuestion && (
+                    <div className="absolute inset-0 bg-teal-400/10 animate-pulse rounded-2xl"></div>
+                  )}
+                  
+                  {/* AI Interviewer Label */}
+                  <div className="absolute bottom-6 left-6 bg-gradient-to-r from-teal-600/90 to-indigo-600/90 backdrop-blur text-white px-4 py-2 rounded-full text-base font-medium shadow-lg">
+                    <div className="flex items-center gap-2">
+                      <Bot className="h-4 w-4" />
                       AI Interviewer
                       {isPlayingQuestion && (
-                        <span className="ml-3 inline-flex items-center">
-                          <div className="w-3 h-3 bg-green-400 rounded-full animate-pulse"></div>
-                          <span className="ml-2 text-sm">Speaking...</span>
-                        </span>
+                        <Badge className="bg-green-400/20 text-green-100 border-green-400/30 ml-2">
+                          <Volume2 className="h-3 w-3 mr-1" />
+                          Speaking
+                        </Badge>
                       )}
-                    </div>
-
-                    {/* Control Buttons - Center Bottom */}
-                    <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 flex items-center space-x-4">
-                      {/* Microphone/Record Button */}
-                      <button
-                        onClick={isRecording ? stopRecording : startRecording}
-                        disabled={isPlayingQuestion || isTranscribing}
-                        className={`w-14 h-14 rounded-full flex items-center justify-center transition-all duration-200 ${
-                          isRecording 
-                            ? 'bg-red-500 hover:bg-red-600 pulse' 
-                            : isPlayingQuestion || isTranscribing
-                              ? 'bg-gray-600 cursor-not-allowed opacity-50'
-                              : 'bg-green-600 hover:bg-green-700'
-                        }`}
-                        title={isRecording ? "Stop Recording" : "Start Recording"}
-                      >
-                        {isRecording ? (
-                          <svg className="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 24 24">
-                            <rect x="6" y="6" width="12" height="12" rx="2"/>
-                          </svg>
-                        ) : (
-                          <svg className="w-7 h-7 text-white" fill="currentColor" viewBox="0 0 24 24">
-                            <path d="M12 2C13.1 2 14 2.9 14 4V12C14 13.1 13.1 14 12 14C10.9 14 10 13.1 10 12V4C10 2.9 10.9 2 12 2ZM19 11C19 15.2 15.8 18.6 11.5 18.95V21H13V23H11H9V21H10.5V18.95C6.2 18.6 3 15.2 3 11H5C5 14.3 7.7 17 11 17S17 14.3 17 11H19Z"/>
-                          </svg>
-                        )}
-                      </button>
-
-                      {/* Replay Question Button */}
-                      {!isPlayingQuestion && !isRecording && !isTranscribing && customInterviewStarted && (
-                        <button
-                          onClick={() => playCustomQuestion(customQuestionIndex)}
-                          className="w-14 h-14 rounded-full bg-blue-600 hover:bg-blue-700 flex items-center justify-center transition-all duration-200"
-                          title="Replay Question"
-                        >
-                          <svg className="w-7 h-7 text-white" fill="currentColor" viewBox="0 0 24 24">
-                            <path d="M12 5V1L7 6L12 11V7C15.31 7 18 9.69 18 13S15.31 19 12 19S6 16.31 6 13H4C4 17.42 7.58 21 12 21S20 17.42 20 13S16.42 5 12 5Z"/>
-                          </svg>
-                        </button>
-                      )}
-
-                      {/* End Call Button */}
-                      <button
-                        onClick={resetInterview}
-                        className="w-14 h-14 rounded-full bg-red-600 hover:bg-red-700 flex items-center justify-center transition-all duration-200"
-                        title="End Interview"
-                      >
-                        <svg className="w-7 h-7 text-white" fill="currentColor" viewBox="0 0 24 24">
-                          <path d="M12 9C10.5 9 9.2 9.7 8.5 10.8L15.5 10.8C14.8 9.7 13.5 9 12 9ZM12 2C6.48 2 2 6.48 2 12S6.48 22 12 22S22 17.52 22 12S17.52 2 12 2ZM12 20C7.59 20 4 16.41 4 12S7.59 4 12 4S20 7.59 20 12S16.41 20 12 20ZM15.5 13H8.5C9.2 14.3 10.5 15 12 15S14.8 14.3 15.5 13Z"/>
-                        </svg>
-                      </button>
                     </div>
                   </div>
 
-                  {/* User Picture-in-Picture (Upper Right) */}
-                  <div className={`absolute top-6 right-6 w-48 h-36 bg-gray-700 rounded-lg overflow-hidden transition-all duration-300 ${
-                    isRecording ? 'ring-3 ring-red-400 shadow-lg shadow-red-400/50' : 'ring-2 ring-gray-600'
-                  }`}>
-                    <div className="w-full h-full flex items-center justify-center relative">
-                      <div className="w-20 h-20 bg-gradient-to-br from-green-500 to-blue-600 rounded-full flex items-center justify-center">
-                        <svg className="w-10 h-10 text-white" fill="currentColor" viewBox="0 0 24 24">
-                          <path d="M12 12C14.21 12 16 10.21 16 8C16 5.79 14.21 4 12 4C9.79 4 8 5.79 8 8C8 10.21 9.79 12 12 12ZM12 14C9.33 14 4 15.34 4 18V20H20V18C20 15.34 14.67 14 12 14Z"/>
-                        </svg>
-                      </div>
-                      {isRecording && (
-                        <div className="absolute inset-0 bg-red-400/20 animate-pulse rounded-lg"></div>
+                  {/* Control Buttons - Center Bottom */}
+                  <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 flex items-center space-x-4">
+                    {/* Microphone/Record Button */}
+                    <Button
+                      onClick={isRecording ? stopRecording : startRecording}
+                      disabled={isPlayingQuestion || isTranscribing}
+                      size="lg"
+                      className={`w-16 h-16 rounded-full shadow-xl transition-all duration-300 ${
+                        isRecording 
+                          ? 'bg-red-500 hover:bg-red-600 ring-4 ring-red-400/30 animate-pulse' 
+                          : isPlayingQuestion || isTranscribing
+                            ? 'bg-slate-400 cursor-not-allowed opacity-50'
+                            : 'bg-green-600 hover:bg-green-700 ring-4 ring-green-400/30 hover:scale-110'
+                      }`}
+                      title={isRecording ? "Stop Recording" : "Start Recording"}
+                    >
+                      {isRecording ? (
+                        <MicOff className="w-7 h-7 text-white" />
+                      ) : (
+                        <Mic className="w-7 h-7 text-white" />
                       )}
-                      
-                      {/* User Label */}
-                      <div className="absolute bottom-2 left-2 bg-black/70 text-white px-2 py-1 rounded text-xs">
+                    </Button>
+
+                    {/* Replay Question Button */}
+                    {!isPlayingQuestion && !isRecording && !isTranscribing && customInterviewStarted && (
+                      <Button
+                        onClick={() => playCustomQuestion(customQuestionIndex)}
+                        size="lg"
+                        className="w-16 h-16 rounded-full bg-teal-600 hover:bg-teal-700 shadow-xl ring-4 ring-teal-400/30 hover:scale-110 transition-all duration-300"
+                        title="Replay Question"
+                      >
+                        <RotateCcw className="w-7 h-7 text-white" />
+                      </Button>
+                    )}
+
+                    {/* End Call Button */}
+                    <Button
+                      onClick={resetInterview}
+                      size="lg"
+                      className="w-16 h-16 rounded-full bg-red-600 hover:bg-red-700 shadow-xl ring-4 ring-red-400/30 hover:scale-110 transition-all duration-300"
+                      title="End Interview"
+                    >
+                      <PhoneOff className="w-7 h-7 text-white" />
+                    </Button>
+                  </div>
+                </div>
+
+                {/* User Picture-in-Picture (Upper Right) */}
+                <div className={`absolute top-6 right-6 w-48 h-36 rounded-2xl overflow-hidden transition-all duration-300 ${
+                  isRecording 
+                    ? 'ring-4 ring-red-400 shadow-lg shadow-red-400/30' 
+                    : 'ring-2 ring-slate-300 dark:ring-slate-600'
+                } bg-gradient-to-br from-slate-200 to-slate-300 dark:from-slate-700 dark:to-slate-800`}>
+                  <div className="w-full h-full flex items-center justify-center relative">
+                    <div className="w-20 h-20 bg-gradient-to-br from-green-500 to-teal-600 rounded-full flex items-center justify-center shadow-lg">
+                      <User2 className="w-10 h-10 text-white" />
+                    </div>
+                    {isRecording && (
+                      <div className="absolute inset-0 bg-red-400/20 animate-pulse rounded-2xl"></div>
+                    )}
+                    
+                    {/* User Label */}
+                    <div className="absolute bottom-2 left-2 bg-gradient-to-r from-green-600/90 to-teal-600/90 backdrop-blur text-white px-3 py-1 rounded-full text-xs font-medium">
+                      <div className="flex items-center gap-1">
+                        <User2 className="h-3 w-3" />
                         You
                         {isRecording && (
-                          <span className="ml-1 inline-flex items-center">
-                            <div className="w-1.5 h-1.5 bg-red-400 rounded-full animate-pulse"></div>
-                            <span className="ml-1 text-xs">Rec</span>
-                          </span>
+                          <Badge className="bg-red-400/20 text-red-100 border-red-400/30 ml-1 text-xs">
+                            <div className="w-1.5 h-1.5 bg-red-400 rounded-full animate-pulse mr-1"></div>
+                            Rec
+                          </Badge>
                         )}
                         {isTranscribing && (
-                          <span className="ml-1 inline-flex items-center">
-                            <div className="w-1.5 h-1.5 bg-yellow-400 rounded-full animate-pulse"></div>
-                            <span className="ml-1 text-xs">Processing</span>
-                          </span>
+                          <Badge className="bg-yellow-400/20 text-yellow-100 border-yellow-400/30 ml-1 text-xs">
+                            <Loader2 className="w-2 h-2 animate-spin mr-1" />
+                            Processing
+                          </Badge>
                         )}
                       </div>
                     </div>
@@ -618,7 +683,7 @@ export default function PreviousMockInterviewPage() {
                 </div>
               </div>
             </div>
-          </>
+          </Card>
         )}
 
         {/* Hidden audio element for playing questions */}
@@ -628,111 +693,170 @@ export default function PreviousMockInterviewPage() {
           className="hidden"
         />
 
-        {/* Content Area */}
-        <div className="bg-gray-800 p-6">
-          {/* Show mock interview information */}
-          {!loadingMockInterview && mockInterviewData && !customInterviewStarted && (
-            <div className="text-center mb-8">
-              <h2 className="text-2xl font-semibold text-white mb-4">
-                Previous Mock Interview Details
-              </h2>
-              <div className="bg-gray-700 border border-gray-600 rounded-lg p-6 mb-6 max-w-md mx-auto">
-                <div className="mb-2 text-blue-300 font-semibold">Role: {mockInterviewData.role}</div>
-                <div className="mb-1 text-gray-200">Experience: {mockInterviewData.experience}</div>
-                <div className="mb-1 text-gray-200">Interview Type: {mockInterviewData.interviewType}</div>
-                <div className="mb-1 text-gray-200">Number of Questions: {mockInterviewData.numQuestions}</div>
-              </div>
-            </div>
-          )}
-
-          {/* Show loading spinner/message when generating custom interview */}
-          {(isGeneratingCustomInterview || isTranscribing) && (
-            <div className="text-center mb-8">
-              <div className="flex items-center justify-center space-x-2 text-blue-400">
-                <div className="w-5 h-5 border-2 border-blue-400 border-t-transparent rounded-full animate-spin"></div>
-                <span className="font-medium">
-                  {isTranscribing
-                    ? 'Processing your responses...'
-                    : 'Generating your personalized interview questions...'}
-                </span>
-              </div>
-            </div>
-          )}
-
-          {/* Show custom interview ready message */}
-          {customInterviewData && !isGeneratingCustomInterview && !isTranscribing && !customInterviewStarted && (
-            <div className="bg-gradient-to-r from-blue-900 to-purple-900 border border-blue-500 rounded-lg p-6 mb-8">
-              <h3 className="text-lg font-semibold text-blue-300 mb-4">
-                🚀 Your Personalized Interview is Ready!
-              </h3>
-              <p className="text-blue-200 mb-4">
-                Based on your previous responses, we&apos;ve generated {customInterviewData.questions?.length || 0} personalized questions 
-                for the role of <strong>{mockInterviewData?.role}</strong> with your experience level.
-              </p>
-              <button
-                onClick={startCustomInterview}
-                className="bg-gradient-to-r from-purple-500 to-blue-600 hover:from-purple-600 hover:to-blue-700 text-white px-8 py-3 rounded-lg font-semibold transition-all duration-200 transform hover:scale-105"
-              >
-                Start Personalized Interview
-              </button>
-            </div>
-          )}
-
-
-          {customInterviewStarted && (
-            <div>
-              {/* Current Custom Question Display */}
-              <div className="bg-gradient-to-r from-purple-900 to-blue-900 border border-purple-500 rounded-lg p-6 mb-6">
-                <h3 className="text-xl font-semibold text-purple-200 mb-2 text-center">
-                  {getCurrentCustomQuestion()?.title || 'Loading...'}
-                </h3>
-                <p className="text-purple-100 mb-4 text-center">
-                  {getCurrentCustomQuestion()?.question || 'Loading question...'}
-                </p>
-                
-                {isPlayingQuestion && (
-                  <div className="flex items-center justify-center space-x-2 text-purple-300 mb-4">
-                    <div className="w-3 h-3 bg-purple-300 rounded-full animate-pulse"></div>
-                    <span className="font-medium">AI is asking the personalized question...</span>
-                  </div>
-                )}
-
-                {!isPlayingQuestion && !isRecording && !isTranscribing && (
-                  <div className="text-center">
-                    <p className="text-purple-200 mb-4">Question audio has finished. Ready to record your answer?</p>
-                  </div>
-                )}
-
-                {isRecording && (
-                  <div className="text-center">
-                    <div className="flex items-center justify-center space-x-2 text-red-400 mb-4">
-                      <div className="w-3 h-3 bg-red-400 rounded-full animate-pulse"></div>
-                      <span className="font-medium">Recording your response...</span>
+        {/* Content Area - Two Column Layout */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
+          <div className="lg:col-span-2 space-y-8">
+            {/* Mock Interview Information */}
+            {!loadingMockInterview && mockInterviewData && !customInterviewStarted && (
+              <Card className={`rounded-2xl ${subtleCard} shadow-sm`}>
+                <CardContent className="p-8 text-center">
+                  <div className="mb-8">
+                    <div className="w-24 h-24 bg-gradient-to-br from-teal-500 via-indigo-500 to-purple-600 rounded-full flex items-center justify-center mx-auto mb-6 shadow-2xl">
+                      <Briefcase className="w-12 h-12 text-white" />
+                    </div>
+                    <h2 className="text-3xl font-semibold text-slate-800 dark:text-slate-100 mb-4">
+                      Previous Mock Interview Details
+                    </h2>
+                    <div className={`${gradientPanel} rounded-xl p-6 mb-6 max-w-lg mx-auto`}>
+                      <div className="space-y-3 text-left">
+                        <div className="flex items-center justify-between">
+                          <span className="text-slate-600 dark:text-slate-400 font-medium">Role:</span>
+                          <Badge className="bg-teal-100 text-teal-700 dark:bg-teal-900/30 dark:text-teal-300">
+                            {mockInterviewData.role}
+                          </Badge>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span className="text-slate-600 dark:text-slate-400">Experience:</span>
+                          <span className="text-slate-800 dark:text-slate-200 font-medium">{mockInterviewData.experience}</span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span className="text-slate-600 dark:text-slate-400">Interview Type:</span>
+                          <span className="text-slate-800 dark:text-slate-200 font-medium">{mockInterviewData.interviewType}</span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span className="text-slate-600 dark:text-slate-400">Questions:</span>
+                          <Badge variant="secondary">{mockInterviewData.numQuestions}</Badge>
+                        </div>
+                      </div>
                     </div>
                   </div>
-                )}
+                </CardContent>
+              </Card>
+            )}
 
-                {isTranscribing && (
-                  <div className="text-center">
-                    <div className="flex items-center justify-center space-x-2 text-yellow-400 mb-4">
-                      <div className="w-5 h-5 border-2 border-yellow-400 border-t-transparent rounded-full animate-spin"></div>
-                      <span className="font-medium">Processing your response...</span>
+            {/* Processing States */}
+            {(isGeneratingCustomInterview || isTranscribing) && (
+              <Card className={`rounded-2xl ${subtleCard} shadow-lg`}>
+                <CardContent className="p-8 text-center">
+                  <Loader2 className="w-12 h-12 text-teal-600 dark:text-teal-400 animate-spin mx-auto mb-4" />
+                  <h3 className="text-xl font-semibold text-slate-800 dark:text-slate-100 mb-2">
+                    {isTranscribing
+                      ? 'Processing Your Responses'
+                      : 'Generating Personalized Questions'}
+                  </h3>
+                  <p className="text-slate-600 dark:text-slate-400">
+                    {isTranscribing
+                      ? 'Analyzing your audio responses and converting them to text...'
+                      : 'Creating customized interview questions based on your previous responses...'}
+                  </p>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Custom Interview Ready */}
+            {customInterviewData && !isGeneratingCustomInterview && !isTranscribing && !customInterviewStarted && (
+              <Card className={`rounded-2xl overflow-hidden ${gradientPanel} shadow-lg`}>
+                <div className="absolute inset-0 bg-gradient-to-br from-teal-100/40 via-transparent to-indigo-100/40 dark:from-teal-500/10 dark:to-indigo-500/10" />
+                <CardContent className="relative p-8">
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="w-12 h-12 bg-gradient-to-br from-teal-500 to-indigo-600 rounded-full flex items-center justify-center">
+                      <Star className="w-6 h-6 text-white" />
+                    </div>
+                    <div>
+                      <h3 className="text-xl font-semibold text-slate-800 dark:text-slate-100">
+                        Personalized Interview Ready!
+                      </h3>
+                      <p className="text-slate-600 dark:text-slate-400 text-sm">
+                        Continue from where you left off
+                      </p>
                     </div>
                   </div>
-                )}
-              </div>
-            </div>
-          )}
+                  <p className="text-slate-700 dark:text-slate-300 mb-6 leading-relaxed">
+                    Based on your previous responses, we&apos;ve generated <strong>{customInterviewData.questions?.length || 0} personalized questions</strong> 
+                    for the role of <strong>{mockInterviewData?.role}</strong> with your experience level.
+                  </p>
+                  <div className="flex gap-3">
+                    <Button
+                      onClick={startCustomInterview}
+                      className="bg-gradient-to-r from-teal-600 to-indigo-600 hover:from-teal-700 hover:to-indigo-700 text-white rounded-full shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300"
+                    >
+                      <Play className="w-4 h-4 mr-2" />
+                      Start Personalized Interview
+                    </Button>
+                    {/* <Button
+                      onClick={resetInterview}
+                      variant="outline"
+                      className="rounded-full border-slate-300/60 bg-white/60 backdrop-blur hover:bg-white shadow-sm"
+                    >
+                      Return to Mock Interviews
+                    </Button> */}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
 
-          {/* Interview Evaluation Results */}
-          {showEvaluation && evaluationResults && !customInterviewStarted && (
+            {/* Current Custom Question */}
+            {customInterviewStarted && (
+              <Card className={`rounded-2xl ${gradientPanel} shadow-lg`}>
+                <div className="absolute inset-0 bg-gradient-to-br from-purple-100/40 via-transparent to-indigo-100/40 dark:from-purple-500/10 dark:to-indigo-500/10" />
+                <CardHeader className="relative pb-4">
+                  <CardTitle className="flex items-center gap-3 text-slate-800 dark:text-slate-100 text-xl">
+                    <Award className="h-6 w-6 text-purple-600 dark:text-purple-400" />
+                    {getCurrentCustomQuestion()?.title || 'Loading...'}
+                  </CardTitle>
+                  <CardDescription className="text-slate-600 dark:text-slate-400">
+                    {getCurrentCustomQuestion()?.question || 'Loading question...'}
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="relative space-y-6">
+                  {isPlayingQuestion && (
+                    <Alert className="border-purple-200 bg-purple-50 dark:border-purple-700 dark:bg-purple-900/20">
+                      <Volume2 className="h-4 w-4 text-purple-600 dark:text-purple-400" />
+                      <AlertDescription className="text-purple-700 dark:text-purple-300">
+                        AI is asking your personalized question. Take your time to think and respond.
+                      </AlertDescription>
+                    </Alert>
+                  )}
+
+                  {!isPlayingQuestion && !isRecording && !isTranscribing && (
+                    <Alert className="border-green-200 bg-green-50 dark:border-green-700 dark:bg-green-900/20">
+                      <CheckCircle className="h-4 w-4 text-green-600 dark:text-green-400" />
+                      <AlertDescription className="text-green-700 dark:text-green-300">
+                        Question completed. Ready to record your personalized response?
+                      </AlertDescription>
+                    </Alert>
+                  )}
+
+                  {isRecording && (
+                    <Alert className="border-red-200 bg-red-50 dark:border-red-700 dark:bg-red-900/20">
+                      <Mic className="h-4 w-4 text-red-600 dark:text-red-400" />
+                      <AlertDescription className="text-red-700 dark:text-red-300">
+                        Recording your detailed response to this personalized question.
+                      </AlertDescription>
+                    </Alert>
+                  )}
+
+                  {isTranscribing && (
+                    <Alert className="border-amber-200 bg-amber-50 dark:border-amber-700 dark:bg-amber-900/20">
+                      <Loader2 className="h-4 w-4 text-amber-600 dark:text-amber-400 animate-spin" />
+                      <AlertDescription className="text-amber-700 dark:text-amber-300">
+                        Processing your response for detailed evaluation.
+                      </AlertDescription>
+                    </Alert>
+                  )}
+                </CardContent>
+              </Card>
+            )}
+
+         
+          {/* {showEvaluation && evaluationResults && !customInterviewStarted && (
             <div className="mb-8">
               <div className="bg-gradient-to-r from-green-900 to-blue-900 border border-green-500 rounded-lg p-6 mb-6">
                 <h3 className="text-xl font-semibold text-green-300 mb-4 text-center">
                   🎯 Interview Evaluation Results
                 </h3>
                 
-                {/* Rating */}
+                
                 <div className="bg-green-800/30 border border-green-600 rounded-lg p-4 mb-4 text-center">
                   <h4 className="text-lg font-semibold text-green-300 mb-2">Overall Rating</h4>
                   <div className="text-3xl font-bold text-white mb-2">
@@ -746,7 +870,7 @@ export default function PreviousMockInterviewPage() {
                   </div>
                 </div>
 
-                {/* Strengths */}
+                
                 {evaluationResults.strengths && evaluationResults.strengths.length > 0 && (
                   <div className="bg-green-800/20 border border-green-600 rounded-lg p-4 mb-4">
                     <h4 className="text-lg font-semibold text-green-300 mb-3 flex items-center">
@@ -763,7 +887,7 @@ export default function PreviousMockInterviewPage() {
                   </div>
                 )}
 
-                {/* Weaknesses */}
+            
                 {evaluationResults.weaknesses && evaluationResults.weaknesses.length > 0 && (
                   <div className="bg-red-800/20 border border-red-600 rounded-lg p-4 mb-4">
                     <h4 className="text-lg font-semibold text-red-300 mb-3 flex items-center">
@@ -780,7 +904,6 @@ export default function PreviousMockInterviewPage() {
                   </div>
                 )}
 
-                {/* Improvements */}
                 {evaluationResults.improvements && evaluationResults.improvements.length > 0 && (
                   <div className="bg-blue-800/20 border border-blue-600 rounded-lg p-4 mb-4">
                     <h4 className="text-lg font-semibold text-blue-300 mb-3 flex items-center">
@@ -802,15 +925,15 @@ export default function PreviousMockInterviewPage() {
                     onClick={resetInterview}
                     className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white px-8 py-3 rounded-lg font-semibold transition-all duration-200 transform hover:scale-105"
                   >
-                    Start New Interview
+                    Start New Intervieww
                   </button>
                 </div>
               </div>
             </div>
-          )}
+          )} */}
 
           {/* Show loading during evaluation or when waiting for evaluation */}
-          {(isEvaluating || (customInterviewComplete && !customInterviewStarted && !showEvaluation && !isTranscribing)) && (
+          {/* {(isEvaluating || (customInterviewComplete && !customInterviewStarted && !showEvaluation && !isTranscribing)) && (
             <div className="text-center mb-8">
               <div className="flex items-center justify-center space-x-2 text-green-400">
                 <div className="w-5 h-5 border-2 border-green-400 border-t-transparent rounded-full animate-spin"></div>
@@ -820,7 +943,7 @@ export default function PreviousMockInterviewPage() {
               </div>
               <p className="text-gray-300 text-sm mt-2">This may take a few moments</p>
             </div>
-          )}
+          )} */}
 
           {/* Error Display */}
           {error && (
@@ -832,9 +955,204 @@ export default function PreviousMockInterviewPage() {
                 <span>{error}</span>
               </div>
             </div>
-          )}
+            )}
+          </div>
 
+          {/* Sidebar */}
+          <div className="space-y-8">
+            {/* Interview Status */}
+            <Card className={`rounded-2xl ${subtleCard} shadow-sm`}>
+              <CardHeader className="pb-3">
+                <CardTitle className="flex items-center gap-2 text-slate-800 dark:text-slate-100 text-base font-semibold">
+                  <Activity className="h-4 w-4 text-teal-600 dark:text-teal-400" />
+                  Interview Status
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-1 gap-4 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-slate-600 dark:text-slate-400">Interview Type</span>
+                    <Badge className="bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300 text-xs">
+                      Previous Session
+                    </Badge>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-600 dark:text-slate-400">Questions Available</span>
+                    <span className="font-medium text-slate-800 dark:text-slate-100">
+                      {customInterviewData ? `${customInterviewData.questions?.length || 0} Generated` : 'Pending'}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-600 dark:text-slate-400">Current Phase</span>
+                    <Badge className={`text-xs ${
+                      customInterviewStarted
+                        ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300'
+                        : customInterviewData
+                          ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300'
+                          : 'bg-slate-100 text-slate-700 dark:bg-slate-700 dark:text-slate-300'
+                    }`}>
+                      {customInterviewStarted 
+                        ? 'In Progress'
+                        : customInterviewData
+                          ? 'Ready to Start'
+                          : 'Preparing'
+                      }
+                    </Badge>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Interview Tips */}
+            <Card className={`rounded-2xl ${gradientPanel} shadow-sm`}>
+              <div className="absolute inset-0 bg-gradient-to-br from-teal-100/40 via-transparent to-indigo-100/40 dark:from-teal-500/10 dark:to-indigo-500/10 rounded-2xl" />
+              <CardHeader className="relative pb-3">
+                <CardTitle className="text-slate-800 dark:text-slate-100 text-base font-semibold">
+                  Interview Tips
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="relative space-y-3">
+                <div className="space-y-3 text-sm text-slate-600 dark:text-slate-400">
+                  <div className="flex items-start gap-2">
+                    <CheckCircle className="h-4 w-4 text-green-500 mt-0.5 flex-shrink-0" />
+                    <span>Build on your previous responses</span>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <CheckCircle className="h-4 w-4 text-green-500 mt-0.5 flex-shrink-0" />
+                    <span>Use specific examples and metrics</span>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <CheckCircle className="h-4 w-4 text-green-500 mt-0.5 flex-shrink-0" />
+                    <span>Take time to think before answering</span>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <CheckCircle className="h-4 w-4 text-green-500 mt-0.5 flex-shrink-0" />
+                    <span>Replay questions if needed</span>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
         </div>
+
+        {/* Interview Evaluation Results */}
+        {showEvaluation && evaluationResults && !customInterviewStarted && (
+          <Card className={`rounded-2xl overflow-hidden ${gradientPanel} shadow-lg`}>
+            <div className="absolute inset-0 bg-gradient-to-br from-green-100/40 via-transparent to-blue-100/40 dark:from-green-500/10 dark:to-blue-500/10" />
+            <CardContent className="relative p-8">
+              <div className="text-center mb-8">
+                <div className="w-16 h-16 bg-gradient-to-br from-green-500 to-blue-600 rounded-full flex items-center justify-center mx-auto mb-4 shadow-xl">
+                  <Award className="w-8 h-8 text-white" />
+                </div>
+                <h3 className="text-2xl font-semibold text-slate-800 dark:text-slate-100 mb-2">
+                  Interview Evaluation Results
+                </h3>
+                <p className="text-slate-600 dark:text-slate-400">
+                  Your performance analysis and improvement recommendations
+                </p>
+              </div>
+              
+              {/* Overall Rating */}
+              <Card className={`rounded-xl mb-6 ${subtleCard}`}>
+                <CardContent className="p-6 text-center">
+                  <h4 className="text-lg font-semibold text-slate-800 dark:text-slate-100 mb-4">Overall Rating</h4>
+                  <div className="text-4xl font-bold text-slate-800 dark:text-slate-100 mb-4">
+                    {evaluationResults.rating}/100
+                  </div>
+                  <div className="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-3 mb-2">
+                    <div 
+                      className="bg-gradient-to-r from-green-500 to-blue-500 h-3 rounded-full transition-all duration-1000"
+                      style={{ width: `${evaluationResults.rating}%` }}
+                    />
+                  </div>
+                  <p className="text-sm text-slate-600 dark:text-slate-400">
+                    {evaluationResults.rating >= 80 ? 'Excellent Performance!' : 
+                     evaluationResults.rating >= 60 ? 'Good Performance' : 
+                     'Room for Improvement'}
+                  </p>
+                </CardContent>
+              </Card>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                {/* Areas for Improvement */}
+                {evaluationResults.weaknesses && evaluationResults.weaknesses.length > 0 && (
+                  <Card className={`rounded-xl ${subtleCard}`}>
+                    <CardContent className="p-6">
+                      <div className="flex items-center gap-2 mb-4">
+                        <AlertCircle className="h-5 w-5 text-amber-600 dark:text-amber-400" />
+                        <h4 className="font-semibold text-slate-800 dark:text-slate-100">Areas to Improve</h4>
+                      </div>
+                      <ul className="space-y-2 text-sm text-slate-600 dark:text-slate-400">
+                        {evaluationResults.weaknesses.map((weakness, index) => (
+                          <li key={index} className="flex items-start gap-2">
+                            <div className="w-1.5 h-1.5 bg-amber-500 rounded-full mt-2 flex-shrink-0" />
+                            {weakness}
+                          </li>
+                        ))}
+                      </ul>
+                    </CardContent>
+                  </Card>
+                )}
+
+                {/* Recommendations */}
+                {evaluationResults.improvements && evaluationResults.improvements.length > 0 && (
+                  <Card className={`rounded-xl ${subtleCard}`}>
+                    <CardContent className="p-6">
+                      <div className="flex items-center gap-2 mb-4">
+                        <Target className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                        <h4 className="font-semibold text-slate-800 dark:text-slate-100">Recommendations</h4>
+                      </div>
+                      <ul className="space-y-2 text-sm text-slate-600 dark:text-slate-400">
+                        {evaluationResults.improvements.map((improvement, index) => (
+                          <li key={index} className="flex items-start gap-2">
+                            <div className="w-1.5 h-1.5 bg-blue-500 rounded-full mt-2 flex-shrink-0" />
+                            {improvement}
+                          </li>
+                        ))}
+                      </ul>
+                    </CardContent>
+                  </Card>
+                )}
+              </div>
+
+              {/* <div className="text-center">
+                <Button
+                  onClick={resetInterview}
+                  className="bg-gradient-to-r from-teal-600 to-indigo-600 hover:from-teal-700 hover:to-indigo-700 text-white px-8 py-3 rounded-full shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300"
+                >
+                  <RotateCcw className="w-4 h-4 mr-2" />
+                  Start New Interview
+                </Button>
+              </div> */}
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Loading during evaluation */}
+        {(isEvaluating || (customInterviewComplete && !customInterviewStarted && !showEvaluation && !isTranscribing)) && (
+          <Card className={`rounded-2xl ${subtleCard} shadow-lg`}>
+            <CardContent className="p-8 text-center">
+              <Loader2 className="w-12 h-12 text-green-600 dark:text-green-400 animate-spin mx-auto mb-4" />
+              <h3 className="text-xl font-semibold text-slate-800 dark:text-slate-100 mb-2">
+                {isEvaluating ? 'Evaluating Interview Performance' : 'Preparing Evaluation'}
+              </h3>
+              <p className="text-slate-600 dark:text-slate-400">
+                {isEvaluating ? 'Analyzing your responses and generating feedback...' : 'This may take a few moments'}
+              </p>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Error Display */}
+        {error && (
+          <Alert className="border-red-200 bg-red-50 dark:border-red-700 dark:bg-red-900/20">
+            <AlertCircle className="h-4 w-4 text-red-600 dark:text-red-400" />
+            <AlertDescription className="text-red-700 dark:text-red-300">
+              {error}
+            </AlertDescription>
+          </Alert>
+        )}
+
       </div>
     </div>
   );
