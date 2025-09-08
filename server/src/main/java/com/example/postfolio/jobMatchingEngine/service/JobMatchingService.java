@@ -34,18 +34,19 @@ public class JobMatchingService {
 
     public MatchingResult scoreApplicant(Job job, Profile applicant) {
         try {
-            // Generate cache key
-            String profileHash = generateProfileHash(applicant);
-            String jobHash = generateJobHash(job);
-            String cacheKey = cacheService.generateCacheKey(profileHash, jobHash);
+            // Generate cache key - COMMENTED OUT FOR DIRECT API CALLS
+            // String profileHash = generateProfileHash(applicant);
+            // String jobHash = generateJobHash(job);
+            // String cacheKey = cacheService.generateCacheKey(profileHash, jobHash);
 
-            // Check Redis cache first
-            MatchingResult cached = cacheService.getCachedResult(cacheKey);
-            if (cached != null) {
-                log.debug("Using cached score for job {} and profile {}: {}", job.getJobId(), applicant.getId(),
-                        cached.getTotalScore());
-                return cached;
-            }
+            // Check Redis cache first - COMMENTED OUT FOR DIRECT API CALLS
+            // MatchingResult cached = cacheService.getCachedResult(cacheKey);
+            // if (cached != null) {
+            // log.debug("Using cached score for job {} and profile {}: {}", job.getJobId(),
+            // applicant.getId(),
+            // cached.getTotalScore());
+            // return cached;
+            // }
 
             // Calculate new score using AI microservice
             log.info("Calculating new score for job {} and profile {} - calling AI service", job.getJobId(),
@@ -78,10 +79,11 @@ public class JobMatchingService {
                     .explanation(aiResponse.getExplanation())
                     .build();
 
-            // Cache the result in Redis
-            cacheService.cacheResult(cacheKey, result);
-            log.info("Cached new score for job {} and profile {}: {}", job.getJobId(), applicant.getId(),
-                    result.getTotalScore());
+            // Cache the result in Redis - COMMENTED OUT FOR DIRECT API CALLS
+            // cacheService.cacheResult(cacheKey, result);
+            // log.info("Cached new score for job {} and profile {}: {}", job.getJobId(),
+            // applicant.getId(),
+            // result.getTotalScore());
             return result;
 
         } catch (Exception e) {

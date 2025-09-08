@@ -8,6 +8,7 @@ const PreparationPage = () => {
   const [selectedFile, setSelectedFile] = useState(null);
   const [textContent, setTextContent] = useState('');
   const [documentName, setDocumentName] = useState('');
+  const [questionCount, setQuestionCount] = useState(10);
   const [mcqSets, setMcqSets] = useState([]);
   const [currentMCQSet, setCurrentMCQSet] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -48,8 +49,8 @@ const PreparationPage = () => {
       return false;
     }
     if (activeTab === 'text' && (!textContent.trim() || !documentName.trim())) {
-      setError(activeTab === 'text' && !documentName.trim() 
-        ? 'Please enter a document name' 
+      setError(activeTab === 'text' && !documentName.trim()
+        ? 'Please enter a document name'
         : 'Please enter some text content');
       return false;
     }
@@ -68,6 +69,7 @@ const PreparationPage = () => {
       if (activeTab === 'upload') {
         const formData = new FormData();
         formData.append('document', selectedFile);
+        formData.append('questionCount', questionCount.toString());
         response = await fetch('http://localhost:8080/api/preparation/generate-mcq', {
           method: 'POST',
           body: formData,
@@ -84,7 +86,8 @@ const PreparationPage = () => {
           },
           body: JSON.stringify({
             documentContent: textContent,
-            documentName: documentName
+            documentName: documentName,
+            questionCount: questionCount
           })
         });
       }
@@ -94,7 +97,7 @@ const PreparationPage = () => {
       const data = await response.json();
       setCurrentMCQSet(data);
       setSuccess('MCQs generated successfully!');
-      
+
       // Reset form
       if (activeTab === 'upload') {
         setSelectedFile(null);
@@ -103,7 +106,7 @@ const PreparationPage = () => {
         setTextContent('');
         setDocumentName('');
       }
-      
+
       await loadMCQSets();
     } catch (err) {
       setError(err.message || 'An error occurred. Please try again.');
@@ -180,11 +183,10 @@ const PreparationPage = () => {
                 <div className="flex">
                   <button
                     onClick={() => setActiveTab('upload')}
-                    className={`flex-1 py-3 md:py-4 px-4 md:px-6 text-center font-medium transition-colors ${
-                      activeTab === 'upload'
+                    className={`flex-1 py-3 md:py-4 px-4 md:px-6 text-center font-medium transition-colors ${activeTab === 'upload'
                         ? 'bg-indigo-50 text-indigo-600 border-b-2 border-indigo-600'
                         : 'text-gray-500 hover:text-gray-700'
-                    }`}
+                      }`}
                   >
                     <FileUp className="h-5 w-5 inline mr-2" />
                     <span className="hidden sm:inline">Upload Document</span>
@@ -192,11 +194,10 @@ const PreparationPage = () => {
                   </button>
                   <button
                     onClick={() => setActiveTab('text')}
-                    className={`flex-1 py-3 md:py-4 px-4 md:px-6 text-center font-medium transition-colors ${
-                      activeTab === 'text'
+                    className={`flex-1 py-3 md:py-4 px-4 md:px-6 text-center font-medium transition-colors ${activeTab === 'text'
                         ? 'bg-indigo-50 text-indigo-600 border-b-2 border-indigo-600'
                         : 'text-gray-500 hover:text-gray-700'
-                    }`}
+                      }`}
                   >
                     <FileText className="h-5 w-5 inline mr-2" />
                     <span className="hidden sm:inline">Paste Text</span>
@@ -286,6 +287,28 @@ const PreparationPage = () => {
                   </div>
                 )}
 
+                {/* Question Count Selection */}
+                <div className="mt-4 md:mt-6">
+                  <label className="block text-sm font-medium text-gray-700 mb-2 md:mb-3">
+                    Number of Questions
+                  </label>
+                  <div className="grid grid-cols-3 gap-2 md:gap-3">
+                    {[10, 20, 30].map((count) => (
+                      <button
+                        key={count}
+                        onClick={() => setQuestionCount(count)}
+                        type="button"
+                        className={`py-2 md:py-3 px-3 md:px-4 rounded-lg text-sm font-medium transition-colors ${questionCount === count
+                            ? 'bg-indigo-600 text-white shadow-sm'
+                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200 border border-gray-300'
+                          }`}
+                      >
+                        {count} MCQs
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
                 <button
                   onClick={generateMCQs}
                   disabled={loading || (activeTab === 'upload' ? !selectedFile : !textContent.trim() || !documentName.trim())}
@@ -300,7 +323,7 @@ const PreparationPage = () => {
                       Generating...
                     </span>
                   ) : (
-                    'Generate 25 MCQs'
+                    `Generate ${questionCount} MCQs`
                   )}
                 </button>
               </div>
