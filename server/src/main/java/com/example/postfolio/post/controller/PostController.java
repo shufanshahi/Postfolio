@@ -145,6 +145,21 @@ public class PostController {
         return ResponseEntity.ok(response);
     }
 
+    @PostMapping("/{postId}/grief")
+    public ResponseEntity<Map<String, Object>> griefPost(@PathVariable Long postId) {
+        boolean isGriefed = postService.toggleGriefPost(postId);
+        Long griefCount = postService.getGriefCount(postId);
+        boolean userGriefed = postService.isPostGriefedByCurrentUser(postId);
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("isGriefed", isGriefed);
+        response.put("griefCount", griefCount);
+        response.put("userGriefed", userGriefed);
+        response.put("message", isGriefed ? "Post expressed grief 😢" : "Grief removed");
+
+        return ResponseEntity.ok(response);
+    }
+
     @GetMapping("/{postId}/celebration-info")
     public ResponseEntity<Map<String, Object>> getCelebrationInfo(@PathVariable Long postId) {
         Long celebrationCount = postService.getCelebrationCount(postId);
@@ -153,6 +168,18 @@ public class PostController {
         Map<String, Object> response = new HashMap<>();
         response.put("celebrationCount", celebrationCount);
         response.put("userCelebrated", userCelebrated);
+
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/{postId}/grief-info")
+    public ResponseEntity<Map<String, Object>> getGriefInfo(@PathVariable Long postId) {
+        Long griefCount = postService.getGriefCount(postId);
+        boolean userGriefed = postService.isPostGriefedByCurrentUser(postId);
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("griefCount", griefCount);
+        response.put("userGriefed", userGriefed);
 
         return ResponseEntity.ok(response);
     }

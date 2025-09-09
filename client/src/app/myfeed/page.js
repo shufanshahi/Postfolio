@@ -3,6 +3,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import withAuth from '@/components/withAuth';
 import Navbar from '@/components/Navbar';
 import CelebrateButton from '@/components/CelebrateButton';
+import GriefButton from '@/components/GriefButton';
 import React, { useState, useEffect, useRef } from 'react';
 // Reuse design tokens from dashboard for consistent theming
 const gradientPanel = 'bg-gradient-to-br from-teal-50/70 via-white/50 to-indigo-50/70 dark:from-slate-800/60 dark:via-slate-800/50 dark:to-slate-800/60 backdrop-blur-xl border border-white/40 dark:border-slate-700/50 shadow-sm';
@@ -23,6 +24,7 @@ function MyFeedPage() {
     const [imagePreviewModal, setImagePreviewModal] = useState({ show: false, image: null });
     const [activeNav, setActiveNav] = useState('feed');
     const [celebratedPosts, setCelebratedPosts] = useState({});
+    const [griefedPosts, setGriefedPosts] = useState({});
     const [showCelebratedModal, setShowCelebratedModal] = useState(false);
     const fileInputRef = useRef(null);
 
@@ -206,6 +208,13 @@ function MyFeedPage() {
         setCelebratedPosts(prev => ({
             ...prev,
             [postId]: isCelebrated
+        }));
+    };
+
+    const handleGriefChange = (postId, isGriefed) => {
+        setGriefedPosts(prev => ({
+            ...prev,
+            [postId]: isGriefed
         }));
     };
 
@@ -542,10 +551,14 @@ function MyFeedPage() {
                                             )}
 
                                             {/* Engagement Bar */}
-                                            <div className="flex items-center justify-start pt-4 border-t border-teal-900/10 dark:border-slate-700/60">
+                                            <div className="flex items-center justify-start gap-3 pt-4 border-t border-teal-900/10 dark:border-slate-700/60">
                                                 <CelebrateButton
                                                     postId={post.id}
                                                     onCelebrationChange={handleCelebrationChange}
+                                                />
+                                                <GriefButton
+                                                    postId={post.id}
+                                                    onGriefChange={handleGriefChange}
                                                 />
                                             </div>
 

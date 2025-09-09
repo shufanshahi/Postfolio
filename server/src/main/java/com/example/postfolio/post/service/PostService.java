@@ -24,6 +24,7 @@ import org.springframework.web.server.ResponseStatusException;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import com.example.postfolio.post.entity.Reaction;
 import com.example.postfolio.post.model.ReactionType;
@@ -278,10 +279,12 @@ public class PostService {
         Post post = getPostById(postId);
         User currentUser = getCurrentUser();
 
-        // Check if user already celebrated this post
-        if (reactionRepository.existsByPostAndUser(post, currentUser)) {
+        // Check if user already has any reaction on this post
+        Optional<Reaction> existingReaction = reactionRepository.findByPostAndUser(post, currentUser);
+
+        if (existingReaction.isPresent() && existingReaction.get().getType() == ReactionType.CELEBRATE) {
             // Remove celebration
-            reactionRepository.deleteByPostAndUser(post, currentUser);
+            reactionRepository.delete(existingReaction.get());
 
             // Remove notification
             notificationService.removePostCelebratedNotification(
@@ -291,6 +294,9 @@ public class PostService {
 
             return false; // Post was uncelebrated
         } else {
+            // Remove any existing reaction first (grief or celebrate)
+            existingReaction.ifPresent(reactionRepository::delete);
+
             // Add celebration
             Reaction reaction = Reaction.builder()
                     .post(post)
@@ -328,13 +334,58 @@ public class PostService {
     public boolean isPostCelebratedByCurrentUser(Long postId) {
         Post post = getPostById(postId);
         User currentUser = getCurrentUser();
-        return reactionRepository.existsByPostAndUser(post, currentUser);
+        Optional<Reaction> reaction = reactionRepository.findByPostAndUser(post, currentUser);
+        return reaction.isPresent() && reaction.get().getType() == ReactionType.CELEBRATE;
     }
 
     @Transactional(readOnly = true)
     public List<Reaction> getPostReactions(Long postId) {
         Post post = getPostById(postId);
         return reactionRepository.findByPostWithUser(post);
+    }
+
+    @Transactional
+    public boolean toggleGriefPost(Long postId) {
+        Post post = getPostById(postId);
+        User currentUser = getCurrentUser();
+
+        // Check if user already grieved this post (specifically with GRIEF type)
+        Optional<Reaction> existingReaction = reactionRepository.findByPostAndUser(post, currentUser);
+
+        if (existingReaction.isPresent() && existingReaction.get().getType() == ReactionType.GRIEF) {
+            // Remove grief
+            reactionRepository.delete(existingReaction.get());
+            return false; // Post was ungriefed
+        } else {
+            // Remove any existing reaction first (celebrate or grief)
+            existingReaction.ifPresent(reactionRepository::delete);
+
+            // Add grief
+            Reaction reaction = Reaction.builder()
+                    .post(post)
+                    .user(currentUser)
+                    .type(ReactionType.GRIEF)
+                    .build();
+
+            reactionRepository.save(reaction);
+            return true; // Post was grieved
+        }
+    }
+
+    @Transactional(readOnly = true)
+    public Long getGriefCount(Long postId) {
+        Post post = getPostById(postId);
+        return reactionRepository.findByPost(post).stream()
+                .filter(reaction -> reaction.getType() == ReactionType.GRIEF)
+                .count();
+    }
+
+    @Transactional(readOnly = true)
+    public boolean isPostGriefedByCurrentUser(Long postId) {
+        Post post = getPostById(postId);
+        User currentUser = getCurrentUser();
+        Optional<Reaction> reaction = reactionRepository.findByPostAndUser(post, currentUser);
+        return reaction.isPresent() && reaction.get().getType() == ReactionType.GRIEF;
     }
 
     private Post savePost(String content, Profile profile, PostType type,
