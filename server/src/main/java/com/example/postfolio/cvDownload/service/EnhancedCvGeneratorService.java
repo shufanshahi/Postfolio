@@ -351,37 +351,35 @@ public class EnhancedCvGeneratorService {
             document.add(eduHeader);
 
             // Count available education data for dynamic layout
-            int columnCount = 0;
-            if (sscResult != null)
-                columnCount++;
-            if (hscResult != null)
-                columnCount++;
-            if (universityDegreeSummaries != null)
-                columnCount += universityDegreeSummaries.size();
-
-            if (columnCount == 0)
+            int sscCount = (sscResult != null) ? 1 : 0;
+            int hscCount = (hscResult != null) ? 1 : 0;
+            int universityCount = (universityDegreeSummaries != null) ? universityDegreeSummaries.size() : 0;
+            
+            if (sscCount + hscCount + universityCount == 0)
                 return;
 
-            // Determine columns based on content
-            int actualColumns = Math.min(columnCount, 3);
-            PdfPTable eduTable = new PdfPTable(actualColumns);
-            eduTable.setWidthPercentage(100);
-            eduTable.setSpacingAfter(20f);
-            eduTable.setSpacingBefore(5f);
+            // Create a flexible table that can handle multiple universities
+            // Use 3 columns per row, but create multiple rows if needed
+            int columnsPerRow = 3;
+            int totalItems = sscCount + hscCount + universityCount;
+            int numberOfRows = (int) Math.ceil((double) totalItems / columnsPerRow);
 
+            // Add items in order
+            List<PdfPCell> educationCells = new ArrayList<>();
+            
             // Add SSC result
             if (sscResult != null) {
                 PdfPCell sscCell = createModernEducationCell("SSC", sscResult.getResult(), TEAL_PRIMARY);
-                eduTable.addCell(sscCell);
+                educationCells.add(sscCell);
             }
 
             // Add HSC result
             if (hscResult != null) {
                 PdfPCell hscCell = createModernEducationCell("HSC", hscResult.getResult(), INDIGO_PRIMARY);
-                eduTable.addCell(hscCell);
+                educationCells.add(hscCell);
             }
 
-            // Add University degree summaries (with calculated CGPA)
+            // Add ALL University degree summaries (with calculated CGPA)
             if (universityDegreeSummaries != null && !universityDegreeSummaries.isEmpty()) {
                 for (var degreeSummary : universityDegreeSummaries) {
                     String universityText = degreeSummary.getUniversityName() + "\n" +
@@ -390,19 +388,30 @@ public class EnhancedCvGeneratorService {
                             degreeSummary.getCompletionStatus();
                     PdfPCell uniCell = createModernEducationCell("University", universityText,
                             new BaseColor(245, 158, 11)); // amber-500
-                    eduTable.addCell(uniCell);
-
-                    // If we have multiple degrees and need to start a new row
-                    if (eduTable.getRows().size() > 0 &&
-                            (sscResult != null ? 1 : 0) + (hscResult != null ? 1 : 0) +
-                                    universityDegreeSummaries.indexOf(degreeSummary) + 1 == actualColumns) {
-                        // Start a new row for additional universities if needed
-                        break; // For now, only show the first few to avoid overcrowding
-                    }
+                    educationCells.add(uniCell);
                 }
             }
 
-            document.add(eduTable);
+            // Create tables row by row to accommodate all universities
+            for (int row = 0; row < numberOfRows; row++) {
+                int startIndex = row * columnsPerRow;
+                int endIndex = Math.min(startIndex + columnsPerRow, educationCells.size());
+                int cellsInThisRow = endIndex - startIndex;
+                
+                PdfPTable eduRowTable = new PdfPTable(cellsInThisRow);
+                eduRowTable.setWidthPercentage(100);
+                eduRowTable.setSpacingAfter(15f);
+                if (row == 0) {
+                    eduRowTable.setSpacingBefore(5f);
+                }
+                
+                // Add cells for this row
+                for (int i = startIndex; i < endIndex; i++) {
+                    eduRowTable.addCell(educationCells.get(i));
+                }
+                
+                document.add(eduRowTable);
+            }
         } catch (Exception e) {
             // If education service fails, silently skip
             System.err.println("Failed to load education data: " + e.getMessage());
