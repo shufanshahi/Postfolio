@@ -226,7 +226,7 @@ public class JobController {
 
             Profile userProfile = profileOpt.get();
 
-            // Clear all cache entries for this user
+            // Clear all cache entries for this user by stable profile ID
             jobMatchingService.invalidateProfileCache(userProfile);
 
             log.info("Cache refreshed for user: {}", userProfile.getId());

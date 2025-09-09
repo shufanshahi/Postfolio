@@ -34,19 +34,17 @@ public class JobMatchingService {
 
     public MatchingResult scoreApplicant(Job job, Profile applicant) {
         try {
-            // Generate cache key - COMMENTED OUT FOR DIRECT API CALLS
-            // String profileHash = generateProfileHash(applicant);
-            // String jobHash = generateJobHash(job);
-            // String cacheKey = cacheService.generateCacheKey(profileHash, jobHash);
+            // Generate cache key using stable IDs to ensure reliable invalidation
+            String cacheKey = cacheService.generateCacheKey(String.valueOf(applicant.getId()), String.valueOf(job.getJobId()));
 
-            // Check Redis cache first - COMMENTED OUT FOR DIRECT API CALLS
-            // MatchingResult cached = cacheService.getCachedResult(cacheKey);
-            // if (cached != null) {
-            // log.debug("Using cached score for job {} and profile {}: {}", job.getJobId(),
-            // applicant.getId(),
-            // cached.getTotalScore());
-            // return cached;
-            // }
+            // Check Redis cache first
+            MatchingResult cached = cacheService.getCachedResult(cacheKey);
+            if (cached != null) {
+                log.debug("Using cached score for job {} and profile {}: {}", job.getJobId(),
+                        applicant.getId(),
+                        cached.getTotalScore());
+                return cached;
+            }
 
             // Calculate new score using AI microservice
             log.info("Calculating new score for job {} and profile {} - calling AI service", job.getJobId(),
@@ -89,11 +87,11 @@ public class JobMatchingService {
                     .explanation(aiResponse.getExplanation())
                     .build();
 
-            // Cache the result in Redis - COMMENTED OUT FOR DIRECT API CALLS
-            // cacheService.cacheResult(cacheKey, result);
-            // log.info("Cached new score for job {} and profile {}: {}", job.getJobId(),
-            // applicant.getId(),
-            // result.getTotalScore());
+            // Cache the result in Redis (24h TTL configured in RedisConfig)
+            cacheService.cacheResult(cacheKey, result);
+            log.info("Cached new score for job {} and profile {}: {}", job.getJobId(),
+                    applicant.getId(),
+                    result.getTotalScore());
             return result;
 
         } catch (Exception e) {
@@ -106,14 +104,12 @@ public class JobMatchingService {
 
     // Method to invalidate cache when profile or job changes
     public void invalidateProfileCache(Profile profile) {
-        String profileHash = generateProfileHash(profile);
-        cacheService.invalidateProfileCache(profileHash);
+        cacheService.invalidateProfileCache(String.valueOf(profile.getId()));
         log.info("Invalidated cache for profile {}", profile.getId());
     }
 
     public void invalidateJobCache(Job job) {
-        String jobHash = generateJobHash(job);
-        cacheService.invalidateJobCache(jobHash);
+        cacheService.invalidateJobCache(String.valueOf(job.getJobId()));
         log.info("Invalidated cache for job {}", job.getJobId());
     }
 
