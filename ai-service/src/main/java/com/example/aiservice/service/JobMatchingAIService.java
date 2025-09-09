@@ -48,7 +48,7 @@ public class JobMatchingAIService {
 
     private String buildJobMatchingPrompt(JobMatchingRequest request) {
         StringBuilder promptBuilder = new StringBuilder();
-        promptBuilder.append("Analyze the job-candidate match and provide a detailed scoring analysis.\n\n");
+        promptBuilder.append("Analyze the job-candidate match using the following structured scoring system:\n\n");
 
         promptBuilder.append("JOB DETAILS:\n");
         promptBuilder.append("Title: ").append(request.getJobTitle()).append("\n");
@@ -91,23 +91,46 @@ public class JobMatchingAIService {
         }
         promptBuilder.append("\n");
 
+        promptBuilder.append("SCORING SYSTEM (Total: 100 marks):\n");
+        promptBuilder.append("1. SCHOOL EDUCATION (10 marks):\n");
+        promptBuilder.append("   - If job requires SSC/HSC grades: Applicant must have SSC/HSC grades above the required GPA\n");
+        promptBuilder.append("   - If applicant meets requirement: Full 10 marks\n");
+        promptBuilder.append("   - If applicant doesn't meet requirement or has no SSC/HSC: 0 marks\n");
+        promptBuilder.append("   - If job doesn't require SSC/HSC: Full 10 marks\n\n");
+
+        promptBuilder.append("2. UNIVERSITY EDUCATION (30 marks):\n");
+        promptBuilder.append("   - If job requires degree: Applicant must have degree with CGPA above required CGPA\n");
+        promptBuilder.append("   - If applicant meets requirement: Full 30 marks\n");
+        promptBuilder.append("   - If applicant doesn't meet requirement or has no degree: 0 marks\n");
+        promptBuilder.append("   - If job doesn't require degree: Full 30 marks\n\n");
+
+        promptBuilder.append("3. EXPERIENCE (30 marks):\n");
+        promptBuilder.append("   - Compare job experience requirements with applicant's work history\n");
+        promptBuilder.append("   - Score based on relevance and duration of experience\n");
+        promptBuilder.append("   - Full marks for exceeding requirements, partial marks for meeting requirements\n");
+        promptBuilder.append("   - 0 marks if no relevant experience\n\n");
+
+        promptBuilder.append("4. SKILLS (30 marks):\n");
+        promptBuilder.append("   - Compare job required skills with applicant's skills\n");
+        promptBuilder.append("   - Score based on skill match percentage\n");
+        promptBuilder.append("   - Full marks for all skills matching, partial marks for partial matches\n");
+        promptBuilder.append("   - 0 marks if no skills match\n\n");
+
         promptBuilder
                 .append("Please analyze the job-candidate match and provide analysis in this EXACT JSON format:\n");
         promptBuilder.append("{\n");
-        promptBuilder.append("  \"score\": any number between 0 and 100,\n");
-        promptBuilder.append("  \"explanation\": \"Overall match analysis summary\",\n");
+        promptBuilder.append("  \"score\": calculated total score (0-100),\n");
+        promptBuilder.append("  \"explanation\": \"Overall match analysis summary with breakdown\",\n");
         promptBuilder.append("  \"strengths\": \"Key strengths and matching qualifications\",\n");
         promptBuilder.append("  \"gaps\": \"Areas where candidate falls short\",\n");
         promptBuilder.append("  \"recommendations\": \"Suggestions for improving match\"\n");
         promptBuilder.append("}\n\n");
-        promptBuilder.append("IMPORTANT: Replace the score with your calculated match percentage (0-100).\n");
+        promptBuilder.append("IMPORTANT: Calculate score using the structured system above.\n");
         promptBuilder.append("Guidelines:\n");
         promptBuilder.append("- Score should be between 0 and 100 (integer value)\n");
-        promptBuilder.append(
-                "- Consider skills match, experience level, location compatibility, and educational background\n");
-        promptBuilder
-                .append("- Educational qualifications should be weighted appropriately based on job requirements\n");
-        promptBuilder.append("- Provide specific, actionable insights\n");
+        promptBuilder.append("- Follow the exact scoring criteria for each category\n");
+        promptBuilder.append("- Provide detailed explanation of your scoring breakdown\n");
+        promptBuilder.append("- Be strict with education requirements - if not met, award 0 marks\n");
         promptBuilder.append("- Only return the JSON, no additional text");
 
         // Console log the prompt information for debugging
