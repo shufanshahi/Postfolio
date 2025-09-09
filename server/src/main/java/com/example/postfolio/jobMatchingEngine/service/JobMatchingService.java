@@ -70,7 +70,7 @@ public class JobMatchingService {
                     .jobExperience(job.getRequiredExperience()) // Add job experience
                     .jobLocation(job.getLocation()) // Add job location
                     .profileSkills(String.join(", ", profileDTO.getSkills()))
-                    .profileWorkExperience(String.join("; ", profileDTO.getExperiences()))
+                    .profileWorkExperience(profileDTO.getExperiences().toArray(new String[0]))
                     .sscResult(sscResult)
                     .hscResult(hscResult)
                     .degreeNames(degreeNames)
@@ -236,11 +236,22 @@ public class JobMatchingService {
                     .collect(Collectors.toList()));
         }
 
+        // Build work experience list from Work entities
+        List<String> workExperiences = new ArrayList<>();
+        if (applicant.getWorks() != null) {
+            workExperiences.addAll(applicant.getWorks().stream()
+                    .map(work -> String.format("%s at %s (%s)",
+                            work.getPosition(),
+                            work.getCompanyName(),
+                            work.getDisplayDateRange()))
+                    .collect(Collectors.toList()));
+        }
+
         return ApplicantProfileDTO.builder()
                 .bio(applicant.getBio())
                 .positionOrInstitute(applicant.getPositionOrInstitue())
                 .education(education)
-                .experiences(groupedEntries.getOrDefault(CvType.EXPERIENCE, new ArrayList<>()))
+                .experiences(workExperiences)
                 .skills(groupedEntries.getOrDefault(CvType.SKILL, new ArrayList<>()))
                 .projects(groupedEntries.getOrDefault(CvType.PROJECT, new ArrayList<>()))
                 .achievements(groupedEntries.getOrDefault(CvType.ACHIEVEMENT, new ArrayList<>()))

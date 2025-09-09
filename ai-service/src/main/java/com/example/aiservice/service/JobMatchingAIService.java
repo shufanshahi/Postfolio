@@ -60,7 +60,7 @@ public class JobMatchingAIService {
 
         promptBuilder.append("CANDIDATE PROFILE:\n");
         promptBuilder.append("Skills: ").append(request.getProfileSkills()).append("\n");
-        promptBuilder.append("Work Experience: ").append(request.getProfileWorkExperience()).append("\n");
+        promptBuilder.append("Work Experience: ").append(request.getProfileWorkExperience() != null ? String.join(", ", request.getProfileWorkExperience()) : "None").append("\n");
 
         // Education details from education service
         promptBuilder.append("EDUCATION BACKGROUND:\n");
@@ -123,7 +123,7 @@ public class JobMatchingAIService {
         log.info("Degree Names: {}",
                 request.getDegreeNames() != null ? String.join(", ", request.getDegreeNames()) : "None");
         log.info("CGPAs: {}", request.getCgpas() != null ? String.join(", ", request.getCgpas()) : "None");
-        log.info("Work Experience: {}", request.getProfileWorkExperience());
+        log.info("Work Experience: {}", request.getProfileWorkExperience() != null ? String.join(", ", request.getProfileWorkExperience()) : "None");
         log.info("=== FULL PROMPT SENT TO GEMINI ===");
         log.info("{}", finalPrompt);
         log.info("=== END OF PROMPT ===");
