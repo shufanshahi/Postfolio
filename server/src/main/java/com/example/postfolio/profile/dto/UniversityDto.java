@@ -2,7 +2,7 @@ package com.example.postfolio.profile.dto;
 
 import lombok.*;
 
-import java.time.LocalDate;
+import java.util.List;
 
 @Data
 @NoArgsConstructor
@@ -13,31 +13,16 @@ public class UniversityDto {
     private Long id;
     private String universityName;
     private String degreeName;
-    private Integer semesterNumber;
-    private String academicYear;
-    private String semesterResult;
-    private Integer totalCredits;
-    private LocalDate completionDate;
-    private String transcriptUrl;
-    private Boolean isCompleted;
-    private String semesterDisplayName;
-    private String academicLevel;
+    private Integer semesterCount;
+    private List<Double> semesterResults;
+    private Double cgpa;
+    private Integer completedSemestersCount;
+    private Double progressPercentage;
+    private Boolean isDegreeCompleted;
+    private String degreeDisplayName;
 
-    // Helper method to get semester display name
-    public String getSemesterDisplayName() {
-        return "Semester " + semesterNumber;
-    }
-
-    // Helper method to get academic level
-    public String getAcademicLevel() {
-        if (semesterNumber <= 2) {
-            return "1st Year";
-        } else if (semesterNumber <= 4) {
-            return "2nd Year";
-        } else if (semesterNumber <= 6) {
-            return "3rd Year";
-        } else {
-            return "4th Year";
-        }
+    // Helper method to get degree display name
+    public String getDegreeDisplayName() {
+        return degreeName + " - " + universityName;
     }
 }

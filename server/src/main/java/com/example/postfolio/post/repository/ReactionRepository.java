@@ -23,4 +23,8 @@ public interface ReactionRepository extends JpaRepository<Reaction, Long> {
     boolean existsByPostAndUser(Post post, User user);
 
     void deleteByPostAndUser(Post post, User user);
+
+    // Count all reactions received on posts by a specific profile
+    @Query("SELECT COUNT(r) FROM Reaction r WHERE r.post.profile.id = :profileId")
+    Long countReactionsByProfilePosts(@Param("profileId") Long profileId);
 }

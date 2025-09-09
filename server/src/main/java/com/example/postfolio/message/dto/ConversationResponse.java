@@ -15,6 +15,7 @@ public class ConversationResponse {
     private Long id;
     private Long otherUserId;
     private String otherUserName;
+    private String otherUserEmail;
     private String otherUserAvatar;
     private String lastMessage;
     private String lastMessageType;

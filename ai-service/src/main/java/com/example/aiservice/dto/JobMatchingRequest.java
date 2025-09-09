@@ -19,12 +19,19 @@ public class JobMatchingRequest implements Serializable {
     private String jobRequirements;
     private String jobSkills;
     private String jobExperience;
+    private String jobEducation;
     private String jobLocation;
 
     private String profileBio;
     private String profilePosition;
     private String profileSkills;
     private String profileEducation;
-    private String profileWorkExperience;
+    private String[] profileWorkExperience;
     private String profileLocation;
+
+    // Education details from education service
+    private String sscResult;
+    private String hscResult;
+    private String[] degreeNames; // Changed to array for multiple degrees
+    private String[] cgpas; // Changed to array for multiple degrees
 }

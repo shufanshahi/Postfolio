@@ -16,6 +16,7 @@ const PreparationPage = () => {
   const [selectedFile, setSelectedFile] = useState(null);
   const [textContent, setTextContent] = useState('');
   const [documentName, setDocumentName] = useState('');
+  const [questionCount, setQuestionCount] = useState(10);
   const [mcqSets, setMcqSets] = useState([]);
   const [currentMCQSet, setCurrentMCQSet] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -76,6 +77,7 @@ const PreparationPage = () => {
       if (activeTab === 'upload') {
         const formData = new FormData();
         formData.append('document', selectedFile);
+        formData.append('questionCount', questionCount.toString());
         // Use synchronous endpoint for immediate results
         response = await fetch('http://localhost:8080/api/preparation/generate-mcq-sync', {
           method: 'POST',
@@ -93,7 +95,8 @@ const PreparationPage = () => {
           },
           body: JSON.stringify({
             documentContent: textContent,
-            documentName: documentName
+            documentName: documentName,
+            questionCount: questionCount
           })
         });
       }
@@ -270,6 +273,26 @@ const PreparationPage = () => {
                     </div>
                   </div>
                 )}
+
+                {/* Question Count Selection */}
+                <div className="space-y-3">
+                  <label className="text-xs font-semibold tracking-wide uppercase text-slate-600 dark:text-slate-400">Number of Questions</label>
+                  <div className="grid grid-cols-3 gap-3">
+                    {[10, 20, 30].map((count) => (
+                      <button
+                        key={count}
+                        onClick={() => setQuestionCount(count)}
+                        className={`h-11 rounded-xl text-sm font-medium transition-all ${questionCount === count
+                            ? 'bg-teal-600 text-white shadow-sm'
+                            : 'bg-white/60 dark:bg-slate-900/40 border border-teal-900/10 dark:border-slate-700/60 text-slate-700 dark:text-slate-200 hover:bg-teal-50 dark:hover:bg-slate-800/60'
+                          }`}
+                      >
+                        {count} MCQs
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
                 <div>
                   <button
                     onClick={generateMCQs}
@@ -282,7 +305,7 @@ const PreparationPage = () => {
                         <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
                       </svg>
                     )}
-                    {loading ? 'Generating MCQs (up to 30s)...' : 'Generate 25 MCQs'}
+                    {loading ? 'Generating MCQs (up to 30s)...' : `Generate ${questionCount} MCQs`}
                   </button>
                 </div>
               </div>

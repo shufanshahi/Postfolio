@@ -8,7 +8,6 @@ import com.example.postfolio.profile.repository.ProfileRepository;
 import com.example.postfolio.user.entity.User;
 import com.example.postfolio.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
-import org.apache.commons.io.IOUtils;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;

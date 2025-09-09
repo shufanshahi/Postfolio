@@ -50,6 +50,7 @@ function FunctionalDashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [userData, setUserData] = useState(null);
+  const [engagementData, setEngagementData] = useState(null);
   const [dashboardData, setDashboardData] = useState({
     stats: [],
     recentActivity: [],
@@ -64,6 +65,13 @@ function FunctionalDashboard() {
 
         // Use user from auth context
         setUserData(user);
+
+        // Fetch engagement data
+        const engagementRes = await apiFetch('/api/dashboard/engagement');
+        if (engagementRes.ok) {
+          const engagement = await engagementRes.json();
+          setEngagementData(engagement);
+        }
 
         // Fetch dashboard statistics
         const statsRes = await apiFetch('/api/dashboard/stats');
@@ -463,29 +471,25 @@ function FunctionalDashboard() {
                 <CardDescription className="text-slate-600 dark:text-slate-400 text-xs">Engagement summary snapshot</CardDescription>
               </CardHeader>
               <CardContent className="relative space-y-4">
-                <div className="grid grid-cols-2 gap-4 text-[13px]">
-                  <div className="space-y-1">
-                    <p className="text-slate-500 dark:text-slate-400">Profile views</p>
-                    <p className="font-semibold text-slate-800 dark:text-slate-100">+{userData?.weeklyViews || 0}</p>
-                  </div>
+                <div className="grid grid-cols-3 gap-4 text-[13px]">
                   <div className="space-y-1">
                     <p className="text-slate-500 dark:text-slate-400">New connections</p>
-                    <p className="font-semibold text-slate-800 dark:text-slate-100">+{userData?.weeklyConnections || 0}</p>
+                    <p className="font-semibold text-slate-800 dark:text-slate-100">+{engagementData?.newConnections || 0}</p>
                   </div>
                   <div className="space-y-1">
                     <p className="text-slate-500 dark:text-slate-400">Messages sent</p>
-                    <p className="font-semibold text-slate-800 dark:text-slate-100">{userData?.weeklyMessages || 0}</p>
+                    <p className="font-semibold text-slate-800 dark:text-slate-100">{engagementData?.messagesSent || 0}</p>
                   </div>
                   <div className="space-y-1">
-                    <p className="text-slate-500 dark:text-slate-400">Interviews</p>
-                    <p className="font-semibold text-slate-800 dark:text-slate-100">{userData?.weeklyInterviews || 0}</p>
+                    <p className="text-slate-500 dark:text-slate-400">Total reactions</p>
+                    <p className="font-semibold text-slate-800 dark:text-slate-100">{engagementData?.totalReactions || 0}</p>
                   </div>
                 </div>
                 <Separator className="bg-gradient-to-r from-transparent via-slate-200/80 to-transparent dark:via-slate-700/60" />
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-medium tracking-wide uppercase text-slate-600 dark:text-slate-400">Total engagement</span>
                   <Badge className="bg-emerald-500/15 text-emerald-700 dark:bg-emerald-400/15 dark:text-emerald-300 rounded-full px-3 py-1 h-6 text-[12px] font-medium">
-                    <TrendingUp className="h-3 w-3 mr-1" /> +{userData?.engagementGrowth || 0}%
+                    <TrendingUp className="h-3 w-3 mr-1" /> +{engagementData?.engagementGrowth || 0}%
                   </Badge>
                 </div>
               </CardContent>

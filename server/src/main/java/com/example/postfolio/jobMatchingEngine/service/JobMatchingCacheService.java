@@ -17,8 +17,9 @@ public class JobMatchingCacheService {
     private final RedisTemplate<String, Object> redisTemplate;
 
     private static final String CACHE_PREFIX = "job_matching:";
-    private static final String PROFILE_PATTERN = "job_matching:*:profile:";
-    private static final String JOB_PATTERN = "job_matching:*:job:";
+    // Pattern constants retained for future use if needed
+    private static final String PROFILE_PATTERN = "job_matching:*:profileId:";
+    private static final String JOB_PATTERN = "job_matching:*:jobId:";
     private static final Duration CACHE_TTL = Duration.ofHours(24);
 
     /**
@@ -54,32 +55,34 @@ public class JobMatchingCacheService {
     /**
      * Invalidate cache entries for a specific profile
      */
-    public void invalidateProfileCache(String profileHash) {
+    public void invalidateProfileCache(String profileId) {
         try {
-            String pattern = CACHE_PREFIX + "*:profile:" + profileHash;
+            // Keys look like: job_matching:profileId:{profileId}:jobId:{jobId}
+            String pattern = CACHE_PREFIX + "profileId:" + profileId + ":jobId:*";
             Set<String> keys = redisTemplate.keys(pattern);
             if (keys != null && !keys.isEmpty()) {
                 redisTemplate.delete(keys);
-                log.info("Invalidated {} cache entries for profile hash: {}", keys.size(), profileHash);
+                log.info("Invalidated {} cache entries for profileId: {}", keys.size(), profileId);
             }
         } catch (Exception e) {
-            log.warn("Failed to invalidate profile cache for hash: {}", profileHash, e);
+            log.warn("Failed to invalidate profile cache for profileId: {}", profileId, e);
         }
     }
 
     /**
      * Invalidate cache entries for a specific job
      */
-    public void invalidateJobCache(String jobHash) {
+    public void invalidateJobCache(String jobId) {
         try {
-            String pattern = CACHE_PREFIX + "*:job:" + jobHash;
+            // Keys look like: job_matching:profileId:{profileId}:jobId:{jobId}
+            String pattern = CACHE_PREFIX + "profileId:*:jobId:" + jobId;
             Set<String> keys = redisTemplate.keys(pattern);
             if (keys != null && !keys.isEmpty()) {
                 redisTemplate.delete(keys);
-                log.info("Invalidated {} cache entries for job hash: {}", keys.size(), jobHash);
+                log.info("Invalidated {} cache entries for jobId: {}", keys.size(), jobId);
             }
         } catch (Exception e) {
-            log.warn("Failed to invalidate job cache for hash: {}", jobHash, e);
+            log.warn("Failed to invalidate job cache for jobId: {}", jobId, e);
         }
     }
 
@@ -114,7 +117,7 @@ public class JobMatchingCacheService {
     /**
      * Generate cache key with profile and job hashes
      */
-    public String generateCacheKey(String profileHash, String jobHash) {
-        return String.format("profile:%s:job:%s", profileHash, jobHash);
+    public String generateCacheKey(String profileId, String jobId) {
+        return String.format("profileId:%s:jobId:%s", profileId, jobId);
     }
 }

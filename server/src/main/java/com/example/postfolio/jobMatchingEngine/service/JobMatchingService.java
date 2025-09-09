@@ -34,22 +34,32 @@ public class JobMatchingService {
 
     public MatchingResult scoreApplicant(Job job, Profile applicant) {
         try {
-            // Generate cache key
-            String profileHash = generateProfileHash(applicant);
-            String jobHash = generateJobHash(job);
-            String cacheKey = cacheService.generateCacheKey(profileHash, jobHash);
+            // Generate cache key using stable IDs to ensure reliable invalidation
+            String cacheKey = cacheService.generateCacheKey(String.valueOf(applicant.getId()), String.valueOf(job.getJobId()));
 
             // Check Redis cache first
             MatchingResult cached = cacheService.getCachedResult(cacheKey);
             if (cached != null) {
-                log.debug("Using cached score for job {} and profile {}", job.getJobId(), applicant.getId());
+                log.debug("Using cached score for job {} and profile {}: {}", job.getJobId(),
+                        applicant.getId(),
+                        cached.getTotalScore());
                 return cached;
             }
 
             // Calculate new score using AI microservice
-            log.info("Calculating new score for job {} and profile {}", job.getJobId(), applicant.getId());
+            log.info("Calculating new score for job {} and profile {} - calling AI service", job.getJobId(),
+                    applicant.getId());
             ApplicantProfileDTO profileDTO = buildApplicantProfile(applicant);
 
+            // Extract education details for AI service
+            String sscResult = extractSSCResult(applicant);
+            String hscResult = extractHSCResult(applicant);
+            String[] degreeNames = extractDegreeNames(applicant);
+            String[] cgpas = extractCGPAs(applicant);
+
+            // Debug logging for job education
+            log.info("DEBUG: Job {} requiredEducation field: '{}'", job.getJobId(), job.getRequiredEducation());
+            
             // Create request for AI service
             JobMatchingRequest aiRequest = JobMatchingRequest.builder()
                     .jobId(job.getJobId())
@@ -57,15 +67,23 @@ public class JobMatchingService {
                     .jobTitle(job.getTitle())
                     .jobDescription(job.getDescription())
                     .jobRequirements(job.getDescription()) // Extract from description
-                    .profileBio(applicant.getBio())
-                    .profilePosition(applicant.getPositionOrInstitue())
+                    .jobSkills(job.getRequiredSkills()) // Add job skills
+                    .jobExperience(job.getRequiredExperience()) // Add job experience
+                    .jobEducation(job.getRequiredEducation()) // Add job education
+                    .jobLocation(job.getLocation()) // Add job location
                     .profileSkills(String.join(", ", profileDTO.getSkills()))
-                    .profileEducation(String.join("; ", profileDTO.getEducation()))
-                    .profileWorkExperience(String.join("; ", profileDTO.getExperiences()))
+                    .profileWorkExperience(profileDTO.getExperiences().toArray(new String[0]))
+                    .sscResult(sscResult)
+                    .hscResult(hscResult)
+                    .degreeNames(degreeNames)
+                    .cgpas(cgpas)
                     .build();
 
             // Call AI microservice
+            log.info("Sending request to AI service for job {} and profile {}", job.getJobId(), applicant.getId());
             JobMatchingResponse aiResponse = jobMatchingAIServiceManager.matchJobSync(aiRequest);
+            log.info("Received response from AI service: score={}, success={}", aiResponse.getScore(),
+                    aiResponse.isSuccess());
 
             // Convert AI response to MatchingResult
             MatchingResult result = MatchingResult.builder()
@@ -73,26 +91,29 @@ public class JobMatchingService {
                     .explanation(aiResponse.getExplanation())
                     .build();
 
-            // Cache the result in Redis
+            // Cache the result in Redis (24h TTL configured in RedisConfig)
             cacheService.cacheResult(cacheKey, result);
+            log.info("Cached new score for job {} and profile {}: {}", job.getJobId(),
+                    applicant.getId(),
+                    result.getTotalScore());
             return result;
 
         } catch (Exception e) {
             log.error("Job matching failed for job: {} and applicant: {}", job.getJobId(), applicant.getId(), e);
-            return createFallbackResult(e.getMessage());
+            MatchingResult fallback = createFallbackResult(e.getMessage());
+            log.warn("Returning fallback score: {}", fallback.getTotalScore());
+            return fallback;
         }
     }
 
     // Method to invalidate cache when profile or job changes
     public void invalidateProfileCache(Profile profile) {
-        String profileHash = generateProfileHash(profile);
-        cacheService.invalidateProfileCache(profileHash);
+        cacheService.invalidateProfileCache(String.valueOf(profile.getId()));
         log.info("Invalidated cache for profile {}", profile.getId());
     }
 
     public void invalidateJobCache(Job job) {
-        String jobHash = generateJobHash(job);
-        cacheService.invalidateJobCache(jobHash);
+        cacheService.invalidateJobCache(String.valueOf(job.getJobId()));
         log.info("Invalidated cache for job {}", job.getJobId());
     }
 
@@ -130,7 +151,7 @@ public class JobMatchingService {
                 for (var uni : profile.getUniversities()) {
                     profileData.append("UNI:").append(uni.getUniversityName())
                             .append(":").append(uni.getDegreeName())
-                            .append(":").append(uni.getSemesterResult()).append("|");
+                            .append(":").append(uni.getCgpa() != null ? uni.getCgpa().toString() : "N/A").append("|");
                 }
             }
 
@@ -206,13 +227,23 @@ public class JobMatchingService {
         // Add university information
         if (applicant.getUniversities() != null) {
             education.addAll(applicant.getUniversities().stream()
-                    .map(uni -> String.format("%s, %s (%s) - %s, Result: %s%s",
+                    .map(uni -> String.format("%s, %s - %d semesters, CGPA: %s%s",
                             uni.getUniversityName(),
                             uni.getDegreeName(),
-                            uni.getSemesterDisplayName(),
-                            uni.getAcademicYear(),
-                            uni.getSemesterResult(),
-                            uni.getIsCompleted() ? " (Completed)" : " (In Progress)"))
+                            uni.getSemesterCount(),
+                            uni.getCgpa() != null ? uni.getCgpa().toString() : "N/A",
+                            uni.isDegreeCompleted() ? " (Completed)" : " (In Progress)"))
+                    .collect(Collectors.toList()));
+        }
+
+        // Build work experience list from Work entities
+        List<String> workExperiences = new ArrayList<>();
+        if (applicant.getWorks() != null) {
+            workExperiences.addAll(applicant.getWorks().stream()
+                    .map(work -> String.format("%s at %s (%s)",
+                            work.getPosition(),
+                            work.getCompanyName(),
+                            work.getDisplayDateRange()))
                     .collect(Collectors.toList()));
         }
 
@@ -220,11 +251,58 @@ public class JobMatchingService {
                 .bio(applicant.getBio())
                 .positionOrInstitute(applicant.getPositionOrInstitue())
                 .education(education)
-                .experiences(groupedEntries.getOrDefault(CvType.EXPERIENCE, new ArrayList<>()))
+                .experiences(workExperiences)
                 .skills(groupedEntries.getOrDefault(CvType.SKILL, new ArrayList<>()))
                 .projects(groupedEntries.getOrDefault(CvType.PROJECT, new ArrayList<>()))
                 .achievements(groupedEntries.getOrDefault(CvType.ACHIEVEMENT, new ArrayList<>()))
                 .build();
+    }
+
+    // Helper methods to extract specific education data for AI service
+    private String extractSSCResult(Profile applicant) {
+        if (applicant.getSchools() == null)
+            return null;
+
+        return applicant.getSchools().stream()
+                .filter(school -> school.getClassLevel() == 10)
+                .map(school -> school.getResult())
+                .findFirst()
+                .orElse(null);
+    }
+
+    private String extractHSCResult(Profile applicant) {
+        if (applicant.getSchools() == null)
+            return null;
+
+        return applicant.getSchools().stream()
+                .filter(school -> school.getClassLevel() == 12)
+                .map(school -> school.getResult())
+                .findFirst()
+                .orElse(null);
+    }
+
+    private String[] extractDegreeNames(Profile applicant) {
+        if (applicant.getUniversities() == null || applicant.getUniversities().isEmpty()) {
+            return new String[0];
+        }
+
+        // Group universities by degree name and get unique degree names
+        return applicant.getUniversities().stream()
+                .map(uni -> uni.getDegreeName())
+                .filter(degreeName -> degreeName != null && !degreeName.isEmpty())
+                .distinct()
+                .toArray(String[]::new);
+    }
+
+    private String[] extractCGPAs(Profile applicant) {
+        if (applicant.getUniversities() == null || applicant.getUniversities().isEmpty()) {
+            return new String[0];
+        }
+
+        // Get CGPA for each university degree
+        return applicant.getUniversities().stream()
+                .map(uni -> uni.getCgpa() != null ? uni.getCgpa().toString() : "N/A")
+                .toArray(String[]::new);
     }
 
     private MatchingResult createFallbackResult(String errorMessage) {

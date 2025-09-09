@@ -7,12 +7,12 @@ import { Badge } from './ui/badge';
 import { Search, UserPlus, MessageCircle } from 'lucide-react';
 import { ScrollArea } from './ui/scroll-area';
 
-const NewChatModal = ({ 
-  isOpen, 
-  onClose, 
-  connections, 
+const NewChatModal = ({
+  isOpen,
+  onClose,
+  connections,
   onStartChat,
-  currentUserId 
+  currentUserId
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filteredConnections, setFilteredConnections] = useState([]);
@@ -21,22 +21,28 @@ const NewChatModal = ({
     if (connections) {
       const filtered = connections.filter(connection => {
         // Determine which user is the other user (not the current user)
-        const otherUser = connection.requesterId === currentUserId 
+        const otherUser = connection.requesterId === currentUserId
           ? {
-              id: connection.receiverId,
-              name: connection.receiverName,
-              email: connection.receiverEmail,
-              profilePicture: connection.receiverPictureBase64
-            }
+            id: connection.receiverId,
+            name: connection.receiverName || 'Unknown User',
+            email: connection.receiverEmail || '',
+            profilePicture: connection.receiverPictureBase64
+          }
           : {
-              id: connection.requesterId,
-              name: connection.requesterName,
-              email: connection.requesterEmail,
-              profilePicture: connection.requesterPictureBase64
-            };
-        
-        return otherUser.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-               otherUser.email.toLowerCase().includes(searchTerm.toLowerCase());
+            id: connection.requesterId,
+            name: connection.requesterName || 'Unknown User',
+            email: connection.requesterEmail || '',
+            profilePicture: connection.requesterPictureBase64
+          };
+
+        // If no search term, show all connections
+        if (!searchTerm.trim()) {
+          return true;
+        }
+
+        // Filter by search term
+        return otherUser.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          otherUser.email?.toLowerCase().includes(searchTerm.toLowerCase());
       });
       setFilteredConnections(filtered);
     }
@@ -48,19 +54,19 @@ const NewChatModal = ({
   };
 
   const getOtherUser = (connection) => {
-    return connection.requesterId === currentUserId 
+    return connection.requesterId === currentUserId
       ? {
-          id: connection.receiverId,
-          name: connection.receiverName,
-          email: connection.receiverEmail,
-          profilePicture: connection.receiverPictureBase64
-        }
+        id: connection.receiverId,
+        name: connection.receiverName || 'Unknown User',
+        email: connection.receiverEmail || '',
+        profilePicture: connection.receiverPictureBase64
+      }
       : {
-          id: connection.requesterId,
-          name: connection.requesterName,
-          email: connection.requesterEmail,
-          profilePicture: connection.requesterPictureBase64
-        };
+        id: connection.requesterId,
+        name: connection.requesterName || 'Unknown User',
+        email: connection.requesterEmail || '',
+        profilePicture: connection.requesterPictureBase64
+      };
   };
 
   if (!connections) {
@@ -114,7 +120,7 @@ const NewChatModal = ({
                             {otherUser.name?.charAt(0)?.toUpperCase()}
                           </AvatarFallback>
                         </Avatar>
-                        
+
                         <div>
                           <h4 className="font-medium">{otherUser.name}</h4>
                           <p className="text-sm text-muted-foreground">{otherUser.email}</p>

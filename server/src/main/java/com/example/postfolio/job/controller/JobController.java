@@ -21,6 +21,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @RestController
@@ -72,6 +73,7 @@ public class JobController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
+
     @PostMapping("/{jobId}/select/{applicantId}")
     public ResponseEntity<JobResponse> selectApplicant(@PathVariable Long jobId, @PathVariable Long applicantId) {
         try {
@@ -209,6 +211,37 @@ public class JobController {
         } catch (Exception e) {
             log.error("Failed to get cache stats", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
+    @PostMapping("/cache/refresh")
+    public ResponseEntity<Map<String, String>> refreshJobMatchingCache(Authentication authentication) {
+        try {
+            // Get current user's profile
+            Optional<Profile> profileOpt = profileService.getMyProfile();
+
+            if (profileOpt.isEmpty()) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+            }
+
+            Profile userProfile = profileOpt.get();
+
+            // Clear all cache entries for this user by stable profile ID
+            jobMatchingService.invalidateProfileCache(userProfile);
+
+            log.info("Cache refreshed for user: {}", userProfile.getId());
+
+            Map<String, String> response = new java.util.HashMap<>();
+            response.put("message", "Job matching cache cleared successfully");
+            response.put("status", "success");
+
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            log.error("Failed to refresh job matching cache", e);
+            Map<String, String> response = new java.util.HashMap<>();
+            response.put("message", "Failed to refresh cache: " + e.getMessage());
+            response.put("status", "error");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
         }
     }
 

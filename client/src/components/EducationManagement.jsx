@@ -4,8 +4,8 @@ import { Plus, Edit, Trash2 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from './ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from './ui/alert-dialog';
-import EducationTimeline from './EducationTimeline';
-import EducationForm from './EducationForm';
+import SimpleEducationTimeline from './SimpleEducationTimeline';
+import SimpleEducationForm from './SimpleEducationForm';
 
 const EducationManagement = ({ userId }) => {
     const [showForm, setShowForm] = useState(false);
@@ -79,7 +79,7 @@ const EducationManagement = ({ userId }) => {
                                 {editData ? 'Edit Education Entry' : 'Add New Education Entry'}
                             </DialogTitle>
                         </DialogHeader>
-                        <EducationForm
+                        <SimpleEducationForm
                             onSuccess={handleSuccess}
                             editData={editData}
                         />
@@ -88,101 +88,14 @@ const EducationManagement = ({ userId }) => {
             </div>
 
             {/* Education Timeline */}
-            <EducationTimeline
+            <SimpleEducationTimeline
                 key={refreshKey}
                 userId={userId}
                 onEdit={handleEdit}
                 onDelete={handleDelete}
             />
 
-            {/* Quick Actions Card */}
-            <Card className="bg-white border-slate-200 shadow-sm">
-                <CardHeader>
-                    <CardTitle className="text-slate-800">Quick Actions</CardTitle>
-                </CardHeader>
-                <CardContent>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div className="text-center p-4 border border-slate-200 rounded-lg bg-slate-50">
-                            <div className="text-2xl mb-2">🏫</div>
-                            <h3 className="font-semibold text-slate-800">Add School</h3>
-                            <p className="text-sm text-slate-600 mb-3">Add your school education details</p>
-                            <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => {
-                                    setEditData(null);
-                                    setShowForm(true);
-                                }}
-                                className="border-slate-300 text-slate-600 hover:bg-slate-100"
-                            >
-                                Add School
-                            </Button>
-                        </div>
 
-                        <div className="text-center p-4 border border-slate-200 rounded-lg bg-slate-50">
-                            <div className="text-2xl mb-2">🎓</div>
-                            <h3 className="font-semibold text-slate-800">Add University</h3>
-                            <p className="text-sm text-slate-600 mb-3">Add your university semester details</p>
-                            <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => {
-                                    setEditData(null);
-                                    setShowForm(true);
-                                }}
-                                className="border-slate-300 text-slate-600 hover:bg-slate-100"
-                            >
-                                Add University
-                            </Button>
-                        </div>
-
-                        <div className="text-center p-4 border border-slate-200 rounded-lg bg-slate-50">
-                            <div className="text-2xl mb-2">📊</div>
-                            <h3 className="font-semibold text-slate-800">View Summary</h3>
-                            <p className="text-sm text-slate-600 mb-3">See your complete education overview</p>
-                            <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-                                className="border-slate-300 text-slate-600 hover:bg-slate-100"
-                            >
-                                View Timeline
-                            </Button>
-                        </div>
-                    </div>
-                </CardContent>
-            </Card>
-
-            {/* Education Tips */}
-            <Card className="bg-white border-slate-200 shadow-sm">
-                <CardHeader>
-                    <CardTitle className="text-slate-800">💡 Education Tips</CardTitle>
-                </CardHeader>
-                <CardContent>
-                    <div className="space-y-3 text-sm text-slate-600">
-                        <div className="flex items-start gap-2">
-                            <span className="text-sky-500">•</span>
-                            <span>Add all your school classes (1-12) to show your complete academic journey</span>
-                        </div>
-                        <div className="flex items-start gap-2">
-                            <span className="text-emerald-500">•</span>
-                            <span>SSC (Class 10) and HSC (Class 12) results are automatically detected</span>
-                        </div>
-                        <div className="flex items-start gap-2">
-                            <span className="text-purple-500">•</span>
-                            <span>Track your university progress semester by semester (1-8)</span>
-                        </div>
-                        <div className="flex items-start gap-2">
-                            <span className="text-amber-500">•</span>
-                            <span>Include certificate and transcript URLs for verification</span>
-                        </div>
-                        <div className="flex items-start gap-2">
-                            <span className="text-red-500">•</span>
-                            <span>Mark semesters as completed when you finish them</span>
-                        </div>
-                    </div>
-                </CardContent>
-            </Card>
         </div>
     );
 };

@@ -10,13 +10,11 @@ import java.util.List;
 @Repository
 public interface UniversityRepository extends JpaRepository<University, Long> {
 
-    List<University> findByProfileOrderBySemesterNumberAsc(Profile profile);
+    List<University> findByProfile(Profile profile);
 
-    List<University> findByProfileAndSemesterNumber(Profile profile, Integer semesterNumber);
+    List<University> findByProfileAndUniversityName(Profile profile, String universityName);
 
-    List<University> findByProfileAndUniversityNameOrderBySemesterNumberAsc(Profile profile, String universityName);
+    List<University> findByProfileAndDegreeName(Profile profile, String degreeName);
 
-    List<University> findByProfileAndDegreeNameOrderBySemesterNumberAsc(Profile profile, String degreeName);
-
-    List<University> findByProfileAndIsCompleted(Profile profile, Boolean isCompleted);
+    List<University> findByProfileAndUniversityNameAndDegreeName(Profile profile, String universityName, String degreeName);
 }

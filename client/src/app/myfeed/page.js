@@ -582,20 +582,6 @@ function MyFeedPage() {
                                                     </div>
                                                 </div>
                                             )}
-
-                                            {/* Comment Input */}
-                                            <div className="mt-5 pt-4 border-t border-teal-900/10 dark:border-slate-700/60">
-                                                <div className="flex items-center gap-3">
-                                                    <div className="w-9 h-9 bg-gradient-to-br from-teal-500 via-indigo-500 to-amber-500 rounded-xl flex items-center justify-center text-white font-bold text-[11px] ring-1 ring-white/40 dark:ring-slate-800/50">
-                                                        {getInitials('You')}
-                                                    </div>
-                                                    <input
-                                                        type="text"
-                                                        placeholder="Add a comment..."
-                                                        className="flex-1 bg-white/60 dark:bg-slate-900/40 border border-teal-900/10 dark:border-slate-700/60 rounded-xl px-3 py-2 text-slate-700 dark:text-slate-200 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-teal-500/40 focus:border-transparent text-xs backdrop-blur"
-                                                    />
-                                                </div>
-                                            </div>
                                         </div>
                                     </div>
                                 </div>
