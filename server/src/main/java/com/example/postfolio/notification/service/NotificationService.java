@@ -144,6 +144,42 @@ public class NotificationService {
                 postOwnerId, celebratorId, NotificationType.POST_LIKED, postId);
     }
 
+    // Create post grief notification
+    public void createPostGriefNotification(Long postOwnerId, Long griefererId, String grieferName,
+            Long postId) {
+        // Don't send notification if user griefs their own post
+        if (postOwnerId.equals(griefererId)) {
+            return;
+        }
+
+        // Check if notification already exists for this grief
+        Optional<Notification> existingNotification = notificationRepository
+                .findByUserIdAndFromUserIdAndTypeAndRelatedEntityId(
+                        postOwnerId, griefererId, NotificationType.POST_GRIEF, postId);
+
+        if (existingNotification.isPresent()) {
+            return; // Don't create duplicate notifications
+        }
+
+        Notification notification = new Notification(
+                postOwnerId,
+                griefererId,
+                grieferName,
+                "Post Grief 😢",
+                grieferName + " expressed grief on your post",
+                NotificationType.POST_GRIEF);
+        notification.setRelatedEntityId(postId);
+        notification.setActionUrl("/myfeed");
+
+        notificationRepository.save(notification);
+    }
+
+    // Remove post grief notification (when ungriefed)
+    public void removePostGriefNotification(Long postOwnerId, Long griefererId, Long postId) {
+        notificationRepository.deleteByUserIdAndFromUserIdAndTypeAndRelatedEntityId(
+                postOwnerId, griefererId, NotificationType.POST_GRIEF, postId);
+    }
+
     // Create message notification
     public void createMessageNotification(Long receiverId, Long senderId, String senderName, String messageContent,
             String messageType, Long conversationId) {

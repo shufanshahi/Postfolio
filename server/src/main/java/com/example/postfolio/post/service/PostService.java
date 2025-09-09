@@ -355,6 +355,13 @@ public class PostService {
         if (existingReaction.isPresent() && existingReaction.get().getType() == ReactionType.GRIEF) {
             // Remove grief
             reactionRepository.delete(existingReaction.get());
+
+            // Remove notification
+            notificationService.removePostGriefNotification(
+                    post.getProfile().getUser().getId(),
+                    currentUser.getId(),
+                    postId);
+
             return false; // Post was ungriefed
         } else {
             // Remove any existing reaction first (celebrate or grief)
@@ -368,6 +375,14 @@ public class PostService {
                     .build();
 
             reactionRepository.save(reaction);
+
+            // Create notification
+            notificationService.createPostGriefNotification(
+                    post.getProfile().getUser().getId(),
+                    currentUser.getId(),
+                    currentUser.getUsername(),
+                    postId);
+
             return true; // Post was grieved
         }
     }

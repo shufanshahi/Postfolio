@@ -6,6 +6,7 @@ public enum NotificationType {
     CONNECTION_REJECTED,
     NEW_POST,
     POST_LIKED,
+    POST_GRIEF,
     POST_COMMENTED,
     JOB_APPLICATION,
     INTERVIEW_SCHEDULED,

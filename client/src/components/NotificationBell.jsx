@@ -1,6 +1,6 @@
 'use client';
 import { useState } from 'react';
-import { Bell, Check, CheckCheck, Clock, UserPlus, Heart, MessageSquare } from 'lucide-react';
+import { Bell, Check, CheckCheck, Clock, UserPlus, Heart, MessageSquare, Frown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -24,6 +24,8 @@ const getNotificationIcon = (type) => {
             return <MessageSquare className="h-4 w-4 text-blue-600" />;
         case 'POST_LIKED':
             return <Heart className="h-4 w-4 text-red-600" />;
+        case 'POST_GRIEF':
+            return <Frown className="h-4 w-4 text-indigo-600" />;
         case 'POST_COMMENTED':
             return <MessageSquare className="h-4 w-4 text-purple-600" />;
         default:

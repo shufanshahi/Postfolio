@@ -56,6 +56,15 @@ export function useNotifications() {
         showInfo("New Image", `${senderName} sent you an image`);
     };
 
+    // Post reaction specific notifications
+    const postGriefReceived = (grieferName) => {
+        showInfo("Post Grief 😢", `${grieferName} expressed grief on your post`);
+    };
+
+    const postCelebrationReceived = (celebratorName) => {
+        showSuccess("Post Celebrated! 🎉", `${celebratorName} celebrated your post with confetti!`);
+    };
+
     return {
         showSuccess,
         showError,
@@ -66,6 +75,8 @@ export function useNotifications() {
         connectionRejected,
         connectionRequestReceived,
         messageReceived,
-        imageMessageReceived
+        imageMessageReceived,
+        postGriefReceived,
+        postCelebrationReceived
     };
 }
