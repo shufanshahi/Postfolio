@@ -56,6 +56,9 @@ public class JobMatchingAIService {
         promptBuilder.append("Requirements: ").append(request.getJobRequirements()).append("\n");
         promptBuilder.append("Skills: ").append(request.getJobSkills()).append("\n");
         promptBuilder.append("Experience: ").append(request.getJobExperience()).append("\n");
+        if (request.getJobEducation() != null && !request.getJobEducation().isEmpty()) {
+            promptBuilder.append("Education: ").append(request.getJobEducation()).append("\n");
+        }
         promptBuilder.append("Location: ").append(request.getJobLocation()).append("\n\n");
 
         promptBuilder.append("CANDIDATE PROFILE:\n");
@@ -139,6 +142,7 @@ public class JobMatchingAIService {
         log.info("Job ID: {}", request.getJobId());
         log.info("Profile ID: {}", request.getProfileId());
         log.info("Job Title: {}", request.getJobTitle());
+        log.info("Job Education: {}", request.getJobEducation());
         log.info("Job Skills: {}", request.getJobSkills());
         log.info("Profile Skills: {}", request.getProfileSkills());
         log.info("SSC Result: {}", request.getSscResult());

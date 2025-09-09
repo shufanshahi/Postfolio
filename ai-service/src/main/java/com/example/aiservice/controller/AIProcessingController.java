@@ -36,6 +36,7 @@ public class AIProcessingController {
     @PostMapping("/match-job")
     public ResponseEntity<JobMatchingResponse> matchJob(@RequestBody JobMatchingRequest request) {
         log.info("Matching job {} for profile {}", request.getJobId(), request.getProfileId());
+        log.info("DEBUG: Received jobEducation field: '{}'", request.getJobEducation());
         JobMatchingResponse response = jobMatchingAIService.matchJob(request);
         return ResponseEntity.ok(response);
     }

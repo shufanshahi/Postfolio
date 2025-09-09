@@ -57,6 +57,9 @@ public class JobMatchingService {
             String[] degreeNames = extractDegreeNames(applicant);
             String[] cgpas = extractCGPAs(applicant);
 
+            // Debug logging for job education
+            log.info("DEBUG: Job {} requiredEducation field: '{}'", job.getJobId(), job.getRequiredEducation());
+            
             // Create request for AI service
             JobMatchingRequest aiRequest = JobMatchingRequest.builder()
                     .jobId(job.getJobId())
@@ -66,6 +69,7 @@ public class JobMatchingService {
                     .jobRequirements(job.getDescription()) // Extract from description
                     .jobSkills(job.getRequiredSkills()) // Add job skills
                     .jobExperience(job.getRequiredExperience()) // Add job experience
+                    .jobEducation(job.getRequiredEducation()) // Add job education
                     .jobLocation(job.getLocation()) // Add job location
                     .profileSkills(String.join(", ", profileDTO.getSkills()))
                     .profileWorkExperience(profileDTO.getExperiences().toArray(new String[0]))
