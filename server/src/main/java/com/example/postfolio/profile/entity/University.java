@@ -1,11 +1,10 @@
 package com.example.postfolio.profile.entity;
 
-import com.example.postfolio.profile.entity.Profile;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
 
-import java.time.LocalDate;
+import java.util.List;
 
 @Entity
 @Table(name = "universities")
@@ -25,52 +24,87 @@ public class University {
     @Column(name = "degree_name", nullable = false)
     private String degreeName; // e.g., "BSc in Computer Science"
 
-    @Column(name = "semester_number", nullable = false)
-    private Integer semesterNumber; // 1 to 8
+    @Column(name = "semester_count", nullable = false)
+    private Integer semesterCount; // Total number of semesters for this degree
 
-    @Column(name = "academic_year", nullable = false)
-    private String academicYear; // e.g., "2020-2021"
+    @ElementCollection
+    @CollectionTable(name = "university_semester_results", joinColumns = @JoinColumn(name = "university_id"))
+    @Column(name = "semester_result")
+    private List<Double> semesterResults; // Array of GPA results for each semester
 
-    @Column(name = "semester_result", nullable = false)
-    private String semesterResult; // GPA or Grade
-
-    @Column(name = "total_credits")
-    private Integer totalCredits;
-
-    @Column(name = "completion_date")
-    private LocalDate completionDate;
-
-    @Column(name = "transcript_url")
-    private String transcriptUrl;
-
-    @Column(name = "is_completed")
-    private Boolean isCompleted = false;
+    @Column(name = "cgpa")
+    private Double cgpa; // Calculated CGPA for this degree
 
     @ManyToOne
     @JoinColumn(name = "profile_id", nullable = false)
     @JsonIgnore
     private Profile profile;
 
-    // Helper method to get semester display name
-    public String getSemesterDisplayName() {
-        return "Semester " + semesterNumber;
+    // Calculate CGPA from semester results
+    public Double calculateCGPA() {
+        if (semesterResults == null || semesterResults.isEmpty()) {
+            return null;
+        }
+
+        List<Double> validGpas = semesterResults.stream()
+                .filter(gpa -> gpa != null && gpa > 0)
+                .collect(java.util.stream.Collectors.toList());
+
+        if (validGpas.isEmpty()) {
+            return null;
+        }
+
+        double sum = validGpas.stream().mapToDouble(Double::doubleValue).sum();
+        return Math.round((sum / validGpas.size()) * 100.0) / 100.0; // Round to 2 decimal places
     }
 
-    // Helper method to check if this is the final semester
-    public boolean isFinalSemester() {
-        return semesterNumber == 8;
+    // Update CGPA when semester results change
+    public void updateCGPA() {
+        this.cgpa = calculateCGPA();
     }
 
-    // Helper method to get academic level
-    public String getAcademicLevel() {
-        if (semesterNumber <= 2) {
-            return "1st Year";
-        } else if (semesterNumber <= 4) {
-            return "2nd Year";
-        } else if (semesterNumber <= 6) {
-            return "3rd Year";
-        } else {
-            return "4th Year";
+    // Get completed semesters count
+    public int getCompletedSemestersCount() {
+        if (semesterResults == null) {
+            return 0;
+        }
+        return (int) semesterResults.stream()
+                .filter(gpa -> gpa != null && gpa > 0)
+                .count();
+    }
+
+    // Check if degree is completed
+    public boolean isDegreeCompleted() {
+        return getCompletedSemestersCount() >= semesterCount;
+    }
+
+    // Get progress percentage
+    public double getProgressPercentage() {
+        if (semesterCount == null || semesterCount == 0) {
+            return 0.0;
+        }
+        return (double) getCompletedSemestersCount() / semesterCount * 100.0;
+    }
+
+    // Helper method to get degree display name
+    public String getDegreeDisplayName() {
+        return degreeName + " - " + universityName;
+    }
+
+    // Add a semester result
+    public void addSemesterResult(Double gpa) {
+        if (semesterResults == null) {
+            semesterResults = new java.util.ArrayList<>();
+        }
+        semesterResults.add(gpa);
+        updateCGPA();
+    }
+
+    // Update a specific semester result
+    public void updateSemesterResult(int semesterIndex, Double gpa) {
+        if (semesterResults != null && semesterIndex >= 0 && semesterIndex < semesterResults.size()) {
+            semesterResults.set(semesterIndex, gpa);
+            updateCGPA();
         }
     }
 }

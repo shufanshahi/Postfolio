@@ -26,13 +26,8 @@ const EducationForm = ({ onSuccess, editData = null }) => {
     const [universityForm, setUniversityForm] = useState({
         universityName: '',
         degreeName: '',
-        semesterNumber: '',
-        academicYear: '',
-        semesterResult: '',
-        totalCredits: '',
-        completionDate: '',
-        transcriptUrl: '',
-        isCompleted: false
+        semesterCount: '',
+        semesterResults: []
     });
 
     useEffect(() => {
@@ -52,13 +47,8 @@ const EducationForm = ({ onSuccess, editData = null }) => {
                 setUniversityForm({
                     universityName: editData.data.universityName || '',
                     degreeName: editData.data.degreeName || '',
-                    semesterNumber: editData.data.semesterNumber?.toString() || '',
-                    academicYear: editData.data.academicYear || '',
-                    semesterResult: editData.data.semesterResult || '',
-                    totalCredits: editData.data.totalCredits?.toString() || '',
-                    completionDate: editData.data.completionDate || '',
-                    transcriptUrl: editData.data.transcriptUrl || '',
-                    isCompleted: editData.data.isCompleted || false
+                    semesterCount: editData.data.semesterCount?.toString() || '',
+                    semesterResults: editData.data.semesterResults || []
                 });
                 setActiveTab('university');
             }
@@ -171,8 +161,8 @@ const EducationForm = ({ onSuccess, editData = null }) => {
 
             const payload = {
                 ...universityForm,
-                semesterNumber: parseInt(universityForm.semesterNumber),
-                totalCredits: universityForm.totalCredits ? parseInt(universityForm.totalCredits) : null
+                semesterCount: parseInt(universityForm.semesterCount),
+                semesterResults: universityForm.semesterResults.map(gpa => parseFloat(gpa) || 0)
             };
 
             const options = {
@@ -221,13 +211,8 @@ const EducationForm = ({ onSuccess, editData = null }) => {
         setUniversityForm({
             universityName: '',
             degreeName: '',
-            semesterNumber: '',
-            academicYear: '',
-            semesterResult: '',
-            totalCredits: '',
-            completionDate: '',
-            transcriptUrl: '',
-            isCompleted: false
+            semesterCount: '',
+            semesterResults: []
         });
     };
 
@@ -373,98 +358,49 @@ const EducationForm = ({ onSuccess, editData = null }) => {
                                 </div>
                             </div>
 
-                            <div className="grid grid-cols-2 gap-4">
-                                <div className="space-y-2">
-                                    <Label htmlFor="semesterNumber" className="text-gray-300">Semester Number *</Label>
-                                    <Select value={universityForm.semesterNumber} onValueChange={(value) => setUniversityForm({...universityForm, semesterNumber: value})}>
-                                        <SelectTrigger className="bg-gray-700 border-gray-600 text-white">
-                                            <SelectValue placeholder="Select semester" />
-                                        </SelectTrigger>
-                                        <SelectContent className="bg-gray-700 border-gray-600">
-                                            {Array.from({ length: 8 }, (_, i) => (
-                                                <SelectItem key={i + 1} value={(i + 1).toString()} className="text-white hover:bg-gray-600">
-                                                    Semester {i + 1}
-                                                </SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
-                                </div>
-
-                                <div className="space-y-2">
-                                    <Label htmlFor="academicYear" className="text-gray-300">Academic Year *</Label>
-                                    <Select value={universityForm.academicYear} onValueChange={(value) => setUniversityForm({...universityForm, academicYear: value})}>
-                                        <SelectTrigger className="bg-gray-700 border-gray-600 text-white">
-                                            <SelectValue placeholder="Select year" />
-                                        </SelectTrigger>
-                                        <SelectContent className="bg-gray-700 border-gray-600">
-                                            {academicYears.map(year => (
-                                                <SelectItem key={year} value={year} className="text-white hover:bg-gray-600">{year}</SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
-                                </div>
-                            </div>
-
-                            <div className="grid grid-cols-2 gap-4">
-                                <div className="space-y-2">
-                                    <Label htmlFor="semesterResult" className="text-gray-300">Semester Result *</Label>
-                                    <Input
-                                        id="semesterResult"
-                                        value={universityForm.semesterResult}
-                                        onChange={(e) => setUniversityForm({...universityForm, semesterResult: e.target.value})}
-                                        placeholder="e.g., 3.75, A-, 85%"
-                                        required
-                                        className="bg-gray-700 border-gray-600 text-white placeholder:text-gray-400"
-                                    />
-                                </div>
-
-                                <div className="space-y-2">
-                                    <Label htmlFor="totalCredits" className="text-gray-300">Total Credits</Label>
-                                    <Input
-                                        id="totalCredits"
-                                        type="number"
-                                        value={universityForm.totalCredits}
-                                        onChange={(e) => setUniversityForm({...universityForm, totalCredits: e.target.value})}
-                                        placeholder="e.g., 18"
-                                        className="bg-gray-700 border-gray-600 text-white placeholder:text-gray-400"
-                                    />
-                                </div>
-                            </div>
-
-                            <div className="grid grid-cols-2 gap-4">
-                                <div className="space-y-2">
-                                    <Label htmlFor="completionDate" className="text-gray-300">Completion Date</Label>
-                                    <Input
-                                        id="completionDate"
-                                        type="date"
-                                        value={universityForm.completionDate}
-                                        onChange={(e) => setUniversityForm({...universityForm, completionDate: e.target.value})}
-                                        className="bg-gray-700 border-gray-600 text-white"
-                                    />
-                                </div>
-
-                                <div className="space-y-2">
-                                    <Label htmlFor="transcriptUrl" className="text-gray-300">Transcript URL</Label>
-                                    <Input
-                                        id="transcriptUrl"
-                                        value={universityForm.transcriptUrl}
-                                        onChange={(e) => setUniversityForm({...universityForm, transcriptUrl: e.target.value})}
-                                        placeholder="https://example.com/transcript"
-                                        className="bg-gray-700 border-gray-600 text-white placeholder:text-gray-400"
-                                    />
-                                </div>
-                            </div>
-
-                            <div className="flex items-center space-x-2">
-                                <input
-                                    type="checkbox"
-                                    id="isCompleted"
-                                    checked={universityForm.isCompleted}
-                                    onChange={(e) => setUniversityForm({...universityForm, isCompleted: e.target.checked})}
-                                    className="rounded bg-gray-700 border-gray-600 text-green-500"
+                            <div className="space-y-2">
+                                <Label htmlFor="semesterCount" className="text-gray-300">Total Semesters *</Label>
+                                <Input
+                                    id="semesterCount"
+                                    type="number"
+                                    min="1"
+                                    max="16"
+                                    value={universityForm.semesterCount}
+                                    onChange={(e) => setUniversityForm({...universityForm, semesterCount: e.target.value})}
+                                    placeholder="e.g., 8"
+                                    required
+                                    className="bg-gray-700 border-gray-600 text-white placeholder:text-gray-400"
                                 />
-                                <Label htmlFor="isCompleted" className="text-gray-300">Semester Completed</Label>
                             </div>
+
+                            {/* Semester Results Section */}
+                            {universityForm.semesterCount && (
+                                <div className="space-y-4">
+                                    <Label className="text-gray-300">Semester Results (GPA)</Label>
+                                    <div className="grid grid-cols-2 gap-2">
+                                        {Array.from({ length: parseInt(universityForm.semesterCount) || 0 }, (_, i) => (
+                                            <div key={i} className="space-y-1">
+                                                <Label className="text-sm text-gray-400">Semester {i + 1}</Label>
+                                                <Input
+                                                    type="number"
+                                                    step="0.01"
+                                                    min="0"
+                                                    max="4"
+                                                    value={universityForm.semesterResults[i] || ''}
+                                                    onChange={(e) => {
+                                                        const newResults = [...universityForm.semesterResults];
+                                                        newResults[i] = e.target.value;
+                                                        setUniversityForm({...universityForm, semesterResults: newResults});
+                                                    }}
+                                                    placeholder="0.00"
+                                                    className="bg-gray-700 border-gray-600 text-white placeholder:text-gray-400"
+                                                />
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+
 
                             <div className="flex gap-2">
                                 <Button type="submit" disabled={loading} className="flex-1 bg-green-600 hover:bg-green-700">

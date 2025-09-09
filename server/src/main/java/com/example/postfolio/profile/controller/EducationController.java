@@ -95,6 +95,27 @@ public class EducationController {
         return ResponseEntity.noContent().build();
     }
 
+    // Add semester result to university
+    @PostMapping("/universities/{universityId}/semester-results")
+    public ResponseEntity<UniversityDto> addSemesterResult(@PathVariable Long universityId,
+            @RequestParam Double gpa,
+            Authentication authentication) {
+        User user = (User) authentication.getPrincipal();
+        UniversityDto updatedUniversity = educationService.addSemesterResult(universityId, gpa, user);
+        return ResponseEntity.ok(updatedUniversity);
+    }
+
+    // Update specific semester result
+    @PutMapping("/universities/{universityId}/semester-results/{semesterIndex}")
+    public ResponseEntity<UniversityDto> updateSemesterResult(@PathVariable Long universityId,
+            @PathVariable int semesterIndex,
+            @RequestParam Double gpa,
+            Authentication authentication) {
+        User user = (User) authentication.getPrincipal();
+        UniversityDto updatedUniversity = educationService.updateSemesterResult(universityId, semesterIndex, gpa, user);
+        return ResponseEntity.ok(updatedUniversity);
+    }
+
     // Education summary endpoint
     @GetMapping("/summary")
     public ResponseEntity<EducationSummaryDto> getEducationSummary(Authentication authentication) {

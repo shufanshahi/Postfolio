@@ -19,7 +19,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
@@ -134,15 +133,16 @@ public class EducationService {
                 University university = University.builder()
                                 .universityName(universityDto.getUniversityName())
                                 .degreeName(universityDto.getDegreeName())
-                                .semesterNumber(universityDto.getSemesterNumber())
-                                .academicYear(universityDto.getAcademicYear())
-                                .semesterResult(universityDto.getSemesterResult())
-                                .totalCredits(universityDto.getTotalCredits())
-                                .completionDate(universityDto.getCompletionDate())
-                                .transcriptUrl(universityDto.getTranscriptUrl())
-                                .isCompleted(universityDto.getIsCompleted())
+                                .semesterCount(universityDto.getSemesterCount())
+                                .semesterResults(universityDto.getSemesterResults())
+                                .cgpa(universityDto.getCgpa())
                                 .profile(profile)
                                 .build();
+
+                // Calculate CGPA if semester results are provided
+                if (university.getSemesterResults() != null && !university.getSemesterResults().isEmpty()) {
+                        university.updateCGPA();
+                }
 
                 University savedUniversity = universityRepository.save(university);
                 return convertToDto(savedUniversity);
@@ -151,7 +151,7 @@ public class EducationService {
         public List<UniversityDto> getUserUniversities(User user) {
                 Profile profile = profileRepository.findByUser(user)
                                 .orElseThrow(() -> new RuntimeException("Profile not found for user"));
-                List<University> universities = universityRepository.findByProfileOrderBySemesterNumberAsc(profile);
+                List<University> universities = universityRepository.findByProfile(profile);
                 return universities.stream()
                                 .map(this::convertToDto)
                                 .collect(Collectors.toList());
@@ -170,13 +170,11 @@ public class EducationService {
 
                 university.setUniversityName(universityDto.getUniversityName());
                 university.setDegreeName(universityDto.getDegreeName());
-                university.setSemesterNumber(universityDto.getSemesterNumber());
-                university.setAcademicYear(universityDto.getAcademicYear());
-                university.setSemesterResult(universityDto.getSemesterResult());
-                university.setTotalCredits(universityDto.getTotalCredits());
-                university.setCompletionDate(universityDto.getCompletionDate());
-                university.setTranscriptUrl(universityDto.getTranscriptUrl());
-                university.setIsCompleted(universityDto.getIsCompleted());
+                university.setSemesterCount(universityDto.getSemesterCount());
+                university.setSemesterResults(universityDto.getSemesterResults());
+                
+                // Update CGPA when semester results change
+                university.updateCGPA();
 
                 University updatedUniversity = universityRepository.save(university);
                 return convertToDto(updatedUniversity);
@@ -194,6 +192,46 @@ public class EducationService {
                 }
 
                 universityRepository.delete(university);
+        }
+
+        // Add semester result to existing university
+        public UniversityDto addSemesterResult(Long universityId, Double gpa, User user) {
+                Profile profile = profileRepository.findByUser(user)
+                                .orElseThrow(() -> new RuntimeException("Profile not found for user"));
+
+                University university = universityRepository.findById(universityId)
+                                .orElseThrow(() -> new RuntimeException("University not found"));
+
+                if (!university.getProfile().getId().equals(profile.getId())) {
+                        throw new RuntimeException("Unauthorized access");
+                }
+
+                // Check if we can add more semester results
+                if (university.getSemesterResults() != null && 
+                    university.getSemesterResults().size() >= university.getSemesterCount()) {
+                        throw new RuntimeException("Cannot add more semester results. Maximum semesters reached.");
+                }
+
+                university.addSemesterResult(gpa);
+                University updatedUniversity = universityRepository.save(university);
+                return convertToDto(updatedUniversity);
+        }
+
+        // Update specific semester result
+        public UniversityDto updateSemesterResult(Long universityId, int semesterIndex, Double gpa, User user) {
+                Profile profile = profileRepository.findByUser(user)
+                                .orElseThrow(() -> new RuntimeException("Profile not found for user"));
+
+                University university = universityRepository.findById(universityId)
+                                .orElseThrow(() -> new RuntimeException("University not found"));
+
+                if (!university.getProfile().getId().equals(profile.getId())) {
+                        throw new RuntimeException("Unauthorized access");
+                }
+
+                university.updateSemesterResult(semesterIndex, gpa);
+                University updatedUniversity = universityRepository.save(university);
+                return convertToDto(updatedUniversity);
         }
 
         // Work operations
@@ -243,80 +281,33 @@ public class EducationService {
 
         // Calculate university degree summaries with average CGPA
         private List<UniversityDegreeSummaryDto> calculateUniversityDegreeSummaries(List<UniversityDto> universities) {
-                // Group universities by university name and degree name
-                Map<String, List<UniversityDto>> groupedByDegree = universities.stream()
-                                .collect(Collectors.groupingBy(u -> u.getUniversityName() + "|" + u.getDegreeName()));
+                return universities.stream()
+                                .map(university -> {
+                                        // Use the CGPA directly from the university
+                                        Double averageCgpa = university.getCgpa();
 
-                return groupedByDegree.entrySet().stream()
-                                .map(entry -> {
-                                        String[] parts = entry.getKey().split("\\|");
-                                        String universityName = parts[0];
-                                        String degreeName = parts[1];
-                                        List<UniversityDto> semesters = entry.getValue();
+                                        // Get semester counts from the university
+                                        int totalSemesters = university.getSemesterCount();
+                                        int completedSemesters = university.getCompletedSemestersCount();
 
-                                        // Calculate average CGPA
-                                        Double averageCgpa = calculateAverageCgpa(semesters);
-
-                                        // Count semesters
-                                        int totalSemesters = semesters.size();
-                                        int completedSemesters = (int) semesters.stream()
-                                                        .filter(UniversityDto::getIsCompleted)
-                                                        .count();
-
-                                        // Determine if degree is completed (all 8 semesters completed)
-                                        boolean isCompleted = completedSemesters >= 8;
-
-                                        // Get start and end dates
-                                        var startDate = semesters.stream()
-                                                        .filter(s -> s.getCompletionDate() != null)
-                                                        .map(UniversityDto::getCompletionDate)
-                                                        .min(java.time.LocalDate::compareTo)
-                                                        .orElse(null);
-
-                                        var endDate = semesters.stream()
-                                                        .filter(s -> s.getCompletionDate() != null)
-                                                        .map(UniversityDto::getCompletionDate)
-                                                        .max(java.time.LocalDate::compareTo)
-                                                        .orElse(null);
+                                        // Determine if degree is completed
+                                        boolean isCompleted = university.getIsDegreeCompleted();
 
                                         return UniversityDegreeSummaryDto.builder()
-                                                        .universityName(universityName)
-                                                        .degreeName(degreeName)
+                                                        .universityName(university.getUniversityName())
+                                                        .degreeName(university.getDegreeName())
                                                         .averageCgpa(averageCgpa)
                                                         .totalSemesters(totalSemesters)
                                                         .completedSemesters(completedSemesters)
-                                                        .startDate(startDate)
-                                                        .endDate(endDate)
+                                                        .startDate(null) // Not available in new structure
+                                                        .endDate(null) // Not available in new structure
                                                         .isCompleted(isCompleted)
-                                                        .semesters(semesters)
+                                                        .semesters(List.of(university)) // Single university entry
                                                         .build();
                                 })
                                 .collect(Collectors.toList());
         }
 
-        // Calculate average CGPA from semester results
-        private Double calculateAverageCgpa(List<UniversityDto> semesters) {
-                List<Double> cgpaValues = semesters.stream()
-                                .map(semester -> {
-                                        try {
-                                                // Try to parse the semester result as a double (CGPA)
-                                                return Double.parseDouble(semester.getSemesterResult());
-                                        } catch (NumberFormatException e) {
-                                                // If it's not a number, return null (will be filtered out)
-                                                return null;
-                                        }
-                                })
-                                .filter(cgpa -> cgpa != null && cgpa > 0) // Filter out null and zero values
-                                .collect(Collectors.toList());
-
-                if (cgpaValues.isEmpty()) {
-                        return null; // No valid CGPA values found
-                }
-
-                // Calculate average
-                double sum = cgpaValues.stream().mapToDouble(Double::doubleValue).sum();
-                return sum / cgpaValues.size();
-        }
 
         // Helper methods to convert entities to DTOs
         private SchoolDto convertToDto(School school) {
@@ -335,15 +326,13 @@ public class EducationService {
                                 .id(university.getId())
                                 .universityName(university.getUniversityName())
                                 .degreeName(university.getDegreeName())
-                                .semesterNumber(university.getSemesterNumber())
-                                .academicYear(university.getAcademicYear())
-                                .semesterResult(university.getSemesterResult())
-                                .totalCredits(university.getTotalCredits())
-                                .completionDate(university.getCompletionDate())
-                                .transcriptUrl(university.getTranscriptUrl())
-                                .isCompleted(university.getIsCompleted())
-                                .semesterDisplayName(university.getSemesterDisplayName())
-                                .academicLevel(university.getAcademicLevel())
+                                .semesterCount(university.getSemesterCount())
+                                .semesterResults(university.getSemesterResults())
+                                .cgpa(university.getCgpa())
+                                .completedSemestersCount(university.getCompletedSemestersCount())
+                                .progressPercentage(university.getProgressPercentage())
+                                .isDegreeCompleted(university.isDegreeCompleted())
+                                .degreeDisplayName(university.getDegreeDisplayName())
                                 .build();
         }
 

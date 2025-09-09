@@ -131,7 +131,7 @@ const EducationTimeline = ({ userId, onEdit, onDelete }) => {
                     <CardTitle className="flex flex-wrap items-center gap-3 text-slate-800 dark:text-slate-100 text-lg font-semibold">
                         <GraduationCap className="h-5 w-5 text-teal-600 dark:text-teal-400" /> Education Journey
                         <Badge variant="secondary" className="bg-slate-100/80 dark:bg-slate-700/60 text-slate-700 dark:text-slate-200 ring-1 ring-inset ring-white/40 dark:ring-slate-600/40">
-                            {educationData.schools?.length || 0} Schools · {educationData.universities?.length || 0} Semesters
+                            {educationData.schools?.length || 0} Schools · {educationData.universities?.reduce((total, uni) => total + (uni.semesterCount || 0), 0) || 0} Semesters
                         </Badge>
                     </CardTitle>
                 </CardHeader>
@@ -182,22 +182,47 @@ const EducationTimeline = ({ userId, onEdit, onDelete }) => {
                                     </Badge>
                                 </div>
 
-                                <div className="flex flex-wrap gap-3 ml-10">
-                                    {Array.from({ length: 8 }, (_, i) => {
-                                        const university = universities.find(u => u.semesterNumber === i + 1);
-                                        const isCompleted = !!university;
-
-                                        return (
-                                            <div
-                                                key={i + 1}
-                                                onClick={() => isCompleted && openInstitutionModal({ type: 'university', data: university, institutionName })}
-                                                className={`group relative w-12 h-12 rounded-xl flex items-center justify-center text-[11px] font-semibold tracking-wide select-none cursor-pointer ring-1 ring-inset ${getLevelColor(i + 13, isCompleted)} transition-all duration-200 hover:-translate-y-0.5 ${isCompleted ? 'hover:shadow-md' : 'opacity-50 cursor-default'}`}
-                                            >
-                                                {i + 1}
+                                {universities.map((university, index) => (
+                                    <div key={university.id || index} className="ml-10">
+                                        <div className="mb-2">
+                                            <h4 className="text-sm font-medium text-slate-700 dark:text-slate-300">{university.degreeName}</h4>
+                                            <div className="flex items-center gap-2 mt-1">
+                                                <span className="text-xs text-slate-500 dark:text-slate-400">
+                                                    CGPA: {university.cgpa ? university.cgpa.toFixed(2) : 'N/A'}
+                                                </span>
+                                                <span className="text-xs text-slate-500 dark:text-slate-400">
+                                                    ({university.completedSemestersCount || 0}/{university.semesterCount || 0} semesters)
+                                                </span>
                                             </div>
-                                        );
-                                    })}
-                                </div>
+                                        </div>
+                                        
+                                        <div className="flex flex-wrap gap-2">
+                                            {Array.from({ length: university.semesterCount || 0 }, (_, i) => {
+                                                const semesterGpa = university.semesterResults?.[i];
+                                                const isCompleted = semesterGpa != null && semesterGpa > 0;
+
+                                                return (
+                                                    <div
+                                                        key={i + 1}
+                                                        onClick={() => isCompleted && openInstitutionModal({ 
+                                                            type: 'university', 
+                                                            data: { 
+                                                                ...university, 
+                                                                semesterNumber: i + 1, 
+                                                                semesterResult: semesterGpa?.toString() || 'N/A',
+                                                                degreeName: university.degreeName
+                                                            }, 
+                                                            institutionName 
+                                                        })}
+                                                        className={`group relative w-10 h-10 rounded-lg flex items-center justify-center text-[10px] font-semibold tracking-wide select-none cursor-pointer ring-1 ring-inset ${getLevelColor(i + 1, isCompleted)} transition-all duration-200 hover:-translate-y-0.5 ${isCompleted ? 'hover:shadow-md' : 'opacity-50 cursor-default'}`}
+                                                    >
+                                                        {i + 1}
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                    </div>
+                                ))}
                             </div>
                         ))}
                     </div>
@@ -251,10 +276,10 @@ const EducationTimeline = ({ userId, onEdit, onDelete }) => {
                             <div className="grid grid-cols-2 gap-4 text-sm">
                                 <div>
                                     <label className="text-xs font-medium text-slate-600 uppercase">Semester</label>
-                                    <p className="mt-0.5 font-semibold">{selectedInstitution.data.semesterDisplayName}</p>
+                                    <p className="mt-0.5 font-semibold">Semester {selectedInstitution.data.semesterNumber}</p>
                                 </div>
                                 <div>
-                                    <label className="text-xs font-medium text-slate-600 uppercase">Result</label>
+                                    <label className="text-xs font-medium text-slate-600 uppercase">GPA</label>
                                     <p className="mt-0.5 font-semibold text-emerald-600">{selectedInstitution.data.semesterResult}</p>
                                 </div>
                                 <div>
@@ -262,18 +287,18 @@ const EducationTimeline = ({ userId, onEdit, onDelete }) => {
                                     <p className="mt-0.5">{selectedInstitution.data.degreeName}</p>
                                 </div>
                                 <div>
-                                    <label className="text-xs font-medium text-slate-600 uppercase">Academic Year</label>
-                                    <p className="mt-0.5">{selectedInstitution.data.academicYear}</p>
+                                    <label className="text-xs font-medium text-slate-600 uppercase">CGPA</label>
+                                    <p className="mt-0.5 font-semibold text-indigo-600">{selectedInstitution.data.cgpa ? selectedInstitution.data.cgpa.toFixed(2) : 'N/A'}</p>
                                 </div>
                                 <div>
-                                    <label className="text-xs font-medium text-slate-600 uppercase">Credits</label>
-                                    <p className="mt-0.5">{selectedInstitution.data.totalCredits}</p>
+                                    <label className="text-xs font-medium text-slate-600 uppercase">Progress</label>
+                                    <p className="mt-0.5">{selectedInstitution.data.completedSemestersCount || 0}/{selectedInstitution.data.semesterCount || 0} semesters</p>
                                 </div>
                                 <div>
                                     <label className="text-xs font-medium text-slate-600 uppercase">Status</label>
                                     <div className="mt-0.5">
-                                        <Badge variant={selectedInstitution.data.isCompleted ? "default" : "secondary"}>
-                                            {selectedInstitution.data.isCompleted ? "Completed" : "In Progress"}
+                                        <Badge variant={selectedInstitution.data.isDegreeCompleted ? "default" : "secondary"}>
+                                            {selectedInstitution.data.isDegreeCompleted ? "Completed" : "In Progress"}
                                         </Badge>
                                     </div>
                                 </div>

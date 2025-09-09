@@ -36,7 +36,7 @@ public class EducationSummaryDto {
     @Deprecated
     public UniversityDto getLatestUniversitySemester() {
         return universities.stream()
-                .max((u1, u2) -> Integer.compare(u1.getSemesterNumber(), u2.getSemesterNumber()))
+                .max((u1, u2) -> Integer.compare(u1.getSemesterCount(), u2.getSemesterCount()))
                 .orElse(null);
     }
 
@@ -68,13 +68,15 @@ public class EducationSummaryDto {
     // Helper method to get completed semesters count
     public long getCompletedSemestersCount() {
         return universities.stream()
-                .filter(UniversityDto::getIsCompleted)
-                .count();
+                .mapToInt(uni -> uni.getCompletedSemestersCount())
+                .sum();
     }
 
     // Helper method to get total semesters count
     public int getTotalSemestersCount() {
-        return universities.size();
+        return universities.stream()
+                .mapToInt(uni -> uni.getSemesterCount())
+                .sum();
     }
 
     // Helper method to get total degrees count

@@ -306,21 +306,37 @@ const SimpleEducationTimeline = ({ userId, onEdit, onDelete }) => {
                                                     {university.degreeName}
                                                 </p>
                                                 <div className="flex flex-wrap gap-2 mt-2">
-                                                    <Badge variant="secondary" className={getLevelColor(university.semesterNumber)}>
-                                                        Semester {university.semesterNumber}
-                                                    </Badge>
-                                                    <Badge variant="outline" className="text-slate-600 dark:text-slate-300">
-                                                        {university.academicYear}
+                                                    <Badge variant="secondary" className="bg-indigo-100 text-indigo-700 dark:bg-indigo-900/20 dark:text-indigo-300">
+                                                        {university.semesterCount} Semesters
                                                     </Badge>
                                                     <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200 dark:bg-green-900/20 dark:text-green-300 dark:border-green-600">
-                                                        {university.semesterResult}
+                                                        CGPA: {university.cgpa ? university.cgpa.toFixed(2) : 'N/A'}
                                                     </Badge>
-                                                    {university.totalCredits && (
-                                                        <Badge variant="outline" className="text-slate-600 dark:text-slate-300">
-                                                            {university.totalCredits} Credits
-                                                        </Badge>
-                                                    )}
+                                                    <Badge variant="outline" className="text-slate-600 dark:text-slate-300">
+                                                        {university.completedSemestersCount || 0}/{university.semesterCount || 0} Completed
+                                                    </Badge>
                                                 </div>
+                                                
+                                                {/* Semester Results Grid */}
+                                                {university.semesterResults && university.semesterResults.length > 0 && (
+                                                    <div className="mt-3">
+                                                        <p className="text-xs text-slate-500 dark:text-slate-400 mb-2">Semester Results:</p>
+                                                        <div className="flex flex-wrap gap-1">
+                                                            {university.semesterResults.map((gpa, index) => (
+                                                                <div
+                                                                    key={index}
+                                                                    className={`px-2 py-1 rounded text-xs font-medium ${
+                                                                        gpa && gpa > 0
+                                                                            ? 'bg-green-100 text-green-700 dark:bg-green-900/20 dark:text-green-300'
+                                                                            : 'bg-slate-100 text-slate-500 dark:bg-slate-700 dark:text-slate-400'
+                                                                    }`}
+                                                                >
+                                                                    S{index + 1}: {gpa ? gpa.toFixed(2) : 'N/A'}
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                    </div>
+                                                )}
                                             </div>
                                             <div className="flex gap-2 ml-4">
                                                 {onEdit && (

@@ -10,7 +10,6 @@ import com.example.postfolio.job.entity.Job;
 import com.example.postfolio.jobMatchingEngine.dto.ApplicantProfileDTO;
 import com.example.postfolio.jobMatchingEngine.dto.MatchingResult;
 import com.example.postfolio.profile.entity.Profile;
-import com.example.postfolio.profile.entity.University;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -152,7 +151,7 @@ public class JobMatchingService {
                 for (var uni : profile.getUniversities()) {
                     profileData.append("UNI:").append(uni.getUniversityName())
                             .append(":").append(uni.getDegreeName())
-                            .append(":").append(uni.getSemesterResult()).append("|");
+                            .append(":").append(uni.getCgpa() != null ? uni.getCgpa().toString() : "N/A").append("|");
                 }
             }
 
@@ -228,13 +227,12 @@ public class JobMatchingService {
         // Add university information
         if (applicant.getUniversities() != null) {
             education.addAll(applicant.getUniversities().stream()
-                    .map(uni -> String.format("%s, %s (%s) - %s, Result: %s%s",
+                    .map(uni -> String.format("%s, %s - %d semesters, CGPA: %s%s",
                             uni.getUniversityName(),
                             uni.getDegreeName(),
-                            uni.getSemesterDisplayName(),
-                            uni.getAcademicYear(),
-                            uni.getSemesterResult(),
-                            uni.getIsCompleted() ? " (Completed)" : " (In Progress)"))
+                            uni.getSemesterCount(),
+                            uni.getCgpa() != null ? uni.getCgpa().toString() : "N/A",
+                            uni.isDegreeCompleted() ? " (Completed)" : " (In Progress)"))
                     .collect(Collectors.toList()));
         }
 
@@ -290,21 +288,9 @@ public class JobMatchingService {
             return new String[0];
         }
 
-        // Group universities by degree name and calculate CGPA for each degree
-        Map<String, List<University>> degreeGroups = applicant.getUniversities().stream()
-                .filter(uni -> uni.getDegreeName() != null && !uni.getDegreeName().isEmpty())
-                .collect(Collectors.groupingBy(University::getDegreeName));
-
-        return degreeGroups.entrySet().stream()
-                .map(entry -> {
-                    List<University> universities = entry.getValue();
-                    // For each degree, get the latest/highest semester result
-                    return universities.stream()
-                            .filter(uni -> uni.getSemesterResult() != null && !uni.getSemesterResult().isEmpty())
-                            .max((u1, u2) -> u1.getSemesterNumber().compareTo(u2.getSemesterNumber()))
-                            .map(uni -> uni.getSemesterResult())
-                            .orElse("N/A");
-                })
+        // Get CGPA for each university degree
+        return applicant.getUniversities().stream()
+                .map(uni -> uni.getCgpa() != null ? uni.getCgpa().toString() : "N/A")
                 .toArray(String[]::new);
     }
 
