@@ -66,6 +66,13 @@ export default function JobApplicants() {
   });
   const [autoSelectError, setAutoSelectError] = useState("");
   
+  // Select with score state
+  const [showSelectScore, setShowSelectScore] = useState(false);
+  const [selectedApplicantForScore, setSelectedApplicantForScore] = useState(null);
+  const [scoreInput, setScoreInput] = useState("");
+  const [scoreError, setScoreError] = useState("");
+  const [scoreLoading, setScoreLoading] = useState(false);
+  
   const handleScheduleClick = (applicantId) => {
     setSelectedApplicant(applicantId);
     setShowSchedule(true);
@@ -432,25 +439,70 @@ export default function JobApplicants() {
 
   // Handle select applicant
   const handleSelectApplicant = async (applicantId) => {
+    setSelectedApplicantForScore(applicantId);
+    setShowSelectScore(true);
+    setScoreInput("");
+    setScoreError("");
+  };
+
+  // Handle select with score submission
+  const handleSelectWithScore = async (e) => {
+    e.preventDefault();
+    setScoreError("");
+    
+    // Validation
+    if (!scoreInput || scoreInput < 0 || scoreInput > 100) {
+      setScoreError("Please enter a valid score between 0 and 100.");
+      return;
+    }
+
+    setScoreLoading(true);
     try {
       const token = localStorage.getItem("token");
-      const res = await fetch(`http://localhost:8080/api/jobs/${jobId}/select/${applicantId}`, {
+      
+      // First create the JobCandidate
+      const candidateResponse = await fetch(`http://localhost:8080/api/job-candidates`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          jobId: parseInt(jobId),
+          profileId: selectedApplicantForScore,
+          status: "PROCESSING",
+          score: parseFloat(scoreInput)
+        }),
+      });
+
+      if (!candidateResponse.ok) {
+        const errorData = await candidateResponse.text();
+        setScoreError(`Failed to create job candidate: ${errorData || 'Unknown error'}`);
+        return;
+      }
+
+      // Then select the applicant as before
+      const selectResponse = await fetch(`http://localhost:8080/api/jobs/${jobId}/select/${selectedApplicantForScore}`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
       });
-      if (res.ok) {
-        alert("Applicant selected successfully!");
+
+      if (selectResponse.ok) {
+        setShowSelectScore(false);
+        alert("Applicant selected successfully and job candidate created!");
         // Refresh job data to update selected applicants
         fetchJobApplicants();
       } else {
-        alert("Failed to select applicant.");
+        setScoreError("Failed to select applicant.");
       }
     } catch (error) {
       console.error("Error selecting applicant:", error);
-      alert("Error selecting applicant.");
+      setScoreError("Error selecting applicant.");
+    } finally {
+      setScoreLoading(false);
     }
   };
 
@@ -937,6 +989,97 @@ export default function JobApplicants() {
                       variant="outline"
                       onClick={() => setShowAutoSelect(false)}
                       disabled={autoSelectLoading}
+                      className="flex-1 bg-white/60 dark:bg-slate-700/60 border-slate-300/60 dark:border-slate-600/60 text-slate-700 dark:text-slate-300"
+                    >
+                      Cancel
+                    </Button>
+                  </div>
+                </form>
+              </Dialog.Panel>
+            </div>
+          </Dialog>
+        )}
+
+        {/* Select with Score Modal */}
+        {showSelectScore && (
+          <Dialog open={showSelectScore} onClose={() => setShowSelectScore(false)} className="fixed z-50 inset-0 overflow-y-auto">
+            <div className="flex items-center justify-center min-h-screen bg-black/50 backdrop-blur-sm">
+              <Dialog.Panel className={`${subtleCard} p-6 rounded-2xl shadow-xl w-full max-w-md m-4`}>
+                <form onSubmit={handleSelectWithScore} className="space-y-6">
+                  <div className="text-center mb-6">
+                    <div className="w-16 h-16 bg-gradient-to-br from-green-400 to-green-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <Star className="h-8 w-8 text-white" />
+                    </div>
+                    <h2 className="text-2xl font-semibold text-slate-800 dark:text-slate-100 mb-2">Select Candidate</h2>
+                    <p className="text-sm text-slate-600 dark:text-slate-400">Enter the candidate&apos;s evaluation score</p>
+                  </div>
+                  
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">
+                        <Star className="h-4 w-4 inline mr-2" />
+                        Candidate Score (0-100)
+                      </label>
+                      <input
+                        type="number"
+                        min="0"
+                        max="100"
+                        step="0.1"
+                        value={scoreInput}
+                        onChange={e => setScoreInput(e.target.value)}
+                        placeholder="e.g., 85.5"
+                        className="w-full p-3 rounded-xl bg-white/60 dark:bg-slate-800/60 text-slate-800 dark:text-slate-200 border border-slate-300/60 dark:border-slate-600/60 focus:border-green-500 dark:focus:border-green-400 focus:outline-none focus:ring-2 focus:ring-green-500/20 dark:focus:ring-green-400/20 transition-colors"
+                        required
+                      />
+                      <p className="text-xs text-slate-500 dark:text-slate-400">
+                        Enter a score between 0 and 100 based on the candidate&apos;s evaluation
+                      </p>
+                    </div>
+                  </div>
+                  
+                  {scoreError && (
+                    <div className="p-4 bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-400/30 rounded-xl">
+                      <p className="text-sm text-red-700 dark:text-red-400">{scoreError}</p>
+                    </div>
+                  )}
+                  
+                  <div className="bg-green-50/60 dark:bg-green-500/10 border border-green-200 dark:border-green-400/30 rounded-xl p-4">
+                    <div className="flex items-start gap-3">
+                      <CheckCircle className="h-5 w-5 text-green-600 dark:text-green-400 mt-0.5 flex-shrink-0" />
+                      <div className="text-sm text-green-800 dark:text-green-200">
+                        <p className="font-medium mb-1">Selection Process:</p>
+                        <ul className="text-xs space-y-1 text-green-700 dark:text-green-300">
+                          <li>• Candidate will be added to selected list</li>
+                          <li>• Job candidate record will be created with score</li>
+                          <li>• Status will be set to PROCESSING</li>
+                        </ul>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="flex gap-3 pt-2">
+                    <Button 
+                      type="submit" 
+                      disabled={scoreLoading}
+                      className="flex-1 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white"
+                    >
+                      {scoreLoading ? (
+                        <>
+                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                          Selecting...
+                        </>
+                      ) : (
+                        <>
+                          <CheckCircle className="h-4 w-4 mr-2" />
+                          Select Candidate
+                        </>
+                      )}
+                    </Button>
+                    <Button 
+                      type="button" 
+                      variant="outline"
+                      onClick={() => setShowSelectScore(false)}
+                      disabled={scoreLoading}
                       className="flex-1 bg-white/60 dark:bg-slate-700/60 border-slate-300/60 dark:border-slate-600/60 text-slate-700 dark:text-slate-300"
                     >
                       Cancel
