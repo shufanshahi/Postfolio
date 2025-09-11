@@ -1,9 +1,11 @@
 
 package com.example.postfolio.job.service;
 
+import com.example.postfolio.job.dto.AutoSelectRequest;
 import com.example.postfolio.job.dto.JobRequest;
 import com.example.postfolio.job.dto.JobResponse;
 import com.example.postfolio.job.entity.Job;
+import com.example.postfolio.job.model.AutoSelectStatus;
 import com.example.postfolio.job.model.JobStatus;
 import com.example.postfolio.job.repository.JobRepository;
 import com.example.postfolio.jobMatchingEngine.service.JobMatchingService;
@@ -182,6 +184,26 @@ public class JobServiceImpl implements JobService {
                 .orElseThrow(() -> new RuntimeException("Job not found with id: " + jobId));
     }
 
+    @Override
+    @Transactional
+    public JobResponse startAutoSelect(Long jobId, AutoSelectRequest request) {
+        Job job = jobRepository.findById(jobId).orElseThrow(() ->
+                new RuntimeException("Job not found with id: " + jobId));
+        
+        // Update auto-select related fields
+        job.setAutoSelectStatus(AutoSelectStatus.ONGOING);
+        job.setOfferLetter(request.getOfferLetter());
+        job.setDesiredSelectNumber(request.getDesiredSelectNumber());
+        job.setLetterExpiry(request.getLetterExpiry());
+        
+        Job savedJob = jobRepository.save(job);
+        
+        // Invalidate job matching cache for this updated job
+        jobMatchingService.invalidateJobCache(savedJob);
+        
+        return toResponse(savedJob);
+    }
+
     private JobResponse toResponse(Job job) {
         JobResponse res = new JobResponse();
         res.setJobId(job.getJobId());
@@ -202,6 +224,14 @@ public class JobServiceImpl implements JobService {
         res.setApplicantIds(job.getApplicants().stream().map(Profile::getId).collect(Collectors.toList()));
         res.setRejectedApplicantIds(job.getRejectedApplicants().stream().map(Profile::getId).collect(Collectors.toList()));
         res.setSelectedApplicantIds(job.getSelectedApplicants().stream().map(Profile::getId).collect(Collectors.toList()));
+        
+        // Auto-select related fields
+        res.setAutoSelectStatus(job.getAutoSelectStatus());
+        res.setOfferLetter(job.getOfferLetter());
+        res.setDesiredSelectNumber(job.getDesiredSelectNumber());
+        res.setLetterExpiry(job.getLetterExpiry());
+        res.setAcceptedByProfileIds(job.getAcceptedByProfileIds());
+        
         return res;
     }
 
@@ -225,6 +255,14 @@ public class JobServiceImpl implements JobService {
         res.setApplicantIds(job.getApplicants().stream().map(Profile::getId).collect(Collectors.toList()));
         res.setRejectedApplicantIds(job.getRejectedApplicants().stream().map(Profile::getId).collect(Collectors.toList()));
         res.setSelectedApplicantIds(job.getSelectedApplicants().stream().map(Profile::getId).collect(Collectors.toList()));
+        
+        // Auto-select related fields
+        res.setAutoSelectStatus(job.getAutoSelectStatus());
+        res.setOfferLetter(job.getOfferLetter());
+        res.setDesiredSelectNumber(job.getDesiredSelectNumber());
+        res.setLetterExpiry(job.getLetterExpiry());
+        res.setAcceptedByProfileIds(job.getAcceptedByProfileIds());
+        
         return res;
     }
 }

@@ -1,5 +1,6 @@
 package com.example.postfolio.job.dto;
 
+import com.example.postfolio.job.model.AutoSelectStatus;
 import lombok.Data;
 import java.time.LocalDate;
 import java.util.List;
@@ -21,5 +22,12 @@ public class JobRequest {
     private String location;
     private List<Long> applicantIds;
     private List<Long> selectedApplicantIds;
-    private  List<Long> rejectedApplicantIds;
+    private List<Long> rejectedApplicantIds;
+    
+    // Auto-select related fields (optional for job creation)
+    private AutoSelectStatus autoSelectStatus;
+    private String offerLetter;
+    private Integer desiredSelectNumber;
+    private LocalDate letterExpiry;
+    private List<Long> acceptedByProfileIds;
 }

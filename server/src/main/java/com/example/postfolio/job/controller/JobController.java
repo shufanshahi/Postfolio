@@ -1,6 +1,7 @@
 
 package com.example.postfolio.job.controller;
 
+import com.example.postfolio.job.dto.AutoSelectRequest;
 import com.example.postfolio.job.dto.JobRequest;
 import com.example.postfolio.job.dto.JobResponse;
 import com.example.postfolio.job.dto.JobWithScoreDTO;
@@ -120,6 +121,20 @@ public class JobController {
         return ResponseEntity.ok(jobService.updateJobStatus(jobId, status));
     }
 
+    @PostMapping("/{jobId}/auto-select")
+    public ResponseEntity<JobResponse> startAutoSelect(@PathVariable Long jobId, @RequestBody AutoSelectRequest request) {
+        try {
+            JobResponse jobResponse = jobService.startAutoSelect(jobId, request);
+            return ResponseEntity.ok(jobResponse);
+        } catch (RuntimeException e) {
+            log.error("Failed to start auto-select for job {}", jobId, e);
+            return ResponseEntity.notFound().build();
+        } catch (Exception e) {
+            log.error("Unexpected error while starting auto-select for job {}", jobId, e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
     @GetMapping("/matched")
     public ResponseEntity<List<JobWithScoreDTO>> getMatchedJobsForUser(Authentication authentication) {
         try {
@@ -149,6 +164,11 @@ public class JobController {
                             .applicantIds(job.getApplicants().stream().map(Profile::getId).collect(Collectors.toList()))
                             .selectedApplicantIds(job.getSelectedApplicants().stream().map(Profile::getId)
                                     .collect(Collectors.toList()))
+                            .autoSelectStatus(job.getAutoSelectStatus())
+                            .offerLetter(job.getOfferLetter())
+                            .desiredSelectNumber(job.getDesiredSelectNumber())
+                            .letterExpiry(job.getLetterExpiry())
+                            .acceptedByProfileIds(job.getAcceptedByProfileIds())
                             .matchingScore(matchingResult)
                             .build();
 
@@ -171,6 +191,11 @@ public class JobController {
                             .applicantIds(job.getApplicants().stream().map(Profile::getId).collect(Collectors.toList()))
                             .selectedApplicantIds(job.getSelectedApplicants().stream().map(Profile::getId)
                                     .collect(Collectors.toList()))
+                            .autoSelectStatus(job.getAutoSelectStatus())
+                            .offerLetter(job.getOfferLetter())
+                            .desiredSelectNumber(job.getDesiredSelectNumber())
+                            .letterExpiry(job.getLetterExpiry())
+                            .acceptedByProfileIds(job.getAcceptedByProfileIds())
                             .matchingScore(createFallbackResult("Scoring failed"))
                             .build();
 

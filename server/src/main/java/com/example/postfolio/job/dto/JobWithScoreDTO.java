@@ -1,4 +1,5 @@
 package com.example.postfolio.job.dto;
+import com.example.postfolio.job.model.AutoSelectStatus;
 import com.example.postfolio.job.model.JobStatus;
 import com.example.postfolio.jobMatchingEngine.dto.MatchingResult;
 import lombok.*;
@@ -26,4 +27,11 @@ public class JobWithScoreDTO {
     private List<Long> applicantIds;
     private List<Long> selectedApplicantIds;
     private MatchingResult matchingScore;
+    
+    // Auto-select related fields
+    private AutoSelectStatus autoSelectStatus;
+    private String offerLetter;
+    private Integer desiredSelectNumber;
+    private LocalDate letterExpiry;
+    private List<Long> acceptedByProfileIds;
 }

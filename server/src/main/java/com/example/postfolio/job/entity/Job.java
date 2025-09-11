@@ -1,5 +1,6 @@
 package com.example.postfolio.job.entity;
 
+import com.example.postfolio.job.model.AutoSelectStatus;
 import com.example.postfolio.job.model.JobStatus;
 import com.example.postfolio.user.entity.User;
 import com.example.postfolio.profile.entity.Profile;
@@ -67,4 +68,21 @@ public class Job {
     private String requiredEducation;
     private String requiredSkills;
     private String location;
+
+    // Auto-select related fields
+    @Enumerated(EnumType.STRING)
+    @Builder.Default
+    private AutoSelectStatus autoSelectStatus = AutoSelectStatus.OFF;
+
+    private String offerLetter;
+
+    private Integer desiredSelectNumber;
+
+    private LocalDate letterExpiry;
+
+    @ElementCollection
+    @CollectionTable(name = "job_accepted_profiles", joinColumns = @JoinColumn(name = "job_id"))
+    @Column(name = "profile_id")
+    @Builder.Default
+    private List<Long> acceptedByProfileIds = new ArrayList<>();
 }

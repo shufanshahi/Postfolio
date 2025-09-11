@@ -1,5 +1,6 @@
 package com.example.postfolio.job.service;
 
+import com.example.postfolio.job.dto.AutoSelectRequest;
 import com.example.postfolio.job.dto.JobRequest;
 import com.example.postfolio.job.dto.JobResponse;
 import com.example.postfolio.job.entity.Job;
@@ -20,6 +21,8 @@ public interface JobService {
     JobResponse rejectApplicant(Long jobId, Long applicantId);
     JobResponse selectApplicant(Long jobId, Long applicantId);
 
+    // Auto-select method
+    JobResponse startAutoSelect(Long jobId, AutoSelectRequest request);
 
     // Additional methods to support matching
     List<Job> findAllActiveJobs();
