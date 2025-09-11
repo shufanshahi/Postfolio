@@ -12,7 +12,7 @@ import {
   ArrowLeft, Users, Calendar, Clock, Mail, Video, CheckCircle, 
   XCircle, UserCheck, Eye, MoreVertical, Briefcase, MapPin, 
   DollarSign, Filter, Search, Settings, Activity, Target,
-  TrendingUp, Award, Star, Loader2
+  TrendingUp, Award, Star, Loader2, Zap, FileText
 } from 'lucide-react';
 
 export default function JobApplicants() {
@@ -55,12 +55,86 @@ export default function JobApplicants() {
   const [notesInput, setNotesInput] = useState("");
   const [scheduleError, setScheduleError] = useState("");
   const [applicantsWithDetails, setApplicantsWithDetails] = useState([]);
+  
+  // Auto-select state
+  const [showAutoSelect, setShowAutoSelect] = useState(false);
+  const [autoSelectLoading, setAutoSelectLoading] = useState(false);
+  const [autoSelectData, setAutoSelectData] = useState({
+    offerLetter: "",
+    desiredSelectNumber: "",
+    letterExpiry: ""
+  });
+  const [autoSelectError, setAutoSelectError] = useState("");
+  
   const handleScheduleClick = (applicantId) => {
     setSelectedApplicant(applicantId);
     setShowSchedule(true);
     setScheduleInput("");
     setNotesInput("");
     setScheduleError("");
+  };
+
+  // Handle auto-select modal
+  const handleAutoSelectClick = () => {
+    setShowAutoSelect(true);
+    setAutoSelectData({
+      offerLetter: "",
+      desiredSelectNumber: "",
+      letterExpiry: ""
+    });
+    setAutoSelectError("");
+  };
+
+  // Handle auto-select submission
+  const handleAutoSelectSubmit = async (e) => {
+    e.preventDefault();
+    setAutoSelectError("");
+    
+    // Validation
+    if (!autoSelectData.offerLetter.trim()) {
+      setAutoSelectError("Offer letter content is required.");
+      return;
+    }
+    if (!autoSelectData.desiredSelectNumber || autoSelectData.desiredSelectNumber < 1) {
+      setAutoSelectError("Please enter a valid number of candidates to select.");
+      return;
+    }
+    if (!autoSelectData.letterExpiry) {
+      setAutoSelectError("Letter expiry date is required.");
+      return;
+    }
+
+    setAutoSelectLoading(true);
+    try {
+      const token = localStorage.getItem("token");
+      const response = await fetch(`http://localhost:8080/api/jobs/${jobId}/auto-select`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          offerLetter: autoSelectData.offerLetter,
+          desiredSelectNumber: parseInt(autoSelectData.desiredSelectNumber),
+          letterExpiry: autoSelectData.letterExpiry
+        }),
+      });
+
+      if (response.ok) {
+        setShowAutoSelect(false);
+        alert("Auto-select process started successfully!");
+        // Refresh job data to show updated status
+        await fetchJobApplicants();
+      } else {
+        const errorData = await response.text();
+        setAutoSelectError(`Failed to start auto-select: ${errorData || 'Unknown error'}`);
+      }
+    } catch (error) {
+      console.error("Error starting auto-select:", error);
+      setAutoSelectError("Error starting auto-select process.");
+    } finally {
+      setAutoSelectLoading(false);
+    }
   };
 
     // Handle reject applicant
@@ -413,28 +487,40 @@ export default function JobApplicants() {
             </p>
           </div>
           
-          {/* Section Tabs */}
-          <div className="flex gap-2 p-1 bg-white/60 dark:bg-slate-800/60 backdrop-blur rounded-full border border-slate-300/60 dark:border-slate-700/60">
-            {[
-              { key: 'applicants', label: 'Applicants', icon: Users },
-              { key: 'selected', label: 'Selected', icon: CheckCircle },
-              { key: 'rejected', label: 'Rejected', icon: XCircle }
-            ].map(({ key, label, icon: Icon }) => (
-              <Button
-                key={key}
-                variant={section === key ? "default" : "ghost"}
-                size="sm"
-                onClick={() => setSection(key)}
-                className={`rounded-full text-sm transition-all duration-200 ${
-                  section === key 
-                    ? 'bg-teal-600 hover:bg-teal-700 text-white shadow-sm' 
-                    : 'text-slate-600 dark:text-slate-400 hover:text-teal-600 dark:hover:text-teal-400'
-                }`}
-              >
-                <Icon className="h-4 w-4 mr-2" />
-                {label}
-              </Button>
-            ))}
+          <div className="flex flex-col sm:flex-row gap-4">
+            {/* Auto-select Button */}
+            <Button
+              onClick={handleAutoSelectClick}
+              className="bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white shadow-lg hover:shadow-xl transition-all duration-200 rounded-full"
+              disabled={!job?.applicantIds?.length}
+            >
+              <Zap className="h-4 w-4 mr-2" />
+              Auto-Select
+            </Button>
+            
+            {/* Section Tabs */}
+            <div className="flex gap-2 p-1 bg-white/60 dark:bg-slate-800/60 backdrop-blur rounded-full border border-slate-300/60 dark:border-slate-700/60">
+              {[
+                { key: 'applicants', label: 'Applicants', icon: Users },
+                { key: 'selected', label: 'Selected', icon: CheckCircle },
+                { key: 'rejected', label: 'Rejected', icon: XCircle }
+              ].map(({ key, label, icon: Icon }) => (
+                <Button
+                  key={key}
+                  variant={section === key ? "default" : "ghost"}
+                  size="sm"
+                  onClick={() => setSection(key)}
+                  className={`rounded-full text-sm transition-all duration-200 ${
+                    section === key 
+                      ? 'bg-teal-600 hover:bg-teal-700 text-white shadow-sm' 
+                      : 'text-slate-600 dark:text-slate-400 hover:text-teal-600 dark:hover:text-teal-400'
+                  }`}
+                >
+                  <Icon className="h-4 w-4 mr-2" />
+                  {label}
+                </Button>
+              ))}
+            </div>
           </div>
         </div>
 
@@ -734,6 +820,123 @@ export default function JobApplicants() {
                       type="button" 
                       variant="outline"
                       onClick={() => setShowSchedule(false)}
+                      className="flex-1 bg-white/60 dark:bg-slate-700/60 border-slate-300/60 dark:border-slate-600/60 text-slate-700 dark:text-slate-300"
+                    >
+                      Cancel
+                    </Button>
+                  </div>
+                </form>
+              </Dialog.Panel>
+            </div>
+          </Dialog>
+        )}
+
+        {/* Auto-Select Modal */}
+        {showAutoSelect && (
+          <Dialog open={showAutoSelect} onClose={() => setShowAutoSelect(false)} className="fixed z-50 inset-0 overflow-y-auto">
+            <div className="flex items-center justify-center min-h-screen bg-black/50 backdrop-blur-sm">
+              <Dialog.Panel className={`${subtleCard} p-6 rounded-2xl shadow-xl w-full max-w-lg m-4`}>
+                <form onSubmit={handleAutoSelectSubmit} className="space-y-6">
+                  <div className="text-center mb-6">
+                    <div className="w-16 h-16 bg-gradient-to-br from-amber-400 to-orange-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <Zap className="h-8 w-8 text-white" />
+                    </div>
+                    <h2 className="text-2xl font-semibold text-slate-800 dark:text-slate-100 mb-2">Auto-Select Candidates</h2>
+                    <p className="text-sm text-slate-600 dark:text-slate-400">Configure automatic candidate selection process</p>
+                  </div>
+                  
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">
+                        <FileText className="h-4 w-4 inline mr-2" />
+                        Offer Letter Content
+                      </label>
+                      <textarea
+                        value={autoSelectData.offerLetter}
+                        onChange={e => setAutoSelectData(prev => ({ ...prev, offerLetter: e.target.value }))}
+                        rows={4}
+                        placeholder="Enter the offer letter content that will be sent to selected candidates..."
+                        className="w-full p-3 rounded-xl bg-white/60 dark:bg-slate-800/60 text-slate-800 dark:text-slate-200 border border-slate-300/60 dark:border-slate-600/60 focus:border-amber-500 dark:focus:border-amber-400 focus:outline-none focus:ring-2 focus:ring-amber-500/20 dark:focus:ring-amber-400/20 transition-colors resize-none"
+                        required
+                      />
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">
+                        <Target className="h-4 w-4 inline mr-2" />
+                        Number of Candidates to Select
+                      </label>
+                      <input
+                        type="number"
+                        min="1"
+                        max="50"
+                        value={autoSelectData.desiredSelectNumber}
+                        onChange={e => setAutoSelectData(prev => ({ ...prev, desiredSelectNumber: e.target.value }))}
+                        placeholder="e.g., 5"
+                        className="w-full p-3 rounded-xl bg-white/60 dark:bg-slate-800/60 text-slate-800 dark:text-slate-200 border border-slate-300/60 dark:border-slate-600/60 focus:border-amber-500 dark:focus:border-amber-400 focus:outline-none focus:ring-2 focus:ring-amber-500/20 dark:focus:ring-amber-400/20 transition-colors"
+                        required
+                      />
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">
+                        <Calendar className="h-4 w-4 inline mr-2" />
+                        Offer Letter Expiry Date
+                      </label>
+                      <input
+                        type="date"
+                        value={autoSelectData.letterExpiry}
+                        onChange={e => setAutoSelectData(prev => ({ ...prev, letterExpiry: e.target.value }))}
+                        min={new Date().toISOString().split('T')[0]}
+                        className="w-full p-3 rounded-xl bg-white/60 dark:bg-slate-800/60 text-slate-800 dark:text-slate-200 border border-slate-300/60 dark:border-slate-600/60 focus:border-amber-500 dark:focus:border-amber-400 focus:outline-none focus:ring-2 focus:ring-amber-500/20 dark:focus:ring-amber-400/20 transition-colors"
+                        required
+                      />
+                    </div>
+                  </div>
+                  
+                  {autoSelectError && (
+                    <div className="p-4 bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-400/30 rounded-xl">
+                      <p className="text-sm text-red-700 dark:text-red-400">{autoSelectError}</p>
+                    </div>
+                  )}
+                  
+                  <div className="bg-amber-50/60 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-400/30 rounded-xl p-4">
+                    <div className="flex items-start gap-3">
+                      <Zap className="h-5 w-5 text-amber-600 dark:text-amber-400 mt-0.5 flex-shrink-0" />
+                      <div className="text-sm text-amber-800 dark:text-amber-200">
+                        <p className="font-medium mb-1">How Auto-Select Works:</p>
+                        <ul className="text-xs space-y-1 text-amber-700 dark:text-amber-300">
+                          <li>• Candidates will be automatically ranked and selected</li>
+                          <li>• Offer letters will be sent to top candidates</li>
+                          <li>• Process will start immediately after confirmation</li>
+                        </ul>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="flex gap-3 pt-2">
+                    <Button 
+                      type="submit" 
+                      disabled={autoSelectLoading}
+                      className="flex-1 bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white"
+                    >
+                      {autoSelectLoading ? (
+                        <>
+                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                          Processing...
+                        </>
+                      ) : (
+                        <>
+                          <Zap className="h-4 w-4 mr-2" />
+                          Start Auto-Select
+                        </>
+                      )}
+                    </Button>
+                    <Button 
+                      type="button" 
+                      variant="outline"
+                      onClick={() => setShowAutoSelect(false)}
+                      disabled={autoSelectLoading}
                       className="flex-1 bg-white/60 dark:bg-slate-700/60 border-slate-300/60 dark:border-slate-600/60 text-slate-700 dark:text-slate-300"
                     >
                       Cancel
