@@ -43,13 +43,13 @@ public class JobCandidateController {
         }
     }
 
-    @GetMapping("/profile/{profileId}/processing")
-    public ResponseEntity<List<JobCandidateResponse>> getProcessingCandidatesByProfileId(@PathVariable Long profileId) {
+    @GetMapping("/profile/{profileId}/active")
+    public ResponseEntity<List<JobCandidateResponse>> getActiveCandidatesByProfileId(@PathVariable Long profileId) {
         try {
-            List<JobCandidateResponse> responses = jobCandidateService.getProcessingCandidatesByProfileId(profileId);
+            List<JobCandidateResponse> responses = jobCandidateService.getActiveCandidatesByProfileId(profileId);
             return ResponseEntity.ok(responses);
         } catch (Exception e) {
-            log.error("Error fetching processing candidates for profile: " + profileId, e);
+            log.error("Error fetching active candidates (PROCESSING, ACCEPTED, REJECTED) for profile: " + profileId, e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }

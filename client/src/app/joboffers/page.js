@@ -71,8 +71,8 @@ function JobOffers() {
       const profileData = await profileRes.json();
       setProfile(profileData);
 
-      // Fetch processing job candidates for this profile
-      const candidatesRes = await fetch(`http://localhost:8080/api/job-candidates/profile/${profileData.id}/processing`, {
+      // Fetch active job candidates (PROCESSING, ACCEPTED, REJECTED) for this profile
+      const candidatesRes = await fetch(`http://localhost:8080/api/job-candidates/profile/${profileData.id}/active`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -280,7 +280,7 @@ function JobOffers() {
             {profile && (
               <p className="text-slate-600 dark:text-slate-300 text-sm md:text-base flex items-center gap-2">
                 <span className="inline-flex h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-                Processing opportunities for: <span className="font-semibold text-slate-800 dark:text-slate-100">{profile.firstName} {profile.lastName}</span>
+                Active job applications for: <span className="font-semibold text-slate-800 dark:text-slate-100">{profile.firstName} {profile.lastName}</span>
               </p>
             )}
           </div>

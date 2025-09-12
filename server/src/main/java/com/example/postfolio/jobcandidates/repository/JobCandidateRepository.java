@@ -14,6 +14,7 @@ public interface JobCandidateRepository extends JpaRepository<JobCandidate, Long
     List<JobCandidate> findByProfileId(Long profileId);
     List<JobCandidate> findByStatus(CandidateStatus status);
     List<JobCandidate> findByProfileIdAndStatus(Long profileId, CandidateStatus status);
+    List<JobCandidate> findByProfileIdAndStatusIn(Long profileId, List<CandidateStatus> statuses);
     Optional<JobCandidate> findByJobIdAndProfileId(Long jobId, Long profileId);
     List<JobCandidate> findByJobIdAndStatus(Long jobId, CandidateStatus status);
 }

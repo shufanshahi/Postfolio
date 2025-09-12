@@ -47,8 +47,15 @@ public class JobCandidateServiceImpl implements JobCandidateService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<JobCandidateResponse> getProcessingCandidatesByProfileId(Long profileId) {
-        return jobCandidateRepository.findByProfileIdAndStatus(profileId, CandidateStatus.PROCESSING)
+    public List<JobCandidateResponse> getActiveCandidatesByProfileId(Long profileId) {
+        // Define the statuses we want to include: PROCESSING, ACCEPTED, REJECTED
+        List<CandidateStatus> activeStatuses = List.of(
+            CandidateStatus.PROCESSING,
+            CandidateStatus.ACCEPTED,
+            CandidateStatus.REJECTED
+        );
+        
+        return jobCandidateRepository.findByProfileIdAndStatusIn(profileId, activeStatuses)
                 .stream()
                 .map(this::mapToResponse)
                 .collect(Collectors.toList());
