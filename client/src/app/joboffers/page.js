@@ -302,7 +302,23 @@ function JobOffers() {
     try {
       const token = localStorage.getItem("token");
       
-      // Call the job candidate status update endpoint with proceed: true for rejection
+      // Step 1: Fetch job details to get the expiryInterval
+      const jobResponse = await fetch(`http://localhost:8080/api/jobs/employer/ajob/${jobId}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (!jobResponse.ok) {
+        alert('Failed to fetch job details. Please try again.');
+        return;
+      }
+
+      const jobData = await jobResponse.json();
+      const { expiryInterval } = jobData;
+      
+      // Step 2: Call the job candidate status update endpoint with proceed: true for rejection
       const statusResponse = await fetch(`http://localhost:8080/api/job-candidates/job/${jobId}/profile/${profile.id}/status`, {
         method: 'PUT',
         headers: {
@@ -311,7 +327,8 @@ function JobOffers() {
         },
         body: JSON.stringify({
           status: 'REJECTED',
-          proceed: true
+          proceed: true,
+          interval: expiryInterval
         })
       });
 
