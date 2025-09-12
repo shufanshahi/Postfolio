@@ -41,6 +41,7 @@ function JobOffers() {
   const [profile, setProfile] = useState(null);
   const [jobCandidates, setJobCandidates] = useState([]);
   const [jobDetails, setJobDetails] = useState({});
+  const [employerProfiles, setEmployerProfiles] = useState({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [filterStatus, setFilterStatus] = useState('All');
@@ -88,6 +89,8 @@ function JobOffers() {
         
         // Fetch job details for each candidate
         const jobDetailsMap = {};
+        const employerProfilesMap = {};
+        
         for (const candidate of candidatesData) {
           try {
             const jobRes = await fetch(`http://localhost:8080/api/jobs/employer/ajob/${candidate.jobId}`, {
@@ -100,6 +103,32 @@ function JobOffers() {
             if (jobRes.ok) {
               const jobData = await jobRes.json();
               jobDetailsMap[candidate.jobId] = jobData;
+              
+              // Fetch employer profile if employerId exists
+              if (jobData.employerId && !employerProfilesMap[jobData.employerId]) {
+                try {
+                  const employerRes = await fetch(`http://localhost:8080/api/profile/${jobData.employerId}`, {
+                    headers: {
+                      'Authorization': `Bearer ${token}`,
+                      'Content-Type': 'application/json'
+                    }
+                  });
+                  
+                  if (employerRes.ok) {
+                    const employerData = await employerRes.json();
+                    employerProfilesMap[jobData.employerId] = employerData;
+                  } else {
+                    employerProfilesMap[jobData.employerId] = {
+                      name: 'Company not available'
+                    };
+                  }
+                } catch (employerErr) {
+                  console.warn(`Failed to fetch employer profile for ${jobData.employerId}:`, employerErr);
+                  employerProfilesMap[jobData.employerId] = {
+                    name: 'Company not available'
+                  };
+                }
+              }
             } else {
               // Fallback if job details can't be fetched
               jobDetailsMap[candidate.jobId] = {
@@ -120,6 +149,7 @@ function JobOffers() {
           }
         }
         setJobDetails(jobDetailsMap);
+        setEmployerProfiles(employerProfilesMap);
       }
     } catch (err) {
       console.error("Error fetching job offers:", err);
@@ -169,6 +199,19 @@ function JobOffers() {
         {config.text}
       </Badge>
     );
+  };
+
+  const getCompanyName = (jobId) => {
+    const job = jobDetails[jobId];
+    if (!job) return 'Company not available';
+    
+    // If job has employerId, get employer's name from employerProfiles
+    if (job.employerId && employerProfiles[job.employerId]) {
+      return employerProfiles[job.employerId].name || 'Company not available';
+    }
+    
+    // Fallback to job's company field if no employerId or employer profile
+    return job.company || 'Company not available';
   };
 
   const handleViewJob = (jobId) => {
@@ -457,12 +500,10 @@ function JobOffers() {
                                 <Briefcase className="h-3 w-3" />
                                 {jobDetails[candidate.jobId]?.position || 'Position not available'}
                               </p>
-                              {jobDetails[candidate.jobId]?.company && (
-                                <p className="text-slate-600 dark:text-slate-400 text-sm flex items-center gap-1">
-                                  <Building className="h-3 w-3" />
-                                  {jobDetails[candidate.jobId].company}
-                                </p>
-                              )}
+                              <p className="text-slate-600 dark:text-slate-400 text-sm flex items-center gap-1">
+                                <Building className="h-3 w-3" />
+                                {getCompanyName(candidate.jobId)}
+                              </p>
                             </div>
                             
                             <div className="flex items-center gap-6 text-sm mb-3">
