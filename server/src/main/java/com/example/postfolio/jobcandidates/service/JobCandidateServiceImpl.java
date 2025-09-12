@@ -42,6 +42,23 @@ public class JobCandidateServiceImpl implements JobCandidateService {
                 .collect(Collectors.toList());
     }
 
+    @Override
+    public List<JobCandidateResponse> activateAllCandidatesForJob(Long jobId) {
+        // Find all candidates for the specific job
+        List<JobCandidate> candidates = jobCandidateRepository.findByJobId(jobId);
+        
+        // Update status to ON for all candidates
+        candidates.forEach(candidate -> candidate.setStatus(CandidateStatus.ON));
+        
+        // Save all updated candidates
+        List<JobCandidate> updatedCandidates = jobCandidateRepository.saveAll(candidates);
+        
+        // Return the updated candidates as responses
+        return updatedCandidates.stream()
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
+    }
+
     private JobCandidateResponse mapToResponse(JobCandidate jobCandidate) {
         JobCandidateResponse response = new JobCandidateResponse();
         response.setId(jobCandidate.getId());

@@ -40,4 +40,15 @@ public class JobCandidateController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
+
+    @PutMapping("/job/{jobId}/activate")
+    public ResponseEntity<List<JobCandidateResponse>> activateAllCandidatesForJob(@PathVariable Long jobId) {
+        try {
+            List<JobCandidateResponse> responses = jobCandidateService.activateAllCandidatesForJob(jobId);
+            return ResponseEntity.ok(responses);
+        } catch (Exception e) {
+            log.error("Error activating candidates for job: " + jobId, e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
 }

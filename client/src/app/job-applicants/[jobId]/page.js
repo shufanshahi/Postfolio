@@ -114,6 +114,21 @@ export default function JobApplicants() {
     setAutoSelectLoading(true);
     try {
       const token = localStorage.getItem("token");
+      
+      // First, activate all candidates for this job
+      const activateResponse = await fetch(`http://localhost:8080/api/job-candidates/job/${jobId}/activate`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!activateResponse.ok) {
+        throw new Error("Failed to activate candidates");
+      }
+
+      // Then proceed with auto-select
       const response = await fetch(`http://localhost:8080/api/jobs/${jobId}/auto-select`, {
         method: "POST",
         headers: {
