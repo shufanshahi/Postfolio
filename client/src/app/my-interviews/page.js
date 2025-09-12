@@ -14,7 +14,9 @@ import {
   User,
   Building,
   ArrowLeft,
-  Loader2
+  Loader2,
+  Map,
+  Plus
 } from "lucide-react";
 
 function MyInterviews() {
@@ -24,6 +26,8 @@ function MyInterviews() {
   const [interviews, setInterviews] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [roadmapStatus, setRoadmapStatus] = useState({}); // Track roadmap status for each interview
+  const [creatingRoadmap, setCreatingRoadmap] = useState(null); // Track which roadmap is being created
 
   const fetchProfileAndInterviews = useCallback(async () => {
     setLoading(true);
@@ -61,6 +65,9 @@ function MyInterviews() {
       } else {
         const interviewsData = await interviewsRes.json();
         setInterviews(interviewsData);
+
+        // Check roadmap status for each interview
+        await checkRoadmapStatus(interviewsData, profileData.id, token);
       }
     } catch (err) {
       console.error("Error fetching interviews:", err);
@@ -135,6 +142,104 @@ function MyInterviews() {
   const handleViewDetails = (interviewId) => {
     // Could redirect to a detailed interview page
     console.log("View details for interview:", interviewId);
+  };
+
+  const checkRoadmapStatus = async (interviewsData, profileId, token) => {
+    const statusMap = {};
+
+    for (const interview of interviewsData) {
+      try {
+        const roadmapRes = await fetch(
+          `http://localhost:8080/api/roadmaps/check/${interview.jobId}/${profileId}`,
+          {
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json'
+            }
+          }
+        );
+
+        if (roadmapRes.ok) {
+          const data = await roadmapRes.json();
+          statusMap[`${interview.jobId}-${profileId}`] = data.exists;
+        }
+      } catch (error) {
+        console.error("Error checking roadmap status:", error);
+        statusMap[`${interview.jobId}-${profileId}`] = false;
+      }
+    }
+
+    setRoadmapStatus(statusMap);
+  };
+
+  const handleCreateRoadmap = async (interview) => {
+    const roadmapKey = `${interview.jobId}-${interview.profileId}`;
+    setCreatingRoadmap(roadmapKey);
+
+    try {
+      const token = localStorage.getItem("token");
+      const roadmapData = {
+        jobId: interview.jobId,
+        profileId: interview.profileId,
+        interviewDate: interview.schedule,
+        title: `Interview Preparation Roadmap - Job ${interview.jobId}`,
+        description: `Structured learning path for the upcoming interview`
+      };
+
+      const response = await fetch('http://localhost:8080/api/roadmaps', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(roadmapData)
+      });
+
+      if (response.ok) {
+        const createdRoadmap = await response.json();
+        // Update roadmap status
+        setRoadmapStatus(prev => ({
+          ...prev,
+          [roadmapKey]: true
+        }));
+
+        // Redirect to roadmap view
+        router.push(`/roadmap/${createdRoadmap.id}`);
+      } else {
+        const errorData = await response.json();
+        alert(`Failed to create roadmap: ${errorData.error || 'Unknown error'}`);
+      }
+    } catch (error) {
+      console.error("Error creating roadmap:", error);
+      alert("Error creating roadmap. Please try again.");
+    } finally {
+      setCreatingRoadmap(null);
+    }
+  };
+
+  const handleViewRoadmap = async (interview) => {
+    try {
+      const token = localStorage.getItem("token");
+      const roadmapRes = await fetch(
+        `http://localhost:8080/api/roadmaps/job/${interview.jobId}/profile/${interview.profileId}`,
+        {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+
+      if (roadmapRes.ok) {
+        const roadmap = await roadmapRes.json();
+        router.push(`/roadmap/${roadmap.id}`);
+      } else {
+        alert("Failed to load roadmap. Please try again.");
+      }
+    } catch (error) {
+      console.error("Error loading roadmap:", error);
+      alert("Error loading roadmap. Please try again.");
+    }
   };
 
   if (loading) {
@@ -301,6 +406,36 @@ function MyInterviews() {
                             Join
                           </Button>
                         )}
+
+                        {/* Roadmap Button */}
+                        {roadmapStatus[`${interview.jobId}-${interview.profileId}`] ? (
+                          <Button
+                            size="sm"
+                            onClick={() => handleViewRoadmap(interview)}
+                            className="bg-green-600 hover:bg-green-700"
+                          >
+                            <Map className="h-4 w-4 mr-1" />
+                            View Roadmap
+                          </Button>
+                        ) : (
+                          <Button
+                            size="sm"
+                            onClick={() => handleCreateRoadmap(interview)}
+                            disabled={creatingRoadmap === `${interview.jobId}-${interview.profileId}`}
+                            className="bg-purple-600 hover:bg-purple-700 disabled:opacity-50"
+                          >
+                            {creatingRoadmap === `${interview.jobId}-${interview.profileId}` ? (
+                              <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+                            ) : (
+                              <Plus className="h-4 w-4 mr-1" />
+                            )}
+                            {creatingRoadmap === `${interview.jobId}-${interview.profileId}`
+                              ? 'Creating...'
+                              : 'Create Roadmap'
+                            }
+                          </Button>
+                        )}
+
                         <Button
                           variant="outline"
                           size="sm"
