@@ -46,7 +46,7 @@ public class JobCandidateServiceImpl implements JobCandidateService {
     }
 
     @Override
-    public List<JobCandidateResponse> activateAllCandidatesForJob(Long jobId, Integer desiredSelectNumber) {
+    public List<JobCandidateResponse> activateAllCandidatesForJob(Long jobId, Integer desiredSelectNumber, LocalDate expireDate) {
         // Find all candidates for the specific job
         List<JobCandidate> candidates = jobCandidateRepository.findByJobId(jobId);
         
@@ -72,6 +72,10 @@ public class JobCandidateServiceImpl implements JobCandidateService {
             if (i < numberOfCandidatesToProcess) {
                 // Top candidates (highest scores) set to PROCESSING
                 candidate.setStatus(CandidateStatus.PROCESSING);
+                // Set expire date for PROCESSING candidates
+                if (expireDate != null) {
+                    candidate.setExpireDate(expireDate);
+                }
             } else {
                 // Remaining candidates set to ON
                 candidate.setStatus(CandidateStatus.ON);

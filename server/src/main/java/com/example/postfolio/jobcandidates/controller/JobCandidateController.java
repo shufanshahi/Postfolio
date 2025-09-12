@@ -49,7 +49,7 @@ public class JobCandidateController {
             @RequestBody ActivateCandidatesRequest request) {
         try {
             List<JobCandidateResponse> responses = jobCandidateService.activateAllCandidatesForJob(
-                jobId, request.getDesiredSelectNumber());
+                jobId, request.getDesiredSelectNumber(), request.getExpireDate());
             return ResponseEntity.ok(responses);
         } catch (Exception e) {
             log.error("Error activating candidates for job: " + jobId, e);

@@ -123,7 +123,8 @@ export default function JobApplicants() {
           Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
-          desiredSelectNumber: parseInt(autoSelectData.desiredSelectNumber)
+          desiredSelectNumber: parseInt(autoSelectData.desiredSelectNumber),
+          expireDate: autoSelectData.letterExpiry
         }),
       });
 
