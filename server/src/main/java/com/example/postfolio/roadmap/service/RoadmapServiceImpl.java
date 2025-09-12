@@ -38,7 +38,7 @@ public class RoadmapServiceImpl implements RoadmapService {
     private final JobService jobService;
     private final ObjectMapper objectMapper;
     private final RestTemplate restTemplate = new RestTemplate();
-    
+
     @Value("${ai.service.url:http://localhost:8081}")
     private String aiServiceUrl;
 
@@ -151,7 +151,7 @@ public class RoadmapServiceImpl implements RoadmapService {
             // Call AI service to generate roadmap
             List<RoadmapItem> roadmapItems = generateAIRoadmapItems(roadmap, job, totalDays);
             roadmapItemRepository.saveAll(roadmapItems);
-            
+
         } catch (Exception e) {
             log.error("Failed to generate AI roadmap, falling back to basic roadmap: ", e);
             // Fallback to basic roadmap generation
@@ -173,25 +173,25 @@ public class RoadmapServiceImpl implements RoadmapService {
             aiRequest.put("location", job.getLocation());
             aiRequest.put("interviewDate", roadmap.getInterviewDate().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME));
             aiRequest.put("daysUntilInterview", (int) totalDays);
-            
+
             // Set up HTTP headers
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_JSON);
             HttpEntity<Map<String, Object>> entity = new HttpEntity<>(aiRequest, headers);
-            
+
             // Call AI service
             String aiServiceEndpoint = aiServiceUrl + "/api/ai/generate-roadmap";
             log.info("Calling AI service at: {}", aiServiceEndpoint);
-            
+
             ResponseEntity<JsonNode> response = restTemplate.postForEntity(
-                aiServiceEndpoint, entity, JsonNode.class);
-                
+                    aiServiceEndpoint, entity, JsonNode.class);
+
             if (response.getStatusCode() == HttpStatus.OK && response.getBody() != null) {
                 return parseAIRoadmapResponse(response.getBody(), roadmap);
             } else {
                 throw new RuntimeException("AI service returned unsuccessful response");
             }
-            
+
         } catch (Exception e) {
             log.error("Error calling AI service for roadmap generation: ", e);
             throw e;
@@ -200,34 +200,34 @@ public class RoadmapServiceImpl implements RoadmapService {
 
     private List<RoadmapItem> parseAIRoadmapResponse(JsonNode aiResponse, Roadmap roadmap) {
         List<RoadmapItem> roadmapItems = new ArrayList<>();
-        
+
         try {
             if (aiResponse.has("success") && !aiResponse.get("success").asBoolean()) {
-                throw new RuntimeException("AI service reported failure: " + 
-                    aiResponse.get("errorMessage").asText());
+                throw new RuntimeException("AI service reported failure: " +
+                        aiResponse.get("errorMessage").asText());
             }
-            
+
             JsonNode itemsArray = aiResponse.get("items");
             if (itemsArray != null && itemsArray.isArray()) {
                 for (JsonNode itemNode : itemsArray) {
                     RoadmapItem item = new RoadmapItem();
                     item.setRoadmap(roadmap);
-                    
+
                     // Parse date
                     String dateStr = itemNode.get("date").asText();
                     LocalDate itemDate = LocalDate.parse(dateStr);
                     item.setDayDate(itemDate);
-                    
+
                     // Parse type
                     String typeStr = itemNode.get("type").asText();
                     item.setItemType(RoadmapItemType.valueOf(typeStr));
-                    
+
                     // Set basic fields
                     item.setTitle(itemNode.get("title").asText());
                     item.setDescription(itemNode.get("description").asText());
                     item.setEstimatedHours(itemNode.get("estimatedHours").asInt());
                     item.setIsCompleted(false);
-                    
+
                     // Parse resources
                     JsonNode resourcesNode = itemNode.get("resources");
                     if (resourcesNode != null && resourcesNode.isArray()) {
@@ -235,15 +235,15 @@ public class RoadmapServiceImpl implements RoadmapService {
                         for (JsonNode resourceNode : resourcesNode) {
                             resources.add(resourceNode.asText());
                         }
-                        
+
                         // Separate resources by type (basic categorization)
                         List<String> videoLinks = new ArrayList<>();
                         List<String> websiteLinks = new ArrayList<>();
                         List<String> otherResources = new ArrayList<>();
-                        
+
                         for (String resource : resources) {
-                            if (resource.toLowerCase().contains("youtube") || 
-                                resource.toLowerCase().contains("video")) {
+                            if (resource.toLowerCase().contains("youtube") ||
+                                    resource.toLowerCase().contains("video")) {
                                 videoLinks.add(resource);
                             } else if (resource.startsWith("http")) {
                                 websiteLinks.add(resource);
@@ -251,28 +251,28 @@ public class RoadmapServiceImpl implements RoadmapService {
                                 otherResources.add(resource);
                             }
                         }
-                        
+
                         item.setVideoLinks(convertListToJson(videoLinks));
                         item.setWebsiteLinks(convertListToJson(websiteLinks));
                         item.setResourceLinks(convertListToJson(otherResources));
                     }
-                    
+
                     roadmapItems.add(item);
                 }
             }
-            
+
         } catch (Exception e) {
             log.error("Error parsing AI roadmap response: ", e);
             throw new RuntimeException("Failed to parse AI roadmap response", e);
         }
-        
+
         return roadmapItems;
     }
 
     private void generateBasicRoadmapItems(Roadmap roadmap, Job job, long totalDays) {
         LocalDate startDate = LocalDate.now();
         LocalDate interviewDate = roadmap.getInterviewDate().toLocalDate();
-        
+
         List<RoadmapItem> roadmapItems = new ArrayList<>();
 
         // Parse job skills and requirements

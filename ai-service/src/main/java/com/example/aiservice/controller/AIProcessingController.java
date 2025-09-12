@@ -83,7 +83,7 @@ public class AIProcessingController {
 
     @PostMapping("/generate-roadmap")
     public ResponseEntity<RoadmapGenerationResponse> generateRoadmap(@RequestBody RoadmapGenerationRequest request) {
-        log.info("Generating AI-powered roadmap for job {} and profile {}", 
+        log.info("Generating AI-powered roadmap for job {} and profile {}",
                 request.getJobId(), request.getProfileId());
         RoadmapGenerationResponse response = roadmapGenerationAIService.generateRoadmap(request);
         return ResponseEntity.ok(response);

@@ -24,14 +24,14 @@ public class RoadmapGenerationAIService {
 
     public RoadmapGenerationResponse generateRoadmap(RoadmapGenerationRequest request) {
         try {
-            log.info("Generating AI-powered roadmap for job {} and profile {}", 
+            log.info("Generating AI-powered roadmap for job {} and profile {}",
                     request.getJobId(), request.getProfileId());
 
             String prompt = buildRoadmapPrompt(request);
             String aiResponse = geminiClient.generateContent(prompt);
-            
+
             return parseAIResponse(aiResponse, request);
-            
+
         } catch (Exception e) {
             log.error("Error generating roadmap with AI: ", e);
             return RoadmapGenerationResponse.builder()
@@ -45,11 +45,12 @@ public class RoadmapGenerationAIService {
 
     private String buildRoadmapPrompt(RoadmapGenerationRequest request) {
         StringBuilder prompt = new StringBuilder();
-        
+
         prompt.append("You are an expert career counselor and technical interview coach. ");
         prompt.append("Create a comprehensive, day-by-day preparation roadmap for a job interview. ");
-        prompt.append("Return your response ONLY as a valid JSON object (no markdown, no backticks, no explanations).\n\n");
-        
+        prompt.append(
+                "Return your response ONLY as a valid JSON object (no markdown, no backticks, no explanations).\n\n");
+
         prompt.append("Job Details:\n");
         prompt.append("- Title: ").append(request.getJobTitle()).append("\n");
         prompt.append("- Description: ").append(request.getJobDescription()).append("\n");
@@ -59,14 +60,14 @@ public class RoadmapGenerationAIService {
         prompt.append("- Location: ").append(request.getLocation()).append("\n");
         prompt.append("- Interview Date: ").append(request.getInterviewDate()).append("\n");
         prompt.append("- Days until interview: ").append(request.getDaysUntilInterview()).append("\n\n");
-        
+
         if (request.getCandidateSkills() != null && !request.getCandidateSkills().isEmpty()) {
             prompt.append("Candidate Current Skills: ").append(request.getCandidateSkills()).append("\n");
         }
         if (request.getCandidateExperience() != null && !request.getCandidateExperience().isEmpty()) {
             prompt.append("Candidate Experience: ").append(request.getCandidateExperience()).append("\n");
         }
-        
+
         prompt.append("\nCreate a roadmap with the following JSON structure:\n");
         prompt.append("{\n");
         prompt.append("  \"title\": \"Comprehensive Interview Preparation Plan\",\n");
@@ -77,15 +78,17 @@ public class RoadmapGenerationAIService {
         prompt.append("      \"type\": \"LEARN_TOPIC\",\n");
         prompt.append("      \"title\": \"Topic Title\",\n");
         prompt.append("      \"description\": \"Detailed description of what to learn/do\",\n");
-        prompt.append("      \"resources\": [\"https://example.com/resource1\", \"Book: Title\", \"YouTube: Channel/Video\"],\n");
+        prompt.append(
+                "      \"resources\": [\"https://example.com/resource1\", \"Book: Title\", \"YouTube: Channel/Video\"],\n");
         prompt.append("      \"estimatedHours\": 4,\n");
         prompt.append("      \"priority\": \"HIGH\"\n");
         prompt.append("    }\n");
         prompt.append("  ]\n");
         prompt.append("}\n\n");
-        
+
         prompt.append("Guidelines:\n");
-        prompt.append("- Include diverse item types: LEARN_TOPIC, REVISION, PRACTICE, MOCK_INTERVIEW, BREAK_DAY, FINAL_REVIEW\n");
+        prompt.append(
+                "- Include diverse item types: LEARN_TOPIC, REVISION, PRACTICE, MOCK_INTERVIEW, BREAK_DAY, FINAL_REVIEW\n");
         prompt.append("- Provide real, useful resources (websites, courses, books, YouTube channels)\n");
         prompt.append("- Balance learning with practice and rest\n");
         prompt.append("- Estimate realistic hours per day (2-8 hours)\n");
@@ -93,10 +96,11 @@ public class RoadmapGenerationAIService {
         prompt.append("- Include coding practice, system design, behavioral questions as needed\n");
         prompt.append("- Add company research and role-specific preparation\n");
         prompt.append("- Schedule lighter days before the interview\n");
-        prompt.append("- Start from today (").append(LocalDate.now().toString()).append(") and plan up to the interview date\n\n");
-        
+        prompt.append("- Start from today (").append(LocalDate.now().toString())
+                .append(") and plan up to the interview date\n\n");
+
         prompt.append("Return ONLY the JSON object, no other text:");
-        
+
         return prompt.toString();
     }
 
@@ -114,16 +118,16 @@ public class RoadmapGenerationAIService {
                 cleanedResponse = cleanedResponse.substring(0, cleanedResponse.length() - 3);
             }
             cleanedResponse = cleanedResponse.trim();
-            
+
             // Parse the JSON response
             var jsonNode = objectMapper.readTree(cleanedResponse);
-            
+
             String title = jsonNode.get("title").asText();
             String description = jsonNode.get("description").asText();
-            
+
             List<RoadmapGenerationResponse.RoadmapItemResponse> items = new ArrayList<>();
             var itemsArray = jsonNode.get("items");
-            
+
             if (itemsArray != null && itemsArray.isArray()) {
                 for (var itemNode : itemsArray) {
                     var item = new RoadmapGenerationResponse.RoadmapItemResponse();
@@ -133,7 +137,7 @@ public class RoadmapGenerationAIService {
                     item.setDescription(itemNode.get("description").asText());
                     item.setEstimatedHours(itemNode.get("estimatedHours").asInt());
                     item.setPriority(itemNode.get("priority").asText());
-                    
+
                     // Parse resources array
                     List<String> resources = new ArrayList<>();
                     var resourcesArray = itemNode.get("resources");
@@ -143,11 +147,11 @@ public class RoadmapGenerationAIService {
                         }
                     }
                     item.setResources(resources);
-                    
+
                     items.add(item);
                 }
             }
-            
+
             return RoadmapGenerationResponse.builder()
                     .jobId(request.getJobId())
                     .profileId(request.getProfileId())
@@ -156,7 +160,7 @@ public class RoadmapGenerationAIService {
                     .items(items)
                     .success(true)
                     .build();
-                    
+
         } catch (Exception e) {
             log.error("Error parsing AI response: ", e);
             log.debug("AI Response was: {}", aiResponse);
@@ -167,14 +171,14 @@ public class RoadmapGenerationAIService {
     private RoadmapGenerationResponse createFallbackRoadmap(RoadmapGenerationRequest request) {
         // Create a simple fallback roadmap if AI parsing fails
         List<RoadmapGenerationResponse.RoadmapItemResponse> items = new ArrayList<>();
-        
+
         LocalDate currentDate = LocalDate.now();
         for (int i = 0; i < Math.min(request.getDaysUntilInterview(), 14); i++) {
             LocalDate itemDate = currentDate.plusDays(i);
-            
+
             var item = new RoadmapGenerationResponse.RoadmapItemResponse();
             item.setDate(itemDate.toString());
-            
+
             if (i == 0) {
                 item.setType("LEARN_TOPIC");
                 item.setTitle("Job Requirements Review");
@@ -204,10 +208,10 @@ public class RoadmapGenerationAIService {
                 item.setEstimatedHours(4);
                 item.setPriority("MEDIUM");
             }
-            
+
             items.add(item);
         }
-        
+
         return RoadmapGenerationResponse.builder()
                 .jobId(request.getJobId())
                 .profileId(request.getProfileId())

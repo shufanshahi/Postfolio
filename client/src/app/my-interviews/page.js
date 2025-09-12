@@ -412,7 +412,7 @@ function MyInterviews() {
                           <Button
                             size="sm"
                             onClick={() => handleViewRoadmap(interview)}
-                            className="bg-green-600 hover:bg-green-700"
+                            className="bg-gradient-to-r from-teal-500 to-teal-600 hover:from-teal-600 hover:to-teal-700 text-white shadow-lg"
                           >
                             <Map className="h-4 w-4 mr-1" />
                             View Roadmap
@@ -422,7 +422,7 @@ function MyInterviews() {
                             size="sm"
                             onClick={() => handleCreateRoadmap(interview)}
                             disabled={creatingRoadmap === `${interview.jobId}-${interview.profileId}`}
-                            className="bg-purple-600 hover:bg-purple-700 disabled:opacity-50"
+                            className="bg-gradient-to-r from-indigo-500 to-indigo-600 hover:from-indigo-600 hover:to-indigo-700 text-white disabled:opacity-50 shadow-lg"
                           >
                             {creatingRoadmap === `${interview.jobId}-${interview.profileId}` ? (
                               <Loader2 className="h-4 w-4 mr-1 animate-spin" />
