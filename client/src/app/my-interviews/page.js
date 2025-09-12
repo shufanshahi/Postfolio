@@ -8,13 +8,25 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
   Calendar,
   Clock,
   Video,
   User,
   Building,
   ArrowLeft,
-  Loader2
+  Loader2,
+  Filter,
+  ChevronDown,
+  Activity,
+  CheckCircle,
+  XCircle,
+  Play
 } from "lucide-react";
 
 function MyInterviews() {
@@ -24,6 +36,11 @@ function MyInterviews() {
   const [interviews, setInterviews] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [filterStatus, setFilterStatus] = useState('All');
+
+  // Design tokens matching dashboard
+  const gradientPanel = 'bg-gradient-to-br from-teal-50/70 via-white/50 to-indigo-50/70 dark:from-slate-800/60 dark:via-slate-800/50 dark:to-slate-800/60 backdrop-blur-xl border border-white/40 dark:border-slate-700/50 shadow-sm';
+  const subtleCard = 'bg-gradient-to-br from-teal-50/65 via-white/55 to-indigo-50/60 dark:from-slate-800/70 dark:via-slate-800/60 dark:to-slate-800/70 backdrop-blur-md border border-teal-900/5 dark:border-slate-700/60 hover:border-teal-500/30 dark:hover:border-teal-400/30 transition-colors';
 
   const fetchProfileAndInterviews = useCallback(async () => {
     setLoading(true);
@@ -76,15 +93,32 @@ function MyInterviews() {
 
   const getStatusBadge = (status) => {
     const statusConfig = {
-      PENDING: { color: "bg-yellow-600", text: "Pending" },
-      COMPLETED: { color: "bg-green-600", text: "Completed" },
-      REJECTED: { color: "bg-red-600", text: "Rejected" },
-      ONGOING: { color: "bg-blue-600", text: "Ongoing" }
+      PENDING: { 
+        color: "bg-gradient-to-r from-amber-400 to-amber-500 text-white ring-1 ring-amber-300/50", 
+        text: "Pending",
+        icon: <Clock className="h-3 w-3" />
+      },
+      COMPLETED: { 
+        color: "bg-gradient-to-r from-emerald-500 to-emerald-600 text-white ring-1 ring-emerald-400/50", 
+        text: "Completed",
+        icon: <CheckCircle className="h-3 w-3" />
+      },
+      REJECTED: { 
+        color: "bg-gradient-to-r from-red-500 to-red-600 text-white ring-1 ring-red-400/50", 
+        text: "Rejected",
+        icon: <XCircle className="h-3 w-3" />
+      },
+      ONGOING: { 
+        color: "bg-gradient-to-r from-blue-500 to-blue-600 text-white ring-1 ring-blue-400/50", 
+        text: "Ongoing",
+        icon: <Activity className="h-3 w-3" />
+      }
     };
 
     const config = statusConfig[status] || statusConfig.PENDING;
     return (
-      <Badge className={`${config.color} text-white`}>
+      <Badge className={`${config.color} rounded-full px-3 py-1.5 text-xs font-medium shadow-sm flex items-center gap-1.5`}>
+        {config.icon}
         {config.text}
       </Badge>
     );
@@ -137,14 +171,29 @@ function MyInterviews() {
     console.log("View details for interview:", interviewId);
   };
 
+  // Filter interviews based on selected status
+  const filteredInterviews = filterStatus === 'All' 
+    ? interviews 
+    : interviews.filter(interview => interview.status === filterStatus);
+
+  const filterOptions = [
+    { value: 'All', label: 'All Interviews', count: interviews.length },
+    { value: 'PENDING', label: 'Pending', count: interviews.filter(i => i.status === 'PENDING').length },
+    { value: 'ONGOING', label: 'Ongoing', count: interviews.filter(i => i.status === 'ONGOING').length },
+    { value: 'COMPLETED', label: 'Completed', count: interviews.filter(i => i.status === 'COMPLETED').length },
+    { value: 'REJECTED', label: 'Rejected', count: interviews.filter(i => i.status === 'REJECTED').length }
+  ];
+
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-900 p-6">
-        <div className="max-w-4xl mx-auto">
-          <div className="flex items-center justify-center py-12">
-            <Loader2 className="h-8 w-8 animate-spin text-white" />
-            <span className="ml-2 text-white">Loading interviews...</span>
-          </div>
+      <div className="min-h-screen relative overflow-hidden flex items-center justify-center bg-[radial-gradient(circle_at_30%_20%,theme(colors.teal.100)_0%,theme(colors.teal.50)_35%,theme(colors.white)_70%)] dark:bg-[radial-gradient(circle_at_30%_20%,oklch(0.3_0.05_210)_0%,oklch(0.22_0.025_250)_60%)]">
+        <div className="absolute inset-0 -z-10 opacity-40 [mask-image:radial-gradient(circle_at_center,white,transparent)]">
+          <div className="absolute top-10 left-1/4 h-64 w-64 bg-teal-300/30 rounded-full blur-3xl animate-pulse" />
+          <div className="absolute bottom-10 right-1/4 h-72 w-72 bg-indigo-300/30 rounded-full blur-3xl animate-pulse [animation-delay:200ms]" />
+        </div>
+        <div className="text-center animate-in fade-in zoom-in duration-500">
+          <Loader2 className="h-9 w-9 animate-spin text-teal-600 dark:text-teal-300 mx-auto mb-4" />
+          <p className="text-sm font-medium text-slate-600 dark:text-slate-300 tracking-wide">Loading your interview schedule...</p>
         </div>
       </div>
     );
@@ -152,166 +201,284 @@ function MyInterviews() {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gray-900 p-6">
-        <div className="max-w-4xl mx-auto">
-          <div className="text-red-400 text-center mb-4">{error}</div>
-          <div className="text-center">
-            <Button onClick={() => router.back()}>Go Back</Button>
-          </div>
+      <div className="min-h-screen relative overflow-hidden bg-[radial-gradient(circle_at_30%_20%,theme(colors.teal.100)_0%,theme(colors.teal.50)_35%,theme(colors.white)_70%)] dark:bg-[radial-gradient(circle_at_30%_20%,oklch(0.3_0.05_210)_0%,oklch(0.22_0.025_250)_60%)]">
+        <div className="absolute inset-0 -z-10 opacity-40 [mask-image:radial-gradient(circle_at_center,white,transparent)]">
+          <div className="absolute top-10 left-1/4 h-64 w-64 bg-teal-300/30 rounded-full blur-3xl" />
+          <div className="absolute bottom-10 right-1/4 h-72 w-72 bg-indigo-300/30 rounded-full blur-3xl" />
+        </div>
+        <div className="max-w-4xl mx-auto p-6 flex items-center justify-center min-h-screen">
+          <Card className={`${subtleCard} p-8 text-center max-w-md`}>
+            <div className="text-red-500 dark:text-red-400 mb-4 text-sm">{error}</div>
+            <Button 
+              onClick={() => router.back()}
+              className="bg-teal-600 hover:bg-teal-700 text-white rounded-full px-6"
+            >
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Go Back
+            </Button>
+          </Card>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-900 p-6">
-      <div className="max-w-4xl mx-auto space-y-6">
+    <div className="min-h-screen relative overflow-hidden">
+      <div className="pointer-events-none select-none absolute inset-0 -z-10">
+        <div className="absolute -top-24 -left-10 h-[38rem] w-[38rem] bg-gradient-to-br from-teal-200 via-teal-100 to-white dark:from-teal-600/30 dark:via-indigo-600/20 dark:to-transparent blur-3xl opacity-70" />
+        <div className="absolute top-1/3 -right-32 h-[34rem] w-[34rem] bg-gradient-to-tr from-indigo-200 via-white to-amber-100 dark:from-indigo-700/30 dark:via-transparent dark:to-teal-700/20 blur-3xl opacity-60" />
+      </div>
+      
+      <div className="max-w-7xl mx-auto py-10 px-6 space-y-10">
         {/* Header */}
-        <div className="flex items-center justify-between">
-          <div>
+        <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-6">
+          <div className="space-y-3">
             <Button
               variant="outline"
               onClick={() => router.push('/dashboard')}
-              className="mb-4 bg-gray-800 border-gray-700 text-white hover:bg-gray-700"
+              className="rounded-full border-slate-300/60 bg-white/60 backdrop-blur hover:bg-white shadow-sm text-slate-700 text-sm mb-4"
             >
               <ArrowLeft className="h-4 w-4 mr-2" />
               Back to Dashboard
             </Button>
-            <h1 className="text-3xl font-bold text-white">My Interviews</h1>
-            {profile && (
-              <p className="text-gray-400 mt-2">
-                Interview schedule for: <span className="text-white font-semibold">{profile.firstName} {profile.lastName}</span>
-                <span className="text-gray-500 ml-2">(Profile ID: {profile.id})</span>
+            <h1 className="text-4xl font-semibold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-teal-700 via-indigo-700 to-amber-600 dark:from-teal-200 dark:via-indigo-200 dark:to-amber-200">
+              My Interviews
+            </h1>
+            {/* {profile && (
+              <p className="text-slate-600 dark:text-slate-300 text-sm md:text-base flex items-center gap-2">
+                <span className="inline-flex h-2 w-2 rounded-full bg-teal-500 animate-pulse" />
+                Interview schedule for:<span className="font-semibold text-slate-800 dark:text-slate-100">{profile.firstName} {profile.lastName}</span>
+                <span className="text-slate-500 ml-2">{profile.name}</span>
               </p>
-            )}
+            )} */}
+          </div>
+          
+          {/* Filter Button */}
+          <div className="flex items-center gap-3">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button 
+                  variant="outline" 
+                  className="rounded-full border-slate-300/60 bg-white/60 backdrop-blur hover:bg-white shadow-sm text-slate-700 text-sm"
+                >
+                  <Filter className="h-4 w-4 mr-2" />
+                  {filterStatus} ({filteredInterviews.length})
+                  <ChevronDown className="h-4 w-4 ml-2" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="w-48 rounded-xl border-slate-200/60 bg-white/90 backdrop-blur-md">
+                {filterOptions.map((option) => (
+                  <DropdownMenuItem
+                    key={option.value}
+                    onClick={() => setFilterStatus(option.value)}
+                    className="flex items-center justify-between rounded-lg text-sm"
+                  >
+                    <span>{option.label}</span>
+                    <Badge variant="secondary" className="text-xs">
+                      {option.count}
+                    </Badge>
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+            <Button className="rounded-full bg-teal-600 hover:bg-teal-700 shadow-sm text-sm">
+              Refresh
+            </Button>
           </div>
         </div>
 
         {/* Statistics Cards */}
-        <div className="grid md:grid-cols-4 gap-4">
-          <Card className="bg-gray-800 border-gray-700">
-            <CardContent className="p-4">
-              <div className="text-center">
-                <div className="text-2xl font-bold text-yellow-400">
-                  {interviews.filter(i => i.status === 'PENDING').length}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          <Card className={`${subtleCard} hover:shadow-md transition-all duration-300 hover:-translate-y-0.5 rounded-2xl overflow-hidden`}>
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="p-3 bg-gradient-to-br from-amber-400 to-amber-500 rounded-xl text-white shadow-sm ring-1 ring-white/40">
+                    <Clock className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <div className="text-2xl font-bold text-slate-800 dark:text-slate-100">
+                      {interviews.filter(i => i.status === 'PENDING').length}
+                    </div>
+                    <div className="text-slate-600 dark:text-slate-400 text-sm font-medium">Pending</div>
+                  </div>
                 </div>
-                <div className="text-gray-400 text-sm">Pending</div>
               </div>
             </CardContent>
           </Card>
-          <Card className="bg-gray-800 border-gray-700">
-            <CardContent className="p-4">
-              <div className="text-center">
-                <div className="text-2xl font-bold text-blue-400">
-                  {interviews.filter(i => i.status === 'ONGOING').length}
+          
+          <Card className={`${subtleCard} hover:shadow-md transition-all duration-300 hover:-translate-y-0.5 rounded-2xl overflow-hidden`}>
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="p-3 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl text-white shadow-sm ring-1 ring-white/40">
+                    <Activity className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <div className="text-2xl font-bold text-slate-800 dark:text-slate-100">
+                      {interviews.filter(i => i.status === 'ONGOING').length}
+                    </div>
+                    <div className="text-slate-600 dark:text-slate-400 text-sm font-medium">Ongoing</div>
+                  </div>
                 </div>
-                <div className="text-gray-400 text-sm">Ongoing</div>
               </div>
             </CardContent>
           </Card>
-          <Card className="bg-gray-800 border-gray-700">
-            <CardContent className="p-4">
-              <div className="text-center">
-                <div className="text-2xl font-bold text-green-400">
-                  {interviews.filter(i => i.status === 'COMPLETED').length}
+          
+          <Card className={`${subtleCard} hover:shadow-md transition-all duration-300 hover:-translate-y-0.5 rounded-2xl overflow-hidden`}>
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="p-3 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-xl text-white shadow-sm ring-1 ring-white/40">
+                    <CheckCircle className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <div className="text-2xl font-bold text-slate-800 dark:text-slate-100">
+                      {interviews.filter(i => i.status === 'COMPLETED').length}
+                    </div>
+                    <div className="text-slate-600 dark:text-slate-400 text-sm font-medium">Completed</div>
+                  </div>
                 </div>
-                <div className="text-gray-400 text-sm">Completed</div>
               </div>
             </CardContent>
           </Card>
-          <Card className="bg-gray-800 border-gray-700">
-            <CardContent className="p-4">
-              <div className="text-center">
-                <div className="text-2xl font-bold text-white">
-                  {interviews.length}
+          
+          <Card className={`${subtleCard} hover:shadow-md transition-all duration-300 hover:-translate-y-0.5 rounded-2xl overflow-hidden`}>
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="p-3 bg-gradient-to-br from-teal-500 to-teal-600 rounded-xl text-white shadow-sm ring-1 ring-white/40">
+                    <Calendar className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <div className="text-2xl font-bold text-slate-800 dark:text-slate-100">
+                      {interviews.length}
+                    </div>
+                    <div className="text-slate-600 dark:text-slate-400 text-sm font-medium">Total</div>
+                  </div>
                 </div>
-                <div className="text-gray-400 text-sm">Total</div>
               </div>
             </CardContent>
           </Card>
         </div>
 
         {/* Interviews List */}
-        <Card className="bg-gray-800 border-gray-700">
-          <CardHeader>
-            <CardTitle className="text-white">Upcoming & Recent Interviews</CardTitle>
-            <CardDescription className="text-gray-400">
-              {interviews.length ?
-                `${interviews.length} interview(s) found` :
-                "No interviews scheduled"
-              }
-            </CardDescription>
+        <Card className={`${subtleCard} rounded-2xl shadow-sm`}>
+          <CardHeader className="pb-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="text-slate-800 dark:text-slate-100 text-xl font-semibold">
+                  {filterStatus === 'All' ? 'All Interviews' : `${filterStatus.charAt(0) + filterStatus.slice(1).toLowerCase()} Interviews`}
+                </CardTitle>
+                <CardDescription className="text-slate-600 dark:text-slate-400 text-sm mt-1">
+                  {filteredInterviews.length ?
+                    `${filteredInterviews.length} interview(s) found` :
+                    "No interviews match your filter"
+                  }
+                </CardDescription>
+              </div>
+              <Badge variant="outline" className="bg-white/60 border-slate-200/60 text-slate-700">
+                {filteredInterviews.length} results
+              </Badge>
+            </div>
           </CardHeader>
           <CardContent>
-            {interviews.length === 0 ? (
-              <div className="text-gray-400 text-center py-8">
-                <Calendar className="h-12 w-12 mx-auto mb-4 text-gray-600" />
-                <p>No interviews scheduled yet.</p>
-                <p className="text-sm">Check back later or apply to more jobs!</p>
+            {filteredInterviews.length === 0 ? (
+              <div className="text-center py-12">
+                <div className="max-w-sm mx-auto">
+                  <div className="p-4 bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-700 dark:to-slate-800 rounded-2xl mb-4 inline-block">
+                    <Calendar className="h-12 w-12 text-slate-400 dark:text-slate-500" />
+                  </div>
+                  <h3 className="text-lg font-medium text-slate-800 dark:text-slate-100 mb-2">
+                    {filterStatus === 'All' ? 'No interviews scheduled' : `No ${filterStatus.toLowerCase()} interviews`}
+                  </h3>
+                  <p className="text-slate-600 dark:text-slate-400 text-sm leading-relaxed">
+                    {filterStatus === 'All' 
+                      ? 'Check back later or apply to more jobs to get interview opportunities!' 
+                      : `Try selecting a different filter to see other interviews.`
+                    }
+                  </p>
+                </div>
               </div>
             ) : (
               <div className="space-y-4">
-                {interviews.map((interview) => (
-                  <div
+                {filteredInterviews.map((interview) => (
+                  <Card
                     key={interview.id}
-                    className="flex items-center justify-between p-4 bg-gray-700 rounded-lg border border-gray-600"
+                    className="group overflow-hidden cursor-pointer relative rounded-xl bg-white/70 dark:bg-slate-800/70 backdrop-blur-sm border border-slate-200/60 dark:border-slate-700/60 hover:border-teal-300/60 dark:hover:border-teal-400/40 transition-all duration-300 hover:shadow-md hover:-translate-y-0.5"
                   >
-                    <div className="flex items-center space-x-4">
-                      <div className="p-3 bg-gray-600 rounded-full">
-                        <Calendar className="h-4 w-4" />
-                      </div>
-                      <div>
-                        <h3 className="text-white font-medium">Interview for Job ID: {interview.jobId}</h3>
-                        <p className="text-gray-400 text-sm">
-                          <User className="h-3 w-3 inline mr-1" />
-                          Profile ID: {interview.profileId}
-                        </p>
-                        {interview.notes && (
-                          <p className="text-gray-400 text-sm">
-                            Notes: {interview.notes}
-                          </p>
-                        )}
-                        <div className="flex items-center gap-4 mt-1">
-                          <p className="text-gray-300 text-sm">
-                            <Calendar className="h-3 w-3 inline mr-1" />
-                            {new Date(interview.schedule).toLocaleDateString()}
-                          </p>
-                          <p className="text-gray-300 text-sm">
-                            <Clock className="h-3 w-3 inline mr-1" />
-                            {new Date(interview.schedule).toLocaleTimeString()}
-                          </p>
+                    <CardContent className="p-6">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-4 flex-1">
+                          <div className="p-3 bg-gradient-to-br from-teal-500 to-teal-600 rounded-xl text-white shadow-sm ring-1 ring-white/40">
+                            <Calendar className="h-5 w-5" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <h3 className="text-slate-800 dark:text-slate-100 font-semibold text-base mb-1">
+                              Interview for Job ID: {interview.jobId}
+                            </h3>
+                            <p className="text-slate-600 dark:text-slate-400 text-sm flex items-center gap-1 mb-2">
+                              <User className="h-3 w-3" />
+                              Profile ID: {interview.profileId}
+                            </p>
+                            {interview.notes && (
+                              <p className="text-slate-600 dark:text-slate-400 text-sm mb-3 p-2 bg-slate-50 dark:bg-slate-700/50 rounded-lg">
+                                <strong>Notes:</strong> {interview.notes}
+                              </p>
+                            )}
+                            <div className="flex items-center gap-6 text-sm">
+                              <p className="text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+                                <Calendar className="h-3 w-3 text-teal-600 dark:text-teal-400" />
+                                {new Date(interview.schedule).toLocaleDateString('en-US', { 
+                                  weekday: 'short', 
+                                  year: 'numeric', 
+                                  month: 'short', 
+                                  day: 'numeric' 
+                                })}
+                              </p>
+                              <p className="text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+                                <Clock className="h-3 w-3 text-teal-600 dark:text-teal-400" />
+                                {new Date(interview.schedule).toLocaleTimeString('en-US', { 
+                                  hour: '2-digit', 
+                                  minute: '2-digit' 
+                                })}
+                              </p>
+                            </div>
+                            {interview.interviewerFeedback && (
+                              <div className="mt-3 p-3 bg-gradient-to-r from-emerald-50 to-emerald-100 dark:from-emerald-900/20 dark:to-emerald-800/20 rounded-lg border border-emerald-200/60 dark:border-emerald-700/60">
+                                <p className="text-emerald-800 dark:text-emerald-300 text-sm font-medium">
+                                  <strong>Feedback:</strong> {interview.interviewerFeedback}
+                                </p>
+                              </div>
+                            )}
+                          </div>
                         </div>
-                        {interview.interviewerFeedback && (
-                          <p className="text-green-400 text-sm mt-1">
-                            Feedback: {interview.interviewerFeedback}
-                          </p>
-                        )}
+                        <div className="flex items-center space-x-4 ml-4">
+                          {getStatusBadge(interview.status)}
+                          <div className="flex space-x-2">
+                            {interview.status === 'ONGOING' && (
+                              <Button
+                                size="sm"
+                                onClick={() => handleJoinInterview(interview)}
+                                className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white rounded-full px-4 py-2 text-sm shadow-sm ring-1 ring-blue-500/50"
+                              >
+                                <Video className="h-4 w-4 mr-1.5" />
+                                Join Interview
+                              </Button>
+                            )}
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleViewDetails(interview.id)}
+                              className="rounded-full border-slate-300/60 bg-white/60 backdrop-blur hover:bg-white text-slate-700 text-sm shadow-sm"
+                            >
+                              View Details
+                            </Button>
+                          </div>
+                        </div>
                       </div>
-                    </div>
-                    <div className="flex items-center space-x-3">
-                      {getStatusBadge(interview.status)}
-                      <div className="flex space-x-2">
-                        {interview.status === 'ONGOING' && (
-                          <Button
-                            size="sm"
-                            onClick={() => handleJoinInterview(interview)}
-                            className="bg-blue-600 hover:bg-blue-700"
-                          >
-                            <Video className="h-4 w-4 mr-1" />
-                            Join
-                          </Button>
-                        )}
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleViewDetails(interview.id)}
-                          className="bg-gray-600 border-gray-500 text-white hover:bg-gray-500"
-                        >
-                          Details
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
+                    </CardContent>
+                  </Card>
                 ))}
               </div>
             )}
