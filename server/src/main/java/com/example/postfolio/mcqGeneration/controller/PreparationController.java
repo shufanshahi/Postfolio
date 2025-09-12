@@ -2,6 +2,7 @@ package com.example.postfolio.mcqGeneration.controller;
 
 import com.example.postfolio.mcqGeneration.dto.MCQGenerationRequest;
 import com.example.postfolio.mcqGeneration.dto.MCQSetResponse;
+import com.example.postfolio.mcqGeneration.service.DocumentTextExtractionService;
 import com.example.postfolio.mcqGeneration.service.MCQService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -9,7 +10,6 @@ import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 @RestController
@@ -19,6 +19,9 @@ public class PreparationController {
 
     @Autowired
     private MCQService mcqService;
+
+    @Autowired
+    private DocumentTextExtractionService documentTextExtractionService;
 
     @PostMapping("/generate-mcq")
     public ResponseEntity<MCQSetResponse> generateMCQFromDocument(
@@ -32,8 +35,8 @@ public class PreparationController {
             // Get user ID from authentication
             Long userId = getUserIdFromAuth(authentication);
 
-            // Read file content
-            String documentContent = new String(file.getBytes(), StandardCharsets.UTF_8);
+            // Extract text content from file (supports both TXT and PDF)
+            String documentContent = documentTextExtractionService.extractTextFromFile(file);
 
             // Create request with all parameters
             MCQGenerationRequest request = MCQGenerationRequest.builder()
@@ -49,10 +52,24 @@ public class PreparationController {
 
             return ResponseEntity.ok(response);
 
+        } catch (UnsupportedOperationException e) {
+            return ResponseEntity.badRequest()
+                    .body(MCQSetResponse.builder()
+                            .success(false)
+                            .message("Unsupported file type. Please upload a .txt or .pdf file.")
+                            .build());
         } catch (IOException e) {
-            return ResponseEntity.badRequest().build();
+            return ResponseEntity.badRequest()
+                    .body(MCQSetResponse.builder()
+                            .success(false)
+                            .message("Error reading file: " + e.getMessage())
+                            .build());
         } catch (Exception e) {
-            return ResponseEntity.internalServerError().build();
+            return ResponseEntity.internalServerError()
+                    .body(MCQSetResponse.builder()
+                            .success(false)
+                            .message("Internal server error occurred while processing the file")
+                            .build());
         }
     }
 
@@ -68,8 +85,8 @@ public class PreparationController {
             // Get user ID from authentication
             Long userId = getUserIdFromAuth(authentication);
 
-            // Read file content
-            String documentContent = new String(file.getBytes(), StandardCharsets.UTF_8);
+            // Extract text content from file (supports both TXT and PDF)
+            String documentContent = documentTextExtractionService.extractTextFromFile(file);
 
             // Create request with all parameters
             MCQGenerationRequest request = MCQGenerationRequest.builder()
@@ -85,10 +102,24 @@ public class PreparationController {
 
             return ResponseEntity.ok(response);
 
+        } catch (UnsupportedOperationException e) {
+            return ResponseEntity.badRequest()
+                    .body(MCQSetResponse.builder()
+                            .success(false)
+                            .message("Unsupported file type. Please upload a .txt or .pdf file.")
+                            .build());
         } catch (IOException e) {
-            return ResponseEntity.badRequest().build();
+            return ResponseEntity.badRequest()
+                    .body(MCQSetResponse.builder()
+                            .success(false)
+                            .message("Error reading file: " + e.getMessage())
+                            .build());
         } catch (Exception e) {
-            return ResponseEntity.internalServerError().build();
+            return ResponseEntity.internalServerError()
+                    .body(MCQSetResponse.builder()
+                            .success(false)
+                            .message("Internal server error occurred while processing the file")
+                            .build());
         }
     }
 

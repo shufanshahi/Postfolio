@@ -79,7 +79,7 @@ public class RoadmapGenerationAIService {
         prompt.append("      \"title\": \"Topic Title\",\n");
         prompt.append("      \"description\": \"Detailed description of what to learn/do\",\n");
         prompt.append(
-                "      \"resources\": [\"https://example.com/resource1\", \"Book: Title\", \"YouTube: Channel/Video\"],\n");
+                "      \"resources\": [\"https://www.freecodecamp.org/learn/javascript\", \"YouTube: Traversy Media - JavaScript Crash Course\", \"Book: Eloquent JavaScript by Marijn Haverbeke\"],\n");
         prompt.append("      \"estimatedHours\": 4,\n");
         prompt.append("      \"priority\": \"HIGH\"\n");
         prompt.append("    }\n");
@@ -89,13 +89,24 @@ public class RoadmapGenerationAIService {
         prompt.append("Guidelines:\n");
         prompt.append(
                 "- Include diverse item types: LEARN_TOPIC, REVISION, PRACTICE, MOCK_INTERVIEW, BREAK_DAY, FINAL_REVIEW\n");
-        prompt.append("- Provide real, useful resources (websites, courses, books, YouTube channels)\n");
+        prompt.append("- Provide REAL, WORKING URLs for resources - no placeholder or fake URLs\n");
+        prompt.append(
+                "- For YouTube videos, use actual channel names like: 'YouTube: Traversy Media - JavaScript Crash Course'\n");
+        prompt.append(
+                "- For websites, use real domains like: 'https://www.freecodecamp.org/learn/javascript-algorithms-and-data-structures/'\n");
+        prompt.append("- For books, format as: 'Book: Clean Code by Robert Martin'\n");
+        prompt.append("- For courses, format as: 'Course: Coursera - Machine Learning by Andrew Ng'\n");
+        prompt.append("- If uncertain about exact URL, provide descriptive resource names with platform\n");
+        prompt.append("- NEVER use empty arrays [] - always provide at least 2-3 meaningful resources\n");
+        prompt.append(
+                "- For MOCK_INTERVIEW items, ALWAYS suggest using our in-house platform with resources like 'Use In-House Mock Interview System', 'Practice with AI Interviewer', 'Complete Mock Technical Interview'\n");
         prompt.append("- Balance learning with practice and rest\n");
         prompt.append("- Estimate realistic hours per day (2-8 hours)\n");
         prompt.append("- Prioritize based on job requirements and candidate gaps\n");
         prompt.append("- Include coding practice, system design, behavioral questions as needed\n");
         prompt.append("- Add company research and role-specific preparation\n");
         prompt.append("- Schedule lighter days before the interview\n");
+        prompt.append("- Include at least 2-3 MOCK_INTERVIEW sessions throughout the roadmap\n");
         prompt.append("- Start from today (").append(LocalDate.now().toString())
                 .append(") and plan up to the interview date\n\n");
 

@@ -28,11 +28,14 @@ const PreparationPage = () => {
     const file = event.target.files[0];
     if (!file) return;
 
-    if (file.type === 'text/plain' || file.name.endsWith('.txt')) {
+    const isTextFile = file.type === 'text/plain' || file.name.endsWith('.txt');
+    const isPdfFile = file.type === 'application/pdf' || file.name.endsWith('.pdf');
+
+    if (isTextFile || isPdfFile) {
       setSelectedFile(file);
       setError('');
     } else {
-      setError('Please select a text file (.txt)');
+      setError('Please select a text file (.txt) or PDF file (.pdf)');
       setSelectedFile(null);
     }
   };
@@ -230,8 +233,8 @@ const PreparationPage = () => {
                       onClick={() => fileInputRef.current?.click()}
                     >
                       <Upload className="h-12 w-12 text-slate-400 mx-auto mb-4" />
-                      <p className="text-slate-600 dark:text-slate-400 mb-4 text-sm">Drag & drop your text file here, or click to browse</p>
-                      <input ref={fileInputRef} type="file" accept=".txt" onChange={handleFileSelect} className="hidden" id="fileInput" />
+                      <p className="text-slate-600 dark:text-slate-400 mb-4 text-sm">Drag & drop your text or PDF file here, or click to browse</p>
+                      <input ref={fileInputRef} type="file" accept=".txt,.pdf,text/plain,application/pdf" onChange={handleFileSelect} className="hidden" id="fileInput" />
                       <label htmlFor="fileInput" className="inline-flex items-center h-10 px-6 rounded-full bg-teal-600 hover:bg-teal-700 text-white text-sm font-medium shadow-sm cursor-pointer transition-colors">Choose File</label>
                     </div>
                     {selectedFile && (
@@ -283,8 +286,8 @@ const PreparationPage = () => {
                         key={count}
                         onClick={() => setQuestionCount(count)}
                         className={`h-11 rounded-xl text-sm font-medium transition-all ${questionCount === count
-                            ? 'bg-teal-600 text-white shadow-sm'
-                            : 'bg-white/60 dark:bg-slate-900/40 border border-teal-900/10 dark:border-slate-700/60 text-slate-700 dark:text-slate-200 hover:bg-teal-50 dark:hover:bg-slate-800/60'
+                          ? 'bg-teal-600 text-white shadow-sm'
+                          : 'bg-white/60 dark:bg-slate-900/40 border border-teal-900/10 dark:border-slate-700/60 text-slate-700 dark:text-slate-200 hover:bg-teal-50 dark:hover:bg-slate-800/60'
                           }`}
                       >
                         {count} MCQs
@@ -349,7 +352,7 @@ const PreparationPage = () => {
               <div className="relative space-y-4">
                 <h4 className="font-semibold text-indigo-800 dark:text-indigo-300 text-sm uppercase tracking-wide">How it works</h4>
                 <ul className="space-y-3 text-xs text-indigo-700 dark:text-indigo-300">
-                  {['Upload a text document or paste content', 'AI generates 25 relevant MCQs', 'Practice and get instant feedback'].map((step, i) => (
+                  {['Upload a text or PDF document or paste content', 'AI generates 25 relevant MCQs', 'Practice and get instant feedback'].map((step, i) => (
                     <li key={i} className="flex items-start gap-2">
                       <span className="h-5 w-5 rounded-full bg-teal-600 text-white flex items-center justify-center text-[11px] font-semibold shadow-sm">{i + 1}</span>
                       <span className="leading-snug flex-1">{step}</span>

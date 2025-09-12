@@ -20,11 +20,14 @@ const PreparationPage = () => {
     const file = event.target.files[0];
     if (!file) return;
 
-    if (file.type === 'text/plain' || file.name.endsWith('.txt')) {
+    const isTextFile = file.type === 'text/plain' || file.name.endsWith('.txt');
+    const isPdfFile = file.type === 'application/pdf' || file.name.endsWith('.pdf');
+
+    if (isTextFile || isPdfFile) {
       setSelectedFile(file);
       setError('');
     } else {
-      setError('Please select a text file (.txt)');
+      setError('Please select a text file (.txt) or PDF file (.pdf)');
       setSelectedFile(null);
     }
   };
@@ -184,8 +187,8 @@ const PreparationPage = () => {
                   <button
                     onClick={() => setActiveTab('upload')}
                     className={`flex-1 py-3 md:py-4 px-4 md:px-6 text-center font-medium transition-colors ${activeTab === 'upload'
-                        ? 'bg-indigo-50 text-indigo-600 border-b-2 border-indigo-600'
-                        : 'text-gray-500 hover:text-gray-700'
+                      ? 'bg-indigo-50 text-indigo-600 border-b-2 border-indigo-600'
+                      : 'text-gray-500 hover:text-gray-700'
                       }`}
                   >
                     <FileUp className="h-5 w-5 inline mr-2" />
@@ -195,8 +198,8 @@ const PreparationPage = () => {
                   <button
                     onClick={() => setActiveTab('text')}
                     className={`flex-1 py-3 md:py-4 px-4 md:px-6 text-center font-medium transition-colors ${activeTab === 'text'
-                        ? 'bg-indigo-50 text-indigo-600 border-b-2 border-indigo-600'
-                        : 'text-gray-500 hover:text-gray-700'
+                      ? 'bg-indigo-50 text-indigo-600 border-b-2 border-indigo-600'
+                      : 'text-gray-500 hover:text-gray-700'
                       }`}
                   >
                     <FileText className="h-5 w-5 inline mr-2" />
@@ -217,12 +220,12 @@ const PreparationPage = () => {
                     >
                       <Upload className="h-10 w-10 md:h-12 md:w-12 text-gray-400 mx-auto mb-3 md:mb-4" />
                       <p className="text-gray-600 mb-3 md:mb-4">
-                        Drag and drop your text file here, or click to browse
+                        Drag and drop your text or PDF file here, or click to browse
                       </p>
                       <input
                         ref={fileInputRef}
                         type="file"
-                        accept=".txt"
+                        accept=".txt,.pdf,text/plain,application/pdf"
                         onChange={handleFileSelect}
                         className="hidden"
                         id="fileInput"
@@ -299,8 +302,8 @@ const PreparationPage = () => {
                         onClick={() => setQuestionCount(count)}
                         type="button"
                         className={`py-2 md:py-3 px-3 md:px-4 rounded-lg text-sm font-medium transition-colors ${questionCount === count
-                            ? 'bg-indigo-600 text-white shadow-sm'
-                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200 border border-gray-300'
+                          ? 'bg-indigo-600 text-white shadow-sm'
+                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200 border border-gray-300'
                           }`}
                       >
                         {count} MCQs
@@ -375,7 +378,7 @@ const PreparationPage = () => {
               <ul className="space-y-2 text-xs md:text-sm text-indigo-700">
                 <li className="flex items-start">
                   <span className="bg-indigo-200 text-indigo-800 rounded-full w-4 h-4 md:w-5 md:h-5 flex items-center justify-center text-xs font-bold mr-2 mt-0.5">1</span>
-                  Upload a text document or paste content
+                  Upload a text or PDF document or paste content
                 </li>
                 <li className="flex items-start">
                   <span className="bg-indigo-200 text-indigo-800 rounded-full w-4 h-4 md:w-5 md:h-5 flex items-center justify-center text-xs font-bold mr-2 mt-0.5">2</span>
