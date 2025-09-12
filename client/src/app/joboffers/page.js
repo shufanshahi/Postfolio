@@ -28,24 +28,28 @@ import {
   XCircle,
   Play,
   Briefcase,
-  MapPin
+  MapPin,
+  Star,
+  DollarSign,
+  FileText,
+  Award
 } from "lucide-react";
 
-function MyInterviews() {
+function JobOffers() {
   const { user } = useAuth();
   const router = useRouter();
   const [profile, setProfile] = useState(null);
-  const [interviews, setInterviews] = useState([]);
+  const [jobCandidates, setJobCandidates] = useState([]);
   const [jobDetails, setJobDetails] = useState({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [filterStatus, setFilterStatus] = useState('All');
 
-  // Design tokens matching dashboard
+  // Design tokens matching dashboard and my-interviews
   const gradientPanel = 'bg-gradient-to-br from-teal-50/70 via-white/50 to-indigo-50/70 dark:from-slate-800/60 dark:via-slate-800/50 dark:to-slate-800/60 backdrop-blur-xl border border-white/40 dark:border-slate-700/50 shadow-sm';
   const subtleCard = 'bg-gradient-to-br from-teal-50/65 via-white/55 to-indigo-50/60 dark:from-slate-800/70 dark:via-slate-800/60 dark:to-slate-800/70 backdrop-blur-md border border-teal-900/5 dark:border-slate-700/60 hover:border-teal-500/30 dark:hover:border-teal-400/30 transition-colors';
 
-  const fetchProfileAndInterviews = useCallback(async () => {
+  const fetchProfileAndJobOffers = useCallback(async () => {
     setLoading(true);
     setError(null);
 
@@ -67,26 +71,26 @@ function MyInterviews() {
       const profileData = await profileRes.json();
       setProfile(profileData);
 
-      // Fetch real interviews for this profile
-      const interviewsRes = await fetch(`http://localhost:8080/api/interviews/profile/${profileData.id}`, {
+      // Fetch processing job candidates for this profile
+      const candidatesRes = await fetch(`http://localhost:8080/api/job-candidates/profile/${profileData.id}/processing`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         }
       });
 
-      if (!interviewsRes.ok) {
-        console.warn("Failed to fetch interviews, using empty array");
-        setInterviews([]);
+      if (!candidatesRes.ok) {
+        console.warn("Failed to fetch job candidates, using empty array");
+        setJobCandidates([]);
       } else {
-        const interviewsData = await interviewsRes.json();
-        setInterviews(interviewsData);
+        const candidatesData = await candidatesRes.json();
+        setJobCandidates(candidatesData);
         
-        // Fetch job details for each interview
+        // Fetch job details for each candidate
         const jobDetailsMap = {};
-        for (const interview of interviewsData) {
+        for (const candidate of candidatesData) {
           try {
-            const jobRes = await fetch(`http://localhost:8080/api/jobs/employer/ajob/${interview.jobId}`, {
+            const jobRes = await fetch(`http://localhost:8080/api/jobs/employer/ajob/${candidate.jobId}`, {
               headers: {
                 'Authorization': `Bearer ${token}`,
                 'Content-Type': 'application/json'
@@ -95,48 +99,50 @@ function MyInterviews() {
             
             if (jobRes.ok) {
               const jobData = await jobRes.json();
-              jobDetailsMap[interview.jobId] = jobData;
+              jobDetailsMap[candidate.jobId] = jobData;
             } else {
               // Fallback if job details can't be fetched
-              jobDetailsMap[interview.jobId] = {
-                title: `Job ${interview.jobId}`,
+              jobDetailsMap[candidate.jobId] = {
+                title: `Job ${candidate.jobId}`,
                 position: 'Position not available',
-                company: 'Company not available'
+                company: 'Company not available',
+                salary: 'Salary not disclosed'
               };
             }
           } catch (jobErr) {
-            console.warn(`Failed to fetch job details for ${interview.jobId}:`, jobErr);
-            jobDetailsMap[interview.jobId] = {
-              title: `Job ${interview.jobId}`,
+            console.warn(`Failed to fetch job details for ${candidate.jobId}:`, jobErr);
+            jobDetailsMap[candidate.jobId] = {
+              title: `Job ${candidate.jobId}`,
               position: 'Position not available',
-              company: 'Company not available'
+              company: 'Company not available',
+              salary: 'Salary not disclosed'
             };
           }
         }
         setJobDetails(jobDetailsMap);
       }
     } catch (err) {
-      console.error("Error fetching interviews:", err);
-      setError("An error occurred while fetching interviews.");
+      console.error("Error fetching job offers:", err);
+      setError("An error occurred while fetching job offers.");
     } finally {
       setLoading(false);
     }
   }, [router]);
 
   useEffect(() => {
-    fetchProfileAndInterviews();
-  }, [fetchProfileAndInterviews]);
+    fetchProfileAndJobOffers();
+  }, [fetchProfileAndJobOffers]);
 
   const getStatusBadge = (status) => {
     const statusConfig = {
-      PENDING: { 
-        color: "bg-gradient-to-r from-amber-400 to-amber-500 text-white ring-1 ring-amber-300/50", 
-        text: "Pending",
-        icon: <Clock className="h-3 w-3" />
+      PROCESSING: { 
+        color: "bg-gradient-to-r from-blue-500 to-blue-600 text-white ring-1 ring-blue-400/50", 
+        text: "Processing",
+        icon: <Activity className="h-3 w-3" />
       },
-      COMPLETED: { 
+      ACCEPTED: { 
         color: "bg-gradient-to-r from-emerald-500 to-emerald-600 text-white ring-1 ring-emerald-400/50", 
-        text: "Completed",
+        text: "Accepted",
         icon: <CheckCircle className="h-3 w-3" />
       },
       REJECTED: { 
@@ -144,14 +150,19 @@ function MyInterviews() {
         text: "Rejected",
         icon: <XCircle className="h-3 w-3" />
       },
-      ONGOING: { 
-        color: "bg-gradient-to-r from-blue-500 to-blue-600 text-white ring-1 ring-blue-400/50", 
-        text: "Ongoing",
-        icon: <Activity className="h-3 w-3" />
+      ON: { 
+        color: "bg-gradient-to-r from-amber-400 to-amber-500 text-white ring-1 ring-amber-300/50", 
+        text: "Active",
+        icon: <Clock className="h-3 w-3" />
+      },
+      OFF: { 
+        color: "bg-gradient-to-r from-gray-400 to-gray-500 text-white ring-1 ring-gray-300/50", 
+        text: "Inactive",
+        icon: <XCircle className="h-3 w-3" />
       }
     };
 
-    const config = statusConfig[status] || statusConfig.PENDING;
+    const config = statusConfig[status] || statusConfig.PROCESSING;
     return (
       <Badge className={`${config.color} rounded-full px-3 py-1.5 text-xs font-medium shadow-sm flex items-center gap-1.5`}>
         {config.icon}
@@ -160,64 +171,50 @@ function MyInterviews() {
     );
   };
 
-  const getTypeIcon = (type) => {
-    switch (type) {
-      case 'video':
-        return <Video className="h-4 w-4" />;
-      case 'phone':
-        return <Clock className="h-4 w-4" />;
-      case 'in-person':
-        return <Building className="h-4 w-4" />;
-      default:
-        return <Calendar className="h-4 w-4" />;
-    }
+  const handleViewJob = (jobId) => {
+    // Redirect to job details page
+    router.push(`/find-jobs/${jobId}`);
   };
 
-  const handleJoinInterview = async (interview) => {
+  const handleAcceptOffer = async (candidateId, jobId) => {
     try {
       const token = localStorage.getItem("token");
-
-      // Get the interview details using profileId and jobId
-      const interviewRes = await fetch(`http://localhost:8080/api/interviews/profile/${interview.profileId}/job/${interview.jobId}`, {
-        method: "GET",
+      
+      // Update candidate status to ACCEPTED
+      const response = await fetch(`http://localhost:8080/api/job-candidates/job/${jobId}/profile/${profile.id}/status`, {
+        method: 'PUT',
         headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
         },
+        body: JSON.stringify({
+          status: 'ACCEPTED'
+        })
       });
 
-      if (!interviewRes.ok) {
-        alert("Failed to get interview details.");
-        return;
+      if (response.ok) {
+        // Refresh the data
+        fetchProfileAndJobOffers();
+        alert('Offer accepted successfully!');
+      } else {
+        alert('Failed to accept offer. Please try again.');
       }
-
-      const interviewData = await interviewRes.json();
-
-      // Use interview ID as room ID and join as participant (not host)
-      const roomId = `${interviewData.id}`;
-      router.push(`/videoCall/${roomId}?role=participant`);
     } catch (error) {
-      console.error("Error joining interview:", error);
-      alert("Error joining interview.");
+      console.error("Error accepting offer:", error);
+      alert("Error accepting offer.");
     }
   };
 
-  const handleViewDetails = (interviewId) => {
-    // Could redirect to a detailed interview page
-    console.log("View details for interview:", interviewId);
-  };
-
-  // Filter interviews based on selected status
-  const filteredInterviews = filterStatus === 'All' 
-    ? interviews 
-    : interviews.filter(interview => interview.status === filterStatus);
+  // Filter candidates based on selected status
+  const filteredCandidates = filterStatus === 'All' 
+    ? jobCandidates 
+    : jobCandidates.filter(candidate => candidate.status === filterStatus);
 
   const filterOptions = [
-    { value: 'All', label: 'All Interviews', count: interviews.length },
-    { value: 'PENDING', label: 'Pending', count: interviews.filter(i => i.status === 'PENDING').length },
-    { value: 'ONGOING', label: 'Ongoing', count: interviews.filter(i => i.status === 'ONGOING').length },
-    { value: 'COMPLETED', label: 'Completed', count: interviews.filter(i => i.status === 'COMPLETED').length },
-    { value: 'REJECTED', label: 'Rejected', count: interviews.filter(i => i.status === 'REJECTED').length }
+    { value: 'All', label: 'All Offers', count: jobCandidates.length },
+    { value: 'PROCESSING', label: 'Processing', count: jobCandidates.filter(c => c.status === 'PROCESSING').length },
+    { value: 'ACCEPTED', label: 'Accepted', count: jobCandidates.filter(c => c.status === 'ACCEPTED').length },
+    { value: 'REJECTED', label: 'Rejected', count: jobCandidates.filter(c => c.status === 'REJECTED').length }
   ];
 
   if (loading) {
@@ -229,7 +226,7 @@ function MyInterviews() {
         </div>
         <div className="text-center animate-in fade-in zoom-in duration-500">
           <Loader2 className="h-9 w-9 animate-spin text-teal-600 dark:text-teal-300 mx-auto mb-4" />
-          <p className="text-sm font-medium text-slate-600 dark:text-slate-300 tracking-wide">Loading your interview schedule...</p>
+          <p className="text-sm font-medium text-slate-600 dark:text-slate-300 tracking-wide">Loading your job offers...</p>
         </div>
       </div>
     );
@@ -271,33 +268,25 @@ function MyInterviews() {
           <div className="space-y-3">
             <Button
               variant="outline"
-              onClick={() => router.push('/dashboard')}
+              onClick={() => router.push('/my-interviews')}
               className="rounded-full border-slate-300/60 bg-white/60 backdrop-blur hover:bg-white shadow-sm text-slate-700 text-sm mb-4"
             >
               <ArrowLeft className="h-4 w-4 mr-2" />
-              Back to Dashboard
+              Back to Interviews
             </Button>
             <h1 className="text-4xl font-semibold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-teal-700 via-indigo-700 to-amber-600 dark:from-teal-200 dark:via-indigo-200 dark:to-amber-200">
-              My Interviews
+              Job Offers & Opportunities
             </h1>
-            {/* {profile && (
+            {profile && (
               <p className="text-slate-600 dark:text-slate-300 text-sm md:text-base flex items-center gap-2">
-                <span className="inline-flex h-2 w-2 rounded-full bg-teal-500 animate-pulse" />
-                Interview schedule for:<span className="font-semibold text-slate-800 dark:text-slate-100">{profile.firstName} {profile.lastName}</span>
-                <span className="text-slate-500 ml-2">{profile.name}</span>
+                <span className="inline-flex h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+                Processing opportunities for: <span className="font-semibold text-slate-800 dark:text-slate-100">{profile.firstName} {profile.lastName}</span>
               </p>
-            )} */}
+            )}
           </div>
           
           {/* Filter Button */}
           <div className="flex items-center gap-3">
-            <Button
-              onClick={() => router.push('/joboffers')}
-              className="rounded-full bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-700 hover:to-emerald-800 text-white shadow-sm text-sm"
-            >
-              <Briefcase className="h-4 w-4 mr-2" />
-              Offer Letters
-            </Button>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button 
@@ -305,7 +294,7 @@ function MyInterviews() {
                   className="rounded-full border-slate-300/60 bg-white/60 backdrop-blur hover:bg-white shadow-sm text-slate-700 text-sm"
                 >
                   <Filter className="h-4 w-4 mr-2" />
-                  {filterStatus} ({filteredInterviews.length})
+                  {filterStatus} ({filteredCandidates.length})
                   <ChevronDown className="h-4 w-4 ml-2" />
                 </Button>
               </DropdownMenuTrigger>
@@ -324,7 +313,10 @@ function MyInterviews() {
                 ))}
               </DropdownMenuContent>
             </DropdownMenu>
-            <Button className="rounded-full bg-teal-600 hover:bg-teal-700 shadow-sm text-sm">
+            <Button 
+              onClick={fetchProfileAndJobOffers}
+              className="rounded-full bg-teal-600 hover:bg-teal-700 shadow-sm text-sm"
+            >
               Refresh
             </Button>
           </div>
@@ -336,32 +328,14 @@ function MyInterviews() {
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <div className="p-3 bg-gradient-to-br from-amber-400 to-amber-500 rounded-xl text-white shadow-sm ring-1 ring-white/40">
-                    <Clock className="h-5 w-5" />
-                  </div>
-                  <div>
-                    <div className="text-2xl font-bold text-slate-800 dark:text-slate-100">
-                      {interviews.filter(i => i.status === 'PENDING').length}
-                    </div>
-                    <div className="text-slate-600 dark:text-slate-400 text-sm font-medium">Pending</div>
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          
-          <Card className={`${subtleCard} hover:shadow-md transition-all duration-300 hover:-translate-y-0.5 rounded-2xl overflow-hidden`}>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
                   <div className="p-3 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl text-white shadow-sm ring-1 ring-white/40">
                     <Activity className="h-5 w-5" />
                   </div>
                   <div>
                     <div className="text-2xl font-bold text-slate-800 dark:text-slate-100">
-                      {interviews.filter(i => i.status === 'ONGOING').length}
+                      {jobCandidates.filter(c => c.status === 'PROCESSING').length}
                     </div>
-                    <div className="text-slate-600 dark:text-slate-400 text-sm font-medium">Ongoing</div>
+                    <div className="text-slate-600 dark:text-slate-400 text-sm font-medium">Processing</div>
                   </div>
                 </div>
               </div>
@@ -377,9 +351,27 @@ function MyInterviews() {
                   </div>
                   <div>
                     <div className="text-2xl font-bold text-slate-800 dark:text-slate-100">
-                      {interviews.filter(i => i.status === 'COMPLETED').length}
+                      {jobCandidates.filter(c => c.status === 'ACCEPTED').length}
                     </div>
-                    <div className="text-slate-600 dark:text-slate-400 text-sm font-medium">Completed</div>
+                    <div className="text-slate-600 dark:text-slate-400 text-sm font-medium">Accepted</div>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card className={`${subtleCard} hover:shadow-md transition-all duration-300 hover:-translate-y-0.5 rounded-2xl overflow-hidden`}>
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="p-3 bg-gradient-to-br from-red-500 to-red-600 rounded-xl text-white shadow-sm ring-1 ring-white/40">
+                    <XCircle className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <div className="text-2xl font-bold text-slate-800 dark:text-slate-100">
+                      {jobCandidates.filter(c => c.status === 'REJECTED').length}
+                    </div>
+                    <div className="text-slate-600 dark:text-slate-400 text-sm font-medium">Rejected</div>
                   </div>
                 </div>
               </div>
@@ -391,13 +383,13 @@ function MyInterviews() {
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <div className="p-3 bg-gradient-to-br from-teal-500 to-teal-600 rounded-xl text-white shadow-sm ring-1 ring-white/40">
-                    <Calendar className="h-5 w-5" />
+                    <Briefcase className="h-5 w-5" />
                   </div>
                   <div>
                     <div className="text-2xl font-bold text-slate-800 dark:text-slate-100">
-                      {interviews.length}
+                      {jobCandidates.length}
                     </div>
-                    <div className="text-slate-600 dark:text-slate-400 text-sm font-medium">Total</div>
+                    <div className="text-slate-600 dark:text-slate-400 text-sm font-medium">Total Offers</div>
                   </div>
                 </div>
               </div>
@@ -405,131 +397,123 @@ function MyInterviews() {
           </Card>
         </div>
 
-        {/* Interviews List */}
+        {/* Job Offers List */}
         <Card className={`${subtleCard} rounded-2xl shadow-sm`}>
           <CardHeader className="pb-4">
             <div className="flex items-center justify-between">
               <div>
                 <CardTitle className="text-slate-800 dark:text-slate-100 text-xl font-semibold">
-                  {filterStatus === 'All' ? 'All Interviews' : `${filterStatus.charAt(0) + filterStatus.slice(1).toLowerCase()} Interviews`}
+                  {filterStatus === 'All' ? 'All Job Offers' : `${filterStatus.charAt(0) + filterStatus.slice(1).toLowerCase()} Offers`}
                 </CardTitle>
                 <CardDescription className="text-slate-600 dark:text-slate-400 text-sm mt-1">
-                  {filteredInterviews.length ?
-                    `${filteredInterviews.length} interview(s) found` :
-                    "No interviews match your filter"
+                  {filteredCandidates.length ?
+                    `${filteredCandidates.length} offer(s) found` :
+                    "No offers match your filter"
                   }
                 </CardDescription>
               </div>
               <Badge variant="outline" className="bg-white/60 border-slate-200/60 text-slate-700">
-                {filteredInterviews.length} results
+                {filteredCandidates.length} results
               </Badge>
             </div>
           </CardHeader>
           <CardContent>
-            {filteredInterviews.length === 0 ? (
+            {filteredCandidates.length === 0 ? (
               <div className="text-center py-12">
                 <div className="max-w-sm mx-auto">
                   <div className="p-4 bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-700 dark:to-slate-800 rounded-2xl mb-4 inline-block">
-                    <Calendar className="h-12 w-12 text-slate-400 dark:text-slate-500" />
+                    <Briefcase className="h-12 w-12 text-slate-400 dark:text-slate-500" />
                   </div>
                   <h3 className="text-lg font-medium text-slate-800 dark:text-slate-100 mb-2">
-                    {filterStatus === 'All' ? 'No interviews scheduled' : `No ${filterStatus.toLowerCase()} interviews`}
+                    {filterStatus === 'All' ? 'No job offers yet' : `No ${filterStatus.toLowerCase()} offers`}
                   </h3>
                   <p className="text-slate-600 dark:text-slate-400 text-sm leading-relaxed">
                     {filterStatus === 'All' 
-                      ? 'Check back later or apply to more jobs to get interview opportunities!' 
-                      : `Try selecting a different filter to see other interviews.`
+                      ? 'Apply to more jobs to get offer opportunities!' 
+                      : `Try selecting a different filter to see other offers.`
                     }
                   </p>
                 </div>
               </div>
             ) : (
               <div className="space-y-4">
-                {filteredInterviews.map((interview) => (
+                {filteredCandidates.map((candidate) => (
                   <Card
-                    key={interview.id}
+                    key={candidate.id}
                     className="group overflow-hidden cursor-pointer relative rounded-xl bg-white/70 dark:bg-slate-800/70 backdrop-blur-sm border border-slate-200/60 dark:border-slate-700/60 hover:border-teal-300/60 dark:hover:border-teal-400/40 transition-all duration-300 hover:shadow-md hover:-translate-y-0.5"
                   >
                     <CardContent className="p-6">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center space-x-4 flex-1">
-                          <div className="p-3 bg-gradient-to-br from-teal-500 to-teal-600 rounded-xl text-white shadow-sm ring-1 ring-white/40">
-                            <Calendar className="h-5 w-5" />
+                          <div className="p-3 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-xl text-white shadow-sm ring-1 ring-white/40">
+                            <Award className="h-5 w-5" />
                           </div>
                           <div className="flex-1 min-w-0">
                             <h3 className="text-slate-800 dark:text-slate-100 font-semibold text-base mb-1">
-                              {jobDetails[interview.jobId]?.title || `Interview for Job ID: ${interview.jobId}`}
+                              {jobDetails[candidate.jobId]?.title || `Job Offer ${candidate.jobId}`}
                             </h3>
                             <div className="flex items-center gap-4 mb-2">
                               <p className="text-slate-600 dark:text-slate-400 text-sm flex items-center gap-1">
                                 <Briefcase className="h-3 w-3" />
-                                {jobDetails[interview.jobId]?.position || 'Position not available'}
+                                {jobDetails[candidate.jobId]?.position || 'Position not available'}
                               </p>
-                              {jobDetails[interview.jobId]?.company && (
+                              {jobDetails[candidate.jobId]?.company && (
                                 <p className="text-slate-600 dark:text-slate-400 text-sm flex items-center gap-1">
                                   <Building className="h-3 w-3" />
-                                  {jobDetails[interview.jobId].company}
+                                  {jobDetails[candidate.jobId].company}
                                 </p>
                               )}
                             </div>
-                            {/* {jobDetails[interview.jobId]?.location && (
-                              <p className="text-slate-600 dark:text-slate-400 text-sm flex items-center gap-1 mb-2">
-                                <MapPin className="h-3 w-3" />
-                                {jobDetails[interview.jobId].location}
-                              </p>
-                            )} */}
-                            {interview.notes && (
-                              <p className="text-slate-600 dark:text-slate-400 text-sm mb-3 p-2 bg-slate-50 dark:bg-slate-700/50 rounded-lg">
-                                <strong>Notes:</strong> {interview.notes}
-                              </p>
-                            )}
-                            <div className="flex items-center gap-6 text-sm">
-                              <p className="text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
-                                <Calendar className="h-3 w-3 text-teal-600 dark:text-teal-400" />
-                                {new Date(interview.schedule).toLocaleDateString('en-US', { 
-                                  weekday: 'short', 
-                                  year: 'numeric', 
-                                  month: 'short', 
-                                  day: 'numeric' 
-                                })}
-                              </p>
-                              <p className="text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
-                                <Clock className="h-3 w-3 text-teal-600 dark:text-teal-400" />
-                                {new Date(interview.schedule).toLocaleTimeString('en-US', { 
-                                  hour: '2-digit', 
-                                  minute: '2-digit' 
-                                })}
-                              </p>
-                            </div>
-                            {interview.interviewerFeedback && (
-                              <div className="mt-3 p-3 bg-gradient-to-r from-emerald-50 to-emerald-100 dark:from-emerald-900/20 dark:to-emerald-800/20 rounded-lg border border-emerald-200/60 dark:border-emerald-700/60">
-                                <p className="text-emerald-800 dark:text-emerald-300 text-sm font-medium">
-                                  <strong>Feedback:</strong> {interview.interviewerFeedback}
+                            
+                            <div className="flex items-center gap-6 text-sm mb-3">
+                              {jobDetails[candidate.jobId]?.salary && (
+                                <p className="text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+                                  <DollarSign className="h-3 w-3 text-emerald-600 dark:text-emerald-400" />
+                                  {jobDetails[candidate.jobId].salary}
                                 </p>
-                              </div>
+                              )}
+                              {candidate.score && (
+                                <p className="text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+                                  <Star className="h-3 w-3 text-amber-600 dark:text-amber-400" />
+                                  Score: {candidate.score}
+                                </p>
+                              )}
+                              {candidate.expireDate && (
+                                <p className="text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+                                  <Calendar className="h-3 w-3 text-red-600 dark:text-red-400" />
+                                  Expires: {new Date(candidate.expireDate).toLocaleDateString()}
+                                </p>
+                              )}
+                            </div>
+
+                            {jobDetails[candidate.jobId]?.description && (
+                              <p className="text-slate-600 dark:text-slate-400 text-sm mb-3 p-3 bg-slate-50 dark:bg-slate-700/50 rounded-lg line-clamp-2">
+                                {jobDetails[candidate.jobId].description}
+                              </p>
                             )}
                           </div>
                         </div>
                         <div className="flex items-center space-x-4 ml-4">
-                          {getStatusBadge(interview.status)}
+                          {getStatusBadge(candidate.status)}
                           <div className="flex space-x-2">
-                            {interview.status === 'ONGOING' && (
+                            {candidate.status === 'PROCESSING' && (
                               <Button
                                 size="sm"
-                                onClick={() => handleJoinInterview(interview)}
-                                className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white rounded-full px-4 py-2 text-sm shadow-sm ring-1 ring-blue-500/50"
+                                onClick={() => handleAcceptOffer(candidate.id, candidate.jobId)}
+                                className="bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-700 hover:to-emerald-800 text-white rounded-full px-4 py-2 text-sm shadow-sm ring-1 ring-emerald-500/50"
                               >
-                                <Video className="h-4 w-4 mr-1.5" />
-                                Join Interview
+                                <CheckCircle className="h-4 w-4 mr-1.5" />
+                                Accept Offer
                               </Button>
                             )}
                             <Button
                               variant="outline"
                               size="sm"
-                              onClick={() => handleViewDetails(interview.id)}
+                              onClick={() => handleViewJob(candidate.jobId)}
                               className="rounded-full border-slate-300/60 bg-white/60 backdrop-blur hover:bg-white text-slate-700 text-sm shadow-sm"
                             >
-                              View Details
+                              <FileText className="h-4 w-4 mr-1.5" />
+                              View Job
                             </Button>
                           </div>
                         </div>
@@ -546,5 +530,4 @@ function MyInterviews() {
   );
 }
 
-
-export default withAuth(MyInterviews);
+export default withAuth(JobOffers);
