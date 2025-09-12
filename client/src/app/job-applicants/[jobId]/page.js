@@ -562,11 +562,15 @@ export default function JobApplicants() {
             {/* Auto-select Button */}
             <Button
               onClick={handleAutoSelectClick}
-              className="bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white shadow-lg hover:shadow-xl transition-all duration-200 rounded-full"
-              disabled={!job?.applicantIds?.length}
+              className={`${
+                job?.autoSelectStatus === 'OFF' 
+                  ? 'bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white shadow-lg hover:shadow-xl' 
+                  : 'bg-slate-300 dark:bg-slate-600 text-slate-500 dark:text-slate-400 cursor-not-allowed'
+              } transition-all duration-200 rounded-full`}
+              disabled={!job?.applicantIds?.length || job?.autoSelectStatus !== 'OFF'}
             >
               <Zap className="h-4 w-4 mr-2" />
-              Auto-Select
+              Auto-Select {job?.autoSelectStatus !== 'OFF' ? `(${job?.autoSelectStatus || 'OFF'})` : ''}
             </Button>
             
             {/* Section Tabs */}
@@ -574,7 +578,8 @@ export default function JobApplicants() {
               {[
                 { key: 'applicants', label: 'Applicants', icon: Users },
                 { key: 'selected', label: 'Selected', icon: CheckCircle },
-                { key: 'rejected', label: 'Rejected', icon: XCircle }
+                { key: 'rejected', label: 'Rejected', icon: XCircle },
+                ...(job?.autoSelectStatus === 'COMPLETED' ? [{ key: 'hired', label: 'Hired', icon: Award }] : [])
               ].map(({ key, label, icon: Icon }) => (
                 <Button
                   key={key}
@@ -624,7 +629,7 @@ export default function JobApplicants() {
                 </div>
                 
                 {/* Stats Grid */}
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 min-w-0 sm:min-w-[400px]">
+                <div className="grid grid-cols-2 sm:grid-cols-5 gap-4 min-w-0 sm:min-w-[500px]">
                   <div className="text-center p-3 bg-white/60 dark:bg-slate-700/60 rounded-xl backdrop-blur">
                     <div className="text-lg font-bold text-teal-600 dark:text-teal-400">{job.applicantIds?.length || 0}</div>
                     <div className="text-xs text-slate-600 dark:text-slate-400">Total</div>
@@ -638,8 +643,20 @@ export default function JobApplicants() {
                     <div className="text-xs text-slate-600 dark:text-slate-400">Rejected</div>
                   </div>
                   <div className="text-center p-3 bg-white/60 dark:bg-slate-700/60 rounded-xl backdrop-blur">
-                    <Badge variant="outline" className="font-medium bg-slate-100/80 dark:bg-slate-700/60 text-slate-700 dark:text-slate-200">
-                      {job.status}
+                    <div className="text-lg font-bold text-amber-600 dark:text-amber-400">{job.acceptedByProfileIds?.length || 0}</div>
+                    <div className="text-xs text-slate-600 dark:text-slate-400">Hired</div>
+                  </div>
+                  <div className="text-center p-3 bg-white/60 dark:bg-slate-700/60 rounded-xl backdrop-blur">
+                    <Badge 
+                      variant="outline" 
+                      className={`font-medium text-xs ${
+                        job.autoSelectStatus === 'OFF' ? 'bg-slate-100/80 dark:bg-slate-700/60 text-slate-700 dark:text-slate-200' :
+                        job.autoSelectStatus === 'ONGOING' ? 'bg-blue-100/80 dark:bg-blue-500/20 text-blue-700 dark:text-blue-300' :
+                        job.autoSelectStatus === 'COMPLETED' ? 'bg-green-100/80 dark:bg-green-500/20 text-green-700 dark:text-green-300' :
+                        'bg-slate-100/80 dark:bg-slate-700/60 text-slate-700 dark:text-slate-200'
+                      }`}
+                    >
+                      Auto-Select: {job.autoSelectStatus || 'OFF'}
                     </Badge>
                   </div>
                 </div>
@@ -1241,6 +1258,88 @@ export default function JobApplicants() {
                               variant="outline" 
                               size="sm"
                               onClick={() => handleViewProfile(applicantId)}
+                              className="bg-white/60 dark:bg-slate-700/60 border-slate-300/60 dark:border-slate-600/60 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700"
+                            >
+                              <Eye className="h-4 w-4 mr-1" />
+                              View Profile
+                            </Button>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    );
+                  })}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Hired Applicants Section */}
+        {section === 'hired' && job?.autoSelectStatus === 'COMPLETED' && (
+          <Card className={`${subtleCard} shadow-sm rounded-2xl overflow-hidden`}>
+            <CardHeader className="pb-4">
+              <div className="flex items-center justify-between">
+                <div className="space-y-1">
+                  <CardTitle className="text-xl font-semibold text-slate-800 dark:text-slate-100 flex items-center gap-2">
+                    <Award className="h-5 w-5 text-amber-600 dark:text-amber-400" />
+                    Hired Candidates
+                  </CardTitle>
+                  <CardDescription className="text-slate-600 dark:text-slate-400">
+                    {job?.acceptedByProfileIds?.length ? `${job.acceptedByProfileIds.length} candidate(s) accepted the offer` : 'No acceptances yet'}
+                  </CardDescription>
+                </div>
+                <Badge variant="outline" className="bg-amber-50/60 dark:bg-amber-500/10 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-400/30">
+                  <Award className="h-3 w-3 mr-1" />
+                  Hired
+                </Badge>
+              </div>
+            </CardHeader>
+            <CardContent>
+              {(!job?.acceptedByProfileIds || job.acceptedByProfileIds.length === 0) ? (
+                <div className="text-center py-12">
+                  <Award className="h-16 w-16 text-slate-300 dark:text-slate-600 mx-auto mb-4" />
+                  <h3 className="text-lg font-medium text-slate-600 dark:text-slate-400 mb-2">No Hired Candidates</h3>
+                  <p className="text-sm text-slate-500 dark:text-slate-500">Candidates who accept their offers will appear here.</p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {job.acceptedByProfileIds.map((profileId, index) => {
+                    const profileObj = applicantsWithDetails.find(a => a.applicantId === profileId);
+                    const profile = profileObj?.profile;
+                    return (
+                      <Card 
+                        key={profileId} 
+                        className="border-0 shadow-sm bg-amber-50/60 dark:bg-amber-500/10 backdrop-blur-sm hover:shadow-md transition-shadow duration-200"
+                      >
+                        <CardContent className="p-6">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center space-x-4">
+                              <Avatar className="h-12 w-12 ring-2 ring-amber-200/60 dark:ring-amber-400/30 shadow-sm">
+                                <AvatarImage src={profile?.profilePicture} alt={profile?.name} />
+                                <AvatarFallback className="bg-gradient-to-br from-amber-400 to-amber-600 text-white font-semibold">
+                                  {profile?.name ? profile.name.charAt(0).toUpperCase() : '🎉'}
+                                </AvatarFallback>
+                              </Avatar>
+                              <div className="space-y-1">
+                                <h4 className="font-semibold text-slate-800 dark:text-slate-100">
+                                  {profile?.name || `Hired Candidate ${index + 1}`}
+                                </h4>
+                                {profile?.email && (
+                                  <div className="flex items-center gap-1 text-sm text-slate-600 dark:text-slate-400">
+                                    <Mail className="h-3 w-3" />
+                                    {profile.email}
+                                  </div>
+                                )}
+                                <Badge variant="outline" className="bg-amber-100 dark:bg-amber-500/20 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-400/30 text-xs">
+                                  <Award className="h-3 w-3 mr-1" />
+                                  Accepted Offer for {job.position}
+                                </Badge>
+                              </div>
+                            </div>
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={() => handleViewProfile(profileId)}
                               className="bg-white/60 dark:bg-slate-700/60 border-slate-300/60 dark:border-slate-600/60 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700"
                             >
                               <Eye className="h-4 w-4 mr-1" />
