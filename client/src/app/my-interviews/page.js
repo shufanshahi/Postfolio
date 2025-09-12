@@ -26,7 +26,9 @@ import {
   Activity,
   CheckCircle,
   XCircle,
-  Play
+  Play,
+  Briefcase,
+  MapPin
 } from "lucide-react";
 
 function MyInterviews() {
@@ -34,6 +36,7 @@ function MyInterviews() {
   const router = useRouter();
   const [profile, setProfile] = useState(null);
   const [interviews, setInterviews] = useState([]);
+  const [jobDetails, setJobDetails] = useState({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [filterStatus, setFilterStatus] = useState('All');
@@ -78,6 +81,39 @@ function MyInterviews() {
       } else {
         const interviewsData = await interviewsRes.json();
         setInterviews(interviewsData);
+        
+        // Fetch job details for each interview
+        const jobDetailsMap = {};
+        for (const interview of interviewsData) {
+          try {
+            const jobRes = await fetch(`http://localhost:8080/api/jobs/employer/ajob/${interview.jobId}`, {
+              headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+              }
+            });
+            
+            if (jobRes.ok) {
+              const jobData = await jobRes.json();
+              jobDetailsMap[interview.jobId] = jobData;
+            } else {
+              // Fallback if job details can't be fetched
+              jobDetailsMap[interview.jobId] = {
+                title: `Job ${interview.jobId}`,
+                position: 'Position not available',
+                company: 'Company not available'
+              };
+            }
+          } catch (jobErr) {
+            console.warn(`Failed to fetch job details for ${interview.jobId}:`, jobErr);
+            jobDetailsMap[interview.jobId] = {
+              title: `Job ${interview.jobId}`,
+              position: 'Position not available',
+              company: 'Company not available'
+            };
+          }
+        }
+        setJobDetails(jobDetailsMap);
       }
     } catch (err) {
       console.error("Error fetching interviews:", err);
@@ -415,12 +451,26 @@ function MyInterviews() {
                           </div>
                           <div className="flex-1 min-w-0">
                             <h3 className="text-slate-800 dark:text-slate-100 font-semibold text-base mb-1">
-                              Interview for Job ID: {interview.jobId}
+                              {jobDetails[interview.jobId]?.title || `Interview for Job ID: ${interview.jobId}`}
                             </h3>
-                            <p className="text-slate-600 dark:text-slate-400 text-sm flex items-center gap-1 mb-2">
-                              <User className="h-3 w-3" />
-                              Profile ID: {interview.profileId}
-                            </p>
+                            <div className="flex items-center gap-4 mb-2">
+                              <p className="text-slate-600 dark:text-slate-400 text-sm flex items-center gap-1">
+                                <Briefcase className="h-3 w-3" />
+                                {jobDetails[interview.jobId]?.position || 'Position not available'}
+                              </p>
+                              {jobDetails[interview.jobId]?.company && (
+                                <p className="text-slate-600 dark:text-slate-400 text-sm flex items-center gap-1">
+                                  <Building className="h-3 w-3" />
+                                  {jobDetails[interview.jobId].company}
+                                </p>
+                              )}
+                            </div>
+                            {/* {jobDetails[interview.jobId]?.location && (
+                              <p className="text-slate-600 dark:text-slate-400 text-sm flex items-center gap-1 mb-2">
+                                <MapPin className="h-3 w-3" />
+                                {jobDetails[interview.jobId].location}
+                              </p>
+                            )} */}
                             {interview.notes && (
                               <p className="text-slate-600 dark:text-slate-400 text-sm mb-3 p-2 bg-slate-50 dark:bg-slate-700/50 rounded-lg">
                                 <strong>Notes:</strong> {interview.notes}
