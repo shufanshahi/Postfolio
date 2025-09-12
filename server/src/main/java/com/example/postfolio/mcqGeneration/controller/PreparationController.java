@@ -2,8 +2,10 @@ package com.example.postfolio.mcqGeneration.controller;
 
 import com.example.postfolio.mcqGeneration.dto.MCQGenerationRequest;
 import com.example.postfolio.mcqGeneration.dto.MCQSetResponse;
+import com.example.postfolio.mcqGeneration.dto.SummaryRequest;
 import com.example.postfolio.mcqGeneration.service.DocumentTextExtractionService;
 import com.example.postfolio.mcqGeneration.service.MCQService;
+import com.example.postfolio.mcqGeneration.service.SummaryService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -22,6 +24,9 @@ public class PreparationController {
 
     @Autowired
     private DocumentTextExtractionService documentTextExtractionService;
+
+    @Autowired
+    private SummaryService summaryService;
 
     @PostMapping("/generate-mcq")
     public ResponseEntity<MCQSetResponse> generateMCQFromDocument(
@@ -149,6 +154,56 @@ public class PreparationController {
         Long userId = getUserIdFromAuth(authentication);
         MCQSetResponse mcqSet = mcqService.getMCQSetById(id, userId);
         return ResponseEntity.ok(mcqSet);
+    }
+
+    @PostMapping("/generate-summary")
+    public ResponseEntity<byte[]> generateSummaryFromDocument(
+            @RequestParam("document") MultipartFile file,
+            Authentication authentication) {
+
+        try {
+            // Extract text content from file (supports both TXT and PDF)
+            String documentContent = documentTextExtractionService.extractTextFromFile(file);
+
+            // Generate summary and return PDF
+            String fileName = file.getOriginalFilename();
+            String baseFileName = (fileName != null) ? fileName.replaceFirst("[.][^.]+$", "") : "document";
+            byte[] pdfBytes = summaryService.generateSummaryPDF(documentContent,
+                    fileName != null ? fileName : "document.txt");
+
+            return ResponseEntity.ok()
+                    .header("Content-Type", "application/pdf")
+                    .header("Content-Disposition", "attachment; filename=\"" + baseFileName + "_summary.pdf\"")
+                    .body(pdfBytes);
+
+        } catch (UnsupportedOperationException e) {
+            return ResponseEntity.badRequest().build();
+        } catch (IOException e) {
+            return ResponseEntity.badRequest().build();
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().build();
+        }
+    }
+
+    @PostMapping("/generate-summary-text")
+    public ResponseEntity<byte[]> generateSummaryFromText(
+            @RequestBody SummaryRequest request,
+            Authentication authentication) {
+
+        try {
+            // Generate summary and return PDF
+            byte[] pdfBytes = summaryService.generateSummaryPDF(request.getDocumentContent(),
+                    request.getDocumentName());
+
+            return ResponseEntity.ok()
+                    .header("Content-Type", "application/pdf")
+                    .header("Content-Disposition",
+                            "attachment; filename=\"" + request.getDocumentName() + "_summary.pdf\"")
+                    .body(pdfBytes);
+
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().build();
+        }
     }
 
     private Long getUserIdFromAuth(Authentication authentication) {

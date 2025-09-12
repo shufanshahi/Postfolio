@@ -118,6 +118,70 @@ const PreparationPage = () => {
     }
   };
 
+  const generateSummary = async () => {
+    if (!validateInputs()) return;
+
+    setLoading(true);
+    setError('');
+    setSuccess('');
+
+    try {
+      let response;
+      if (activeTab === 'upload') {
+        const formData = new FormData();
+        formData.append('document', selectedFile);
+        response = await fetch('http://localhost:8080/api/preparation/generate-summary', {
+          method: 'POST',
+          body: formData,
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+          }
+        });
+      } else {
+        response = await fetch('http://localhost:8080/api/preparation/generate-summary-text', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+          },
+          body: JSON.stringify({
+            documentContent: textContent,
+            documentName: documentName
+          })
+        });
+      }
+
+      if (!response.ok) throw new Error('Failed to generate summary');
+
+      // Handle PDF download
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.style.display = 'none';
+      a.href = url;
+      a.download = `${activeTab === 'upload' ? selectedFile.name.replace(/\.[^/.]+$/, '') : documentName}_summary.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+
+      setSuccess('Summary PDF generated and downloaded successfully!');
+
+      // Reset form
+      if (activeTab === 'upload') {
+        setSelectedFile(null);
+        if (fileInputRef.current) fileInputRef.current.value = '';
+      } else {
+        setTextContent('');
+        setDocumentName('');
+      }
+
+    } catch (err) {
+      setError(err.message || 'An error occurred while generating summary. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const loadMCQSets = async () => {
     try {
       const response = await fetch('http://localhost:8080/api/preparation/mcq-sets', {
@@ -312,23 +376,43 @@ const PreparationPage = () => {
                   </div>
                 </div>
 
-                <button
-                  onClick={generateMCQs}
-                  disabled={loading || (activeTab === 'upload' ? !selectedFile : !textContent.trim() || !documentName.trim())}
-                  className="w-full mt-4 md:mt-6 bg-indigo-600 text-white py-2 md:py-3 px-4 md:px-6 rounded-lg hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {loading ? (
-                    <span className="flex items-center justify-center">
-                      <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                      </svg>
-                      Generating...
-                    </span>
-                  ) : (
-                    `Generate ${questionCount} MCQs`
-                  )}
-                </button>
+                <div className="space-y-3 mt-4 md:mt-6">
+                  <button
+                    onClick={generateMCQs}
+                    disabled={loading || (activeTab === 'upload' ? !selectedFile : !textContent.trim() || !documentName.trim())}
+                    className="w-full bg-indigo-600 text-white py-2 md:py-3 px-4 md:px-6 rounded-lg hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {loading ? (
+                      <span className="flex items-center justify-center">
+                        <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        Generating...
+                      </span>
+                    ) : (
+                      `Generate ${questionCount} MCQs`
+                    )}
+                  </button>
+
+                  <button
+                    onClick={generateSummary}
+                    disabled={loading || (activeTab === 'upload' ? !selectedFile : !textContent.trim() || !documentName.trim())}
+                    className="w-full bg-purple-600 text-white py-2 md:py-3 px-4 md:px-6 rounded-lg hover:bg-purple-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {loading ? (
+                      <span className="flex items-center justify-center">
+                        <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        Generating...
+                      </span>
+                    ) : (
+                      'Generate Summary PDF'
+                    )}
+                  </button>
+                </div>
               </div>
             </div>
           </div>

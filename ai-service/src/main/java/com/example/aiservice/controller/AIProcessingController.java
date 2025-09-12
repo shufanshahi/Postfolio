@@ -19,6 +19,7 @@ public class AIProcessingController {
     private final InterviewGenerationAIService interviewGenerationAIService;
     private final NewsSummarizationAIService newsSummarizationAIService;
     private final RoadmapGenerationAIService roadmapGenerationAIService;
+    private final DocumentSummarizationAIService documentSummarizationAIService;
 
     @PostMapping("/process-post")
     public ResponseEntity<PostProcessingResponse> processPost(@RequestBody PostProcessingRequest request) {
@@ -87,6 +88,13 @@ public class AIProcessingController {
                 request.getJobId(), request.getProfileId());
         RoadmapGenerationResponse response = roadmapGenerationAIService.generateRoadmap(request);
         return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/summarize")
+    public ResponseEntity<String> summarizeDocument(@RequestBody DocumentSummarizationRequest request) {
+        log.info("Summarizing document content with {} characters", request.getDocumentContent().length());
+        String summary = documentSummarizationAIService.summarizeDocument(request);
+        return ResponseEntity.ok(summary);
     }
 
     @GetMapping("/health")
