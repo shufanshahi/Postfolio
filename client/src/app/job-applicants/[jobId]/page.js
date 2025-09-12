@@ -122,6 +122,9 @@ export default function JobApplicants() {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
+        body: JSON.stringify({
+          desiredSelectNumber: parseInt(autoSelectData.desiredSelectNumber)
+        }),
       });
 
       if (!activateResponse.ok) {

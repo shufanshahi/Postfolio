@@ -9,6 +9,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -43,12 +44,37 @@ public class JobCandidateServiceImpl implements JobCandidateService {
     }
 
     @Override
-    public List<JobCandidateResponse> activateAllCandidatesForJob(Long jobId) {
+    public List<JobCandidateResponse> activateAllCandidatesForJob(Long jobId, Integer desiredSelectNumber) {
         // Find all candidates for the specific job
         List<JobCandidate> candidates = jobCandidateRepository.findByJobId(jobId);
         
-        // Update status to ON for all candidates
-        candidates.forEach(candidate -> candidate.setStatus(CandidateStatus.ON));
+        if (candidates.isEmpty()) {
+            return new ArrayList<>();
+        }
+        
+        // Sort candidates by score in descending order (highest scores first)
+        // Handle null scores by treating them as 0.0
+        candidates.sort((c1, c2) -> {
+            Double score1 = c1.getScore() != null ? c1.getScore() : 0.0;
+            Double score2 = c2.getScore() != null ? c2.getScore() : 0.0;
+            return Double.compare(score2, score1); // Descending order
+        });
+        
+        // Handle corner case: if desiredSelectNumber is null or candidates are fewer than desired
+        int numberOfCandidatesToProcess = desiredSelectNumber != null ? 
+            Math.min(desiredSelectNumber, candidates.size()) : candidates.size();
+        
+        // Set status for candidates
+        for (int i = 0; i < candidates.size(); i++) {
+            JobCandidate candidate = candidates.get(i);
+            if (i < numberOfCandidatesToProcess) {
+                // Top candidates (highest scores) set to PROCESSING
+                candidate.setStatus(CandidateStatus.PROCESSING);
+            } else {
+                // Remaining candidates set to ON
+                candidate.setStatus(CandidateStatus.ON);
+            }
+        }
         
         // Save all updated candidates
         List<JobCandidate> updatedCandidates = jobCandidateRepository.saveAll(candidates);

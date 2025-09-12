@@ -2,6 +2,7 @@ package com.example.postfolio.jobcandidates.controller;
 
 import com.example.postfolio.jobcandidates.dto.JobCandidateRequest;
 import com.example.postfolio.jobcandidates.dto.JobCandidateResponse;
+import com.example.postfolio.jobcandidates.dto.ActivateCandidatesRequest;
 import com.example.postfolio.jobcandidates.service.JobCandidateService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -42,9 +43,12 @@ public class JobCandidateController {
     }
 
     @PutMapping("/job/{jobId}/activate")
-    public ResponseEntity<List<JobCandidateResponse>> activateAllCandidatesForJob(@PathVariable Long jobId) {
+    public ResponseEntity<List<JobCandidateResponse>> activateAllCandidatesForJob(
+            @PathVariable Long jobId, 
+            @RequestBody ActivateCandidatesRequest request) {
         try {
-            List<JobCandidateResponse> responses = jobCandidateService.activateAllCandidatesForJob(jobId);
+            List<JobCandidateResponse> responses = jobCandidateService.activateAllCandidatesForJob(
+                jobId, request.getDesiredSelectNumber());
             return ResponseEntity.ok(responses);
         } catch (Exception e) {
             log.error("Error activating candidates for job: " + jobId, e);

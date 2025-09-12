@@ -8,5 +8,5 @@ import java.util.List;
 public interface JobCandidateService {
     JobCandidateResponse createJobCandidate(JobCandidateRequest request);
     List<JobCandidateResponse> getAllJobCandidates();
-    List<JobCandidateResponse> activateAllCandidatesForJob(Long jobId);
+    List<JobCandidateResponse> activateAllCandidatesForJob(Long jobId, Integer desiredSelectNumber);
 }
