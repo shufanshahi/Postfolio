@@ -289,7 +289,7 @@ function JobOffers() {
   // Offer Letter Modal Component
   const OfferLetterModal = () => (
     <Dialog open={showOfferLetter} onOpenChange={setShowOfferLetter}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto p-0">
+      <DialogContent className="max-w-6xl w-[95vw] max-h-[90vh] overflow-y-auto p-0">
         <div className="bg-white dark:bg-slate-900 rounded-lg shadow-2xl">
           {/* Header */}
           {/* <div className="flex items-center justify-between p-6 border-b border-slate-200 dark:border-slate-700 bg-gradient-to-r from-teal-50 to-indigo-50 dark:from-slate-800 dark:to-slate-700">
@@ -344,11 +344,11 @@ function JobOffers() {
                     {selectedOffer.employerData?.email || 'company@example.com'}
                   </p>
                   <p className="text-slate-600 dark:text-slate-400 text-sm">
-                    {new Date().toLocaleDateString('en-US', { 
+                    {/* {new Date().toLocaleDateString('en-US', { 
                       year: 'numeric', 
                       month: 'long', 
                       day: 'numeric' 
-                    })}
+                    })} */}
                   </p>
                 </div>
               </div>
@@ -356,7 +356,7 @@ function JobOffers() {
               {/* Recipient */}
               <div className="mb-8">
                 <h3 className="text-lg font-semibold text-slate-800 dark:text-slate-100 mb-2">
-                  Dear {profile?.firstName} {profile?.lastName},
+                  Dear {profile?.name} ,
                 </h3>
               </div>
 
