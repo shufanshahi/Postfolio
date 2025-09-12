@@ -292,25 +292,35 @@ function JobOffers() {
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto p-0">
         <div className="bg-white dark:bg-slate-900 rounded-lg shadow-2xl">
           {/* Header */}
-          <div className="flex items-center justify-between p-6 border-b border-slate-200 dark:border-slate-700">
-            <DialogTitle className="text-xl font-semibold text-slate-800 dark:text-slate-100">
-              Job Offer Letter
-            </DialogTitle>
+          {/* <div className="flex items-center justify-between p-6 border-b border-slate-200 dark:border-slate-700 bg-gradient-to-r from-teal-50 to-indigo-50 dark:from-slate-800 dark:to-slate-700">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-gradient-to-br from-teal-500 to-teal-600 rounded-lg text-white shadow-sm">
+                <FileText className="h-5 w-5" />
+              </div>
+              <div>
+                <DialogTitle className="text-xl font-semibold text-slate-800 dark:text-slate-100">
+                  Official Job Offer Letter
+                </DialogTitle>
+                <p className="text-sm text-slate-600 dark:text-slate-400">
+                  {selectedOffer?.companyName} • {selectedOffer?.jobData?.title}
+                </p>
+              </div>
+            </div>
             <div className="flex items-center gap-2">
-              <Button variant="outline" size="sm" className="rounded-full">
+              <Button variant="outline" size="sm" className="rounded-full border-teal-300/60 bg-white/80 backdrop-blur hover:bg-white text-teal-700">
                 <Download className="h-4 w-4 mr-2" />
-                Download
+                Download PDF
               </Button>
               <Button 
                 variant="ghost" 
                 size="sm" 
                 onClick={() => setShowOfferLetter(false)}
-                className="rounded-full"
+                className="rounded-full hover:bg-red-100 dark:hover:bg-red-900/20 text-slate-600 hover:text-red-600"
               >
                 <X className="h-4 w-4" />
               </Button>
             </div>
-          </div>
+          </div> */}
 
           {/* Letter Content */}
           {selectedOffer && (
@@ -351,7 +361,7 @@ function JobOffers() {
               </div>
 
               {/* Job Offer Details */}
-              <div className="mb-8 p-6 bg-gradient-to-r from-teal-50 to-indigo-50 dark:from-slate-800 dark:to-slate-700 rounded-xl border border-teal-200 dark:border-slate-600">
+              {/* <div className="mb-8 p-6 bg-gradient-to-r from-teal-50 to-indigo-50 dark:from-slate-800 dark:to-slate-700 rounded-xl border border-teal-200 dark:border-slate-600">
                 <h4 className="text-xl font-bold text-slate-800 dark:text-slate-100 mb-4 flex items-center gap-2">
                   <Award className="h-5 w-5 text-teal-600" />
                   Job Offer: {selectedOffer.jobData?.title}
@@ -392,59 +402,179 @@ function JobOffers() {
                     </div>
                   )}
                 </div>
-              </div>
+              </div> */}
 
               {/* Offer Letter Body */}
               <div className="mb-8">
+                {/* Letter Introduction */}
+                {/* <div className="mb-6 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-slate-700 dark:to-slate-600 rounded-lg border border-blue-200 dark:border-slate-500">
+                  <p className="text-slate-700 dark:text-slate-300 font-medium text-center">
+                    📧 <strong>Official Job Offer Letter</strong>
+                  </p>
+                </div> */}
+
                 <div className="prose prose-slate dark:prose-invert max-w-none">
                   {selectedOffer.jobData?.offerLetter ? (
-                    <div className="whitespace-pre-wrap text-slate-700 dark:text-slate-300 leading-relaxed">
-                      {selectedOffer.jobData.offerLetter}
+                    <div className="bg-white dark:bg-slate-800 p-6 rounded-lg border border-slate-200 dark:border-slate-600 shadow-inner">
+                      {/* Letter Header */}
+                      <div className="text-center mb-6 pb-4 border-b border-slate-200 dark:border-slate-600">
+                        <h2 className="text-xl font-bold text-slate-800 dark:text-slate-100 mb-2">
+                           OFFER LETTER
+                        </h2>
+                        <p className="text-sm text-slate-600 dark:text-slate-400">
+                          {/* {selectedOffer.companyName} • {new Date().toLocaleDateString('en-US', { 
+                            year: 'numeric', 
+                            month: 'long', 
+                            day: 'numeric' 
+                          })} */}
+                        </p>
+                      </div>
+
+                      {/* Main Letter Content */}
+                      <div className="whitespace-pre-wrap text-slate-700 dark:text-slate-300 leading-relaxed text-justify font-serif text-base">
+                        {selectedOffer.jobData.offerLetter}
+                      </div>
+
+                      {/* Letter Footer */}
+                      <div className="mt-6 pt-4 border-t border-slate-200 dark:border-slate-600">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                          <div className="space-y-2">
+                            <p className="font-semibold text-slate-800 dark:text-slate-100">Position Details:</p>
+                            <p className="text-slate-600 dark:text-slate-400">• Title: {selectedOffer.jobData?.title}</p>
+                            <p className="text-slate-600 dark:text-slate-400">• Position: {selectedOffer.jobData?.position}</p>
+                            {selectedOffer.jobData?.salary && (
+                              <p className="text-slate-600 dark:text-slate-400">• Compensation: {selectedOffer.jobData.salary}</p>
+                            )}
+                          </div>
+                          <div className="space-y-2">
+                            <p className="font-semibold text-slate-800 dark:text-slate-100">Important Dates:</p>
+                            {/* <p className="text-slate-600 dark:text-slate-400">• Offer Date: {new Date().toLocaleDateString()}</p> */}
+                            {selectedOffer.candidate?.expireDate && (
+                              <p className="text-slate-600 dark:text-slate-400">• Response Deadline: {new Date(selectedOffer.candidate.expireDate).toLocaleDateString()}</p>
+                            )}
+                            {/* {selectedOffer.candidate?.score && (
+                              <p className="text-slate-600 dark:text-slate-400">• Assessment Score: {selectedOffer.candidate.score}</p>
+                            )} */}
+                          </div>
+                        </div>
+                      </div>
                     </div>
                   ) : (
-                    <div className="text-slate-700 dark:text-slate-300 leading-relaxed">
-                      <p className="mb-4">
-                        We are pleased to extend an offer of employment for the position of <strong>{selectedOffer.jobData?.position}</strong> at <strong>{selectedOffer.companyName}</strong>.
-                      </p>
-                      <p className="mb-4">
-                        We were impressed by your qualifications and believe you would be a valuable addition to our team. This position offers an excellent opportunity for professional growth and development.
-                      </p>
-                      <p className="mb-4">
-                        Please review the terms and conditions of this offer. If you accept, please respond by the expiration date mentioned above.
-                      </p>
-                      <p>
-                        We look forward to welcoming you to our team and are excited about the contributions you will make to our organization.
-                      </p>
+                    <div className="bg-white dark:bg-slate-800 p-6 rounded-lg border border-slate-200 dark:border-slate-600 shadow-inner">
+                      {/* Letter Header */}
+                      <div className="text-center mb-6 pb-4 border-b border-slate-200 dark:border-slate-600">
+                        <h2 className="text-xl font-bold text-slate-800 dark:text-slate-100 mb-2">
+                          EMPLOYMENT OFFER LETTER
+                        </h2>
+                        <p className="text-sm text-slate-600 dark:text-slate-400">
+                          {selectedOffer.companyName} • {new Date().toLocaleDateString('en-US', { 
+                            year: 'numeric', 
+                            month: 'long', 
+                            day: 'numeric' 
+                          })}
+                        </p>
+                      </div>
+
+                      {/* Default Letter Content */}
+                      <div className="text-slate-700 dark:text-slate-300 leading-relaxed text-justify font-serif space-y-4">
+                        <p className="text-base">
+                          We are pleased to extend an offer of employment for the position of <strong>{selectedOffer.jobData?.position}</strong> at <strong>{selectedOffer.companyName}</strong>.
+                        </p>
+                        <p className="text-base">
+                          After careful consideration of your qualifications, experience, and interview performance, we believe you would be an excellent addition to our team. Your skills and expertise align perfectly with our requirements for this role.
+                        </p>
+                        <p className="text-base">
+                          This position offers competitive compensation, comprehensive benefits, and excellent opportunities for professional growth and development within our organization.
+                        </p>
+                        <p className="text-base">
+                          Please review the terms and conditions of this offer carefully. Should you accept this position, we request that you respond by the deadline specified above.
+                        </p>
+                        <p className="text-base">
+                          We are excited about the possibility of you joining our team and look forward to the valuable contributions you will make to our organization&apos;s continued success.
+                        </p>
+                      </div>
+
+                      {/* Default Letter Footer */}
+                      <div className="mt-6 pt-4 border-t border-slate-200 dark:border-slate-600">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                          <div className="space-y-2">
+                            <p className="font-semibold text-slate-800 dark:text-slate-100">Position Details:</p>
+                            <p className="text-slate-600 dark:text-slate-400">• Title: {selectedOffer.jobData?.title}</p>
+                            <p className="text-slate-600 dark:text-slate-400">• Position: {selectedOffer.jobData?.position}</p>
+                            {selectedOffer.jobData?.salary && (
+                              <p className="text-slate-600 dark:text-slate-400">• Compensation: {selectedOffer.jobData.salary}</p>
+                            )}
+                          </div>
+                          <div className="space-y-2">
+                            <p className="font-semibold text-slate-800 dark:text-slate-100">Important Dates:</p>
+                            <p className="text-slate-600 dark:text-slate-400">• Offer Date: {new Date().toLocaleDateString()}</p>
+                            {selectedOffer.candidate?.expireDate && (
+                              <p className="text-slate-600 dark:text-slate-400">• Response Deadline: {new Date(selectedOffer.candidate.expireDate).toLocaleDateString()}</p>
+                            )}
+                            {selectedOffer.candidate?.score && (
+                              <p className="text-slate-600 dark:text-slate-400">• Assessment Score: {selectedOffer.candidate.score}</p>
+                            )}
+                          </div>
+                        </div>
+                      </div>
                     </div>
                   )}
                 </div>
               </div>
 
               {/* Signature */}
-              <div className="border-t border-slate-200 dark:border-slate-700 pt-6">
-                <div className="flex justify-between items-end">
-                  <div>
-                    <p className="text-slate-800 dark:text-slate-100 font-medium">
-                      Sincerely,
-                    </p>
-                    <p className="text-slate-800 dark:text-slate-100 font-bold mt-2">
-                      {selectedOffer.companyName}
-                    </p>
-                    <p className="text-slate-600 dark:text-slate-400 text-sm">
-                      HR Department
-                    </p>
-                  </div>
-                  <div className="text-right">
-                    <div className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400 mb-2">
-                      <Mail className="h-4 w-4" />
-                      {selectedOffer.employerData?.email || 'hr@company.com'}
+              {/* <div className="border-t border-slate-200 dark:border-slate-700 pt-6">
+                <div className="bg-gradient-to-r from-slate-50 to-white dark:from-slate-800 dark:to-slate-700 p-6 rounded-lg border border-slate-200 dark:border-slate-600">
+                  <div className="flex justify-between items-end">
+                    <div className="space-y-3">
+                      <p className="text-slate-800 dark:text-slate-100 font-medium text-base">
+                        Sincerely,
+                      </p>
+                      <div className="space-y-1">
+                        <div className="h-12 w-48 border-b border-slate-400 dark:border-slate-500 relative">
+                          <span className="absolute -bottom-6 left-0 text-xs text-slate-500 dark:text-slate-400 italic">
+                            Authorized Signature
+                          </span>
+                        </div>
+                      </div>
+                      <div className="mt-8">
+                        <p className="text-slate-800 dark:text-slate-100 font-bold text-lg">
+                          {selectedOffer.companyName}
+                        </p>
+                        <p className="text-slate-600 dark:text-slate-400 text-sm font-medium">
+                          Human Resources Department
+                        </p>
+                        <p className="text-slate-500 dark:text-slate-500 text-xs mt-1">
+                          This is an official offer letter
+                        </p>
+                      </div>
                     </div>
-                    <div className="text-xs text-slate-500 dark:text-slate-500">
-                      Generated on {new Date().toLocaleDateString()}
+                    <div className="text-right space-y-2">
+                      <div className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400">
+                        <Mail className="h-4 w-4" />
+                        <span>{selectedOffer.employerData?.email || 'hr@company.com'}</span>
+                      </div>
+                      <div className="text-xs text-slate-500 dark:text-slate-500">
+                        Document ID: #{selectedOffer.candidate?.id || '000'}
+                      </div>
+                      <div className="text-xs text-slate-500 dark:text-slate-500">
+                        Generated: {new Date().toLocaleDateString('en-US', { 
+                          year: 'numeric', 
+                          month: 'short', 
+                          day: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit'
+                        })}
+                      </div>
+                      <div className="mt-3 p-2 bg-slate-100 dark:bg-slate-600 rounded border">
+                        <p className="text-xs text-slate-600 dark:text-slate-300 font-mono">
+                          🔒 Confidential Document
+                        </p>
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
+              </div> */}
 
               {/* Action Buttons */}
               {selectedOffer.candidate?.status === 'PROCESSING' && (
