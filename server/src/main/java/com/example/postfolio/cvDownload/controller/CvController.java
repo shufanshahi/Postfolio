@@ -32,7 +32,8 @@ public class CvController {
             } else {
                 return ResponseEntity.status(503)
                         .header("Content-Type", "text/plain")
-                        .body("LaTeX compilation not available. Please install LaTeX using setup-latex.sh script or use /api/cv/generate/latex-source/{profileId} to download LaTeX source.".getBytes());
+                        .body("LaTeX compilation not available. Please install LaTeX using setup-latex.sh script or use /api/cv/generate/latex-source/{profileId} to download LaTeX source."
+                                .getBytes());
             }
         } catch (Exception e) {
             e.printStackTrace(); // For debugging
@@ -56,7 +57,8 @@ public class CvController {
             } else {
                 return ResponseEntity.status(503)
                         .header("Content-Type", "text/plain")
-                        .body("LaTeX compilation not available. Please install LaTeX using setup-latex.sh script.".getBytes());
+                        .body("LaTeX compilation not available. Please install LaTeX using setup-latex.sh script."
+                                .getBytes());
             }
         } catch (Exception e) {
             e.printStackTrace(); // For debugging

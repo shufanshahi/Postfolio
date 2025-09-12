@@ -136,19 +136,10 @@ function CvDownloadButton() {
                         </>
                     )}
                 </Button>
-                
+
                 {/* Additional download options */}
                 <div className="flex flex-col gap-2">
-                    <Button
-                        onClick={() => downloadCv('generate/enhanced', 'professional_cv_enhanced.pdf')}
-                        disabled={loading || !profileId}
-                        className="gap-2 rounded-full bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-400 shadow-lg shadow-indigo-500/25"
-                        size="sm"
-                    >
-                        <Download className="h-3 w-3" />
-                        Enhanced PDF
-                    </Button>
-                    
+
                     <Button
                         onClick={downloadLatexSource}
                         disabled={loading || !profileId}
