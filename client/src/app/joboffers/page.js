@@ -249,24 +249,48 @@ function JobOffers() {
     try {
       const token = localStorage.getItem("token");
       
-      // Update candidate status to ACCEPTED
-      const response = await fetch(`http://localhost:8080/api/job-candidates/job/${jobId}/profile/${profile.id}/status`, {
+      // Step 1: Call the accept job offer endpoint to append to AcceptedByProfileIds
+      const acceptResponse = await fetch(`http://localhost:8080/api/jobs/${jobId}/accept/${profile.id}`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (!acceptResponse.ok) {
+        alert('Failed to accept offer. Please try again.');
+        return;
+      }
+
+      const jobResponseData = await acceptResponse.json();
+      
+      // Step 2: Extract the required fields from the response
+      const { expiryInterval, acceptedByProfileIds, desiredSelectNumber } = jobResponseData;
+      
+      // Step 3: Determine proceed value based on acceptedByProfileIds count vs desiredSelectNumber
+      const proceed = acceptedByProfileIds.length < desiredSelectNumber;
+      
+      // Step 4: Call the job candidate status update endpoint
+      const statusResponse = await fetch(`http://localhost:8080/api/job-candidates/job/${jobId}/profile/${profile.id}/status`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          status: 'ACCEPTED'
+          status: 'ACCEPTED',
+          proceed: false,
+          interval: expiryInterval
         })
       });
 
-      if (response.ok) {
+      if (statusResponse.ok) {
         // Refresh the data
         fetchProfileAndJobOffers();
         alert('Offer accepted successfully!');
       } else {
-        alert('Failed to accept offer. Please try again.');
+        alert('Failed to update candidate status. Please try again.');
       }
     } catch (error) {
       console.error("Error accepting offer:", error);
