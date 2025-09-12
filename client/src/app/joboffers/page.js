@@ -271,6 +271,22 @@ function JobOffers() {
       // Step 3: Determine proceed value based on acceptedByProfileIds count vs desiredSelectNumber
       const proceed = acceptedByProfileIds.length < desiredSelectNumber;
       
+      // Step 3.1: Check if auto-select should be completed
+      if (acceptedByProfileIds.length >= desiredSelectNumber) {
+        try {
+          await fetch(`http://localhost:8080/api/jobs/${jobId}/auto-select-status`, {
+            method: 'PUT',
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json'
+            }
+          });
+        } catch (error) {
+          console.error("Error updating auto-select status:", error);
+          // Continue with the flow even if this fails
+        }
+      }
+      
       // Step 4: Call the job candidate status update endpoint
       const statusResponse = await fetch(`http://localhost:8080/api/job-candidates/job/${jobId}/profile/${profile.id}/status`, {
         method: 'PUT',

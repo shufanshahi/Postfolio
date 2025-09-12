@@ -26,6 +26,9 @@ public interface JobService {
     
     // Accept job offer method
     JobResponse acceptJobOffer(Long jobId, Long profileId);
+    
+    // Update auto-select status method
+    JobResponse updateAutoSelectStatus(Long jobId);
 
     // Additional methods to support matching
     List<Job> findAllActiveJobs();

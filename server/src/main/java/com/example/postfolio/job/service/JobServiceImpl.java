@@ -294,4 +294,22 @@ public class JobServiceImpl implements JobService {
         
         return res;
     }
+
+    @Override
+    @Transactional
+    public JobResponse updateAutoSelectStatus(Long jobId) {
+        Job job = jobRepository.findById(jobId).orElseThrow(() ->
+                new RuntimeException("Job not found with id: " + jobId));
+        
+        // Check if acceptedByProfileIds.length equals desiredSelectNumber
+        if (job.getDesiredSelectNumber() != null && 
+            job.getAcceptedByProfileIds().size() >= job.getDesiredSelectNumber()) {
+            job.setAutoSelectStatus(AutoSelectStatus.COMPLETED);
+            Job savedJob = jobRepository.save(job);
+            return toResponse(savedJob);
+        }
+        
+        // If condition not met, return current job state without changes
+        return toResponse(job);
+    }
 }

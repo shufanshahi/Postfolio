@@ -151,6 +151,20 @@ public class JobController {
         }
     }
 
+    @PutMapping("/{jobId}/auto-select-status")
+    public ResponseEntity<JobResponse> updateAutoSelectStatus(@PathVariable Long jobId) {
+        try {
+            JobResponse jobResponse = jobService.updateAutoSelectStatus(jobId);
+            return ResponseEntity.ok(jobResponse);
+        } catch (RuntimeException e) {
+            log.error("Failed to update auto-select status for job {}", jobId, e);
+            return ResponseEntity.notFound().build();
+        } catch (Exception e) {
+            log.error("Unexpected error while updating auto-select status for job {}", jobId, e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
     @GetMapping("/matched")
     public ResponseEntity<List<JobWithScoreDTO>> getMatchedJobsForUser(Authentication authentication) {
         try {
