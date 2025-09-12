@@ -18,6 +18,7 @@ public class AIProcessingController {
     private final MCQGenerationAIService mcqGenerationAIService;
     private final InterviewGenerationAIService interviewGenerationAIService;
     private final NewsSummarizationAIService newsSummarizationAIService;
+    private final RoadmapGenerationAIService roadmapGenerationAIService;
 
     @PostMapping("/process-post")
     public ResponseEntity<PostProcessingResponse> processPost(@RequestBody PostProcessingRequest request) {
@@ -77,6 +78,14 @@ public class AIProcessingController {
     public ResponseEntity<NewsSummarizationResponse> summarizeNews(@RequestBody NewsSummarizationRequest request) {
         log.info("Summarizing news content with target audience: {}", request.getTargetAudience());
         NewsSummarizationResponse response = newsSummarizationAIService.summarizeNews(request);
+        return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/generate-roadmap")
+    public ResponseEntity<RoadmapGenerationResponse> generateRoadmap(@RequestBody RoadmapGenerationRequest request) {
+        log.info("Generating AI-powered roadmap for job {} and profile {}", 
+                request.getJobId(), request.getProfileId());
+        RoadmapGenerationResponse response = roadmapGenerationAIService.generateRoadmap(request);
         return ResponseEntity.ok(response);
     }
 
