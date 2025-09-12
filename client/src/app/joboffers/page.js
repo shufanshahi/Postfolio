@@ -14,6 +14,14 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import {
   Calendar,
   Clock,
   Video,
@@ -32,7 +40,10 @@ import {
   Star,
   DollarSign,
   FileText,
-  Award
+  Award,
+  X,
+  Download,
+  Mail
 } from "lucide-react";
 
 function JobOffers() {
@@ -45,6 +56,8 @@ function JobOffers() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [filterStatus, setFilterStatus] = useState('All');
+  const [showOfferLetter, setShowOfferLetter] = useState(false);
+  const [selectedOffer, setSelectedOffer] = useState(null);
 
   // Design tokens matching dashboard and my-interviews
   const gradientPanel = 'bg-gradient-to-br from-teal-50/70 via-white/50 to-indigo-50/70 dark:from-slate-800/60 dark:via-slate-800/50 dark:to-slate-800/60 backdrop-blur-xl border border-white/40 dark:border-slate-700/50 shadow-sm';
@@ -219,6 +232,19 @@ function JobOffers() {
     router.push(`/find-jobs/${jobId}`);
   };
 
+  const handleViewOfferLetter = (candidate) => {
+    const jobData = jobDetails[candidate.jobId];
+    const employerData = jobData?.employerId ? employerProfiles[jobData.employerId] : null;
+    
+    setSelectedOffer({
+      candidate,
+      jobData,
+      employerData,
+      companyName: getCompanyName(candidate.jobId)
+    });
+    setShowOfferLetter(true);
+  };
+
   const handleAcceptOffer = async (candidateId, jobId) => {
     try {
       const token = localStorage.getItem("token");
@@ -259,6 +285,197 @@ function JobOffers() {
     { value: 'ACCEPTED', label: 'Accepted', count: jobCandidates.filter(c => c.status === 'ACCEPTED').length },
     { value: 'REJECTED', label: 'Rejected', count: jobCandidates.filter(c => c.status === 'REJECTED').length }
   ];
+
+  // Offer Letter Modal Component
+  const OfferLetterModal = () => (
+    <Dialog open={showOfferLetter} onOpenChange={setShowOfferLetter}>
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto p-0">
+        <div className="bg-white dark:bg-slate-900 rounded-lg shadow-2xl">
+          {/* Header */}
+          <div className="flex items-center justify-between p-6 border-b border-slate-200 dark:border-slate-700">
+            <DialogTitle className="text-xl font-semibold text-slate-800 dark:text-slate-100">
+              Job Offer Letter
+            </DialogTitle>
+            <div className="flex items-center gap-2">
+              <Button variant="outline" size="sm" className="rounded-full">
+                <Download className="h-4 w-4 mr-2" />
+                Download
+              </Button>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={() => setShowOfferLetter(false)}
+                className="rounded-full"
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+
+          {/* Letter Content */}
+          {selectedOffer && (
+            <div className="p-8 bg-white dark:bg-slate-900">
+              {/* Company Header */}
+              <div className="flex items-center gap-4 mb-8 pb-6 border-b border-slate-200 dark:border-slate-700">
+                <Avatar className="h-16 w-16 ring-2 ring-teal-200 dark:ring-teal-700">
+                  <AvatarImage 
+                    src={selectedOffer.employerData?.profileImage || '/default-company-logo.png'} 
+                    alt="Company Logo" 
+                  />
+                  <AvatarFallback className="bg-gradient-to-br from-teal-500 to-teal-600 text-white text-lg font-bold">
+                    {selectedOffer.companyName?.charAt(0) || 'C'}
+                  </AvatarFallback>
+                </Avatar>
+                <div>
+                  <h2 className="text-2xl font-bold text-slate-800 dark:text-slate-100">
+                    {selectedOffer.companyName}
+                  </h2>
+                  <p className="text-slate-600 dark:text-slate-400">
+                    {selectedOffer.employerData?.email || 'company@example.com'}
+                  </p>
+                  <p className="text-slate-600 dark:text-slate-400 text-sm">
+                    {new Date().toLocaleDateString('en-US', { 
+                      year: 'numeric', 
+                      month: 'long', 
+                      day: 'numeric' 
+                    })}
+                  </p>
+                </div>
+              </div>
+
+              {/* Recipient */}
+              <div className="mb-8">
+                <h3 className="text-lg font-semibold text-slate-800 dark:text-slate-100 mb-2">
+                  Dear {profile?.firstName} {profile?.lastName},
+                </h3>
+              </div>
+
+              {/* Job Offer Details */}
+              <div className="mb-8 p-6 bg-gradient-to-r from-teal-50 to-indigo-50 dark:from-slate-800 dark:to-slate-700 rounded-xl border border-teal-200 dark:border-slate-600">
+                <h4 className="text-xl font-bold text-slate-800 dark:text-slate-100 mb-4 flex items-center gap-2">
+                  <Award className="h-5 w-5 text-teal-600" />
+                  Job Offer: {selectedOffer.jobData?.title}
+                </h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="flex items-center gap-2">
+                    <Briefcase className="h-4 w-4 text-slate-600 dark:text-slate-400" />
+                    <span className="text-sm text-slate-600 dark:text-slate-400">Position:</span>
+                    <span className="font-medium text-slate-800 dark:text-slate-100">
+                      {selectedOffer.jobData?.position}
+                    </span>
+                  </div>
+                  {selectedOffer.jobData?.salary && (
+                    <div className="flex items-center gap-2">
+                      <DollarSign className="h-4 w-4 text-slate-600 dark:text-slate-400" />
+                      <span className="text-sm text-slate-600 dark:text-slate-400">Salary:</span>
+                      <span className="font-medium text-slate-800 dark:text-slate-100">
+                        {selectedOffer.jobData.salary}
+                      </span>
+                    </div>
+                  )}
+                  {selectedOffer.candidate?.score && (
+                    <div className="flex items-center gap-2">
+                      <Star className="h-4 w-4 text-amber-500" />
+                      <span className="text-sm text-slate-600 dark:text-slate-400">Your Score:</span>
+                      <span className="font-medium text-slate-800 dark:text-slate-100">
+                        {selectedOffer.candidate.score}
+                      </span>
+                    </div>
+                  )}
+                  {selectedOffer.candidate?.expireDate && (
+                    <div className="flex items-center gap-2">
+                      <Calendar className="h-4 w-4 text-red-500" />
+                      <span className="text-sm text-slate-600 dark:text-slate-400">Expires:</span>
+                      <span className="font-medium text-red-600 dark:text-red-400">
+                        {new Date(selectedOffer.candidate.expireDate).toLocaleDateString()}
+                      </span>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Offer Letter Body */}
+              <div className="mb-8">
+                <div className="prose prose-slate dark:prose-invert max-w-none">
+                  {selectedOffer.jobData?.offerLetter ? (
+                    <div className="whitespace-pre-wrap text-slate-700 dark:text-slate-300 leading-relaxed">
+                      {selectedOffer.jobData.offerLetter}
+                    </div>
+                  ) : (
+                    <div className="text-slate-700 dark:text-slate-300 leading-relaxed">
+                      <p className="mb-4">
+                        We are pleased to extend an offer of employment for the position of <strong>{selectedOffer.jobData?.position}</strong> at <strong>{selectedOffer.companyName}</strong>.
+                      </p>
+                      <p className="mb-4">
+                        We were impressed by your qualifications and believe you would be a valuable addition to our team. This position offers an excellent opportunity for professional growth and development.
+                      </p>
+                      <p className="mb-4">
+                        Please review the terms and conditions of this offer. If you accept, please respond by the expiration date mentioned above.
+                      </p>
+                      <p>
+                        We look forward to welcoming you to our team and are excited about the contributions you will make to our organization.
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Signature */}
+              <div className="border-t border-slate-200 dark:border-slate-700 pt-6">
+                <div className="flex justify-between items-end">
+                  <div>
+                    <p className="text-slate-800 dark:text-slate-100 font-medium">
+                      Sincerely,
+                    </p>
+                    <p className="text-slate-800 dark:text-slate-100 font-bold mt-2">
+                      {selectedOffer.companyName}
+                    </p>
+                    <p className="text-slate-600 dark:text-slate-400 text-sm">
+                      HR Department
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <div className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400 mb-2">
+                      <Mail className="h-4 w-4" />
+                      {selectedOffer.employerData?.email || 'hr@company.com'}
+                    </div>
+                    <div className="text-xs text-slate-500 dark:text-slate-500">
+                      Generated on {new Date().toLocaleDateString()}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              {selectedOffer.candidate?.status === 'PROCESSING' && (
+                <div className="mt-8 pt-6 border-t border-slate-200 dark:border-slate-700">
+                  <div className="flex justify-center gap-4">
+                    <Button
+                      onClick={() => {
+                        handleAcceptOffer(selectedOffer.candidate.id, selectedOffer.candidate.jobId);
+                        setShowOfferLetter(false);
+                      }}
+                      className="bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-700 hover:to-emerald-800 text-white rounded-full px-8 py-2 shadow-lg"
+                    >
+                      <CheckCircle className="h-4 w-4 mr-2" />
+                      Accept Offer
+                    </Button>
+                    <Button
+                      variant="outline"
+                      onClick={() => setShowOfferLetter(false)}
+                      className="rounded-full px-8 py-2"
+                    >
+                      Review Later
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
 
   if (loading) {
     return (
@@ -550,11 +767,11 @@ function JobOffers() {
                             <Button
                               variant="outline"
                               size="sm"
-                              onClick={() => handleViewJob(candidate.jobId)}
+                              onClick={() => handleViewOfferLetter(candidate)}
                               className="rounded-full border-slate-300/60 bg-white/60 backdrop-blur hover:bg-white text-slate-700 text-sm shadow-sm"
                             >
                               <FileText className="h-4 w-4 mr-1.5" />
-                              View Job
+                              Check Offer Letter
                             </Button>
                           </div>
                         </div>
@@ -567,6 +784,9 @@ function JobOffers() {
           </CardContent>
         </Card>
       </div>
+      
+      {/* Offer Letter Modal */}
+      <OfferLetterModal />
     </div>
   );
 }
