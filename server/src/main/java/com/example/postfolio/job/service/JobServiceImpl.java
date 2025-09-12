@@ -214,6 +214,23 @@ public class JobServiceImpl implements JobService {
         return toResponse(savedJob);
     }
 
+    @Override
+    @Transactional
+    public JobResponse acceptJobOffer(Long jobId, Long profileId) {
+        Job job = jobRepository.findById(jobId).orElseThrow(() ->
+                new RuntimeException("Job not found with id: " + jobId));
+        
+        // Check if the profile ID is not already in the accepted list
+        if (!job.getAcceptedByProfileIds().contains(profileId)) {
+            job.getAcceptedByProfileIds().add(profileId);
+            Job savedJob = jobRepository.save(job);
+            return toResponse(savedJob);
+        }
+        
+        // If already accepted, just return the current job state
+        return toResponse(job);
+    }
+
     private JobResponse toResponse(Job job) {
         JobResponse res = new JobResponse();
         res.setJobId(job.getJobId());

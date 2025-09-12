@@ -135,6 +135,22 @@ public class JobController {
         }
     }
 
+    @PostMapping("/{jobId}/accept/{profileId}")
+    public ResponseEntity<JobResponse> acceptJobOffer(
+            @PathVariable Long jobId, 
+            @PathVariable Long profileId) {
+        try {
+            JobResponse jobResponse = jobService.acceptJobOffer(jobId, profileId);
+            return ResponseEntity.ok(jobResponse);
+        } catch (RuntimeException e) {
+            log.error("Failed to accept job offer for job {} by profile {}", jobId, profileId, e);
+            return ResponseEntity.notFound().build();
+        } catch (Exception e) {
+            log.error("Unexpected error while accepting job offer for job {} by profile {}", jobId, profileId, e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
     @GetMapping("/matched")
     public ResponseEntity<List<JobWithScoreDTO>> getMatchedJobsForUser(Authentication authentication) {
         try {

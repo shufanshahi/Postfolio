@@ -23,6 +23,9 @@ public interface JobService {
 
     // Auto-select method
     JobResponse startAutoSelect(Long jobId, AutoSelectRequest request);
+    
+    // Accept job offer method
+    JobResponse acceptJobOffer(Long jobId, Long profileId);
 
     // Additional methods to support matching
     List<Job> findAllActiveJobs();
