@@ -13,6 +13,7 @@ public interface JobCandidateRepository extends JpaRepository<JobCandidate, Long
     List<JobCandidate> findByJobId(Long jobId);
     List<JobCandidate> findByProfileId(Long profileId);
     List<JobCandidate> findByStatus(CandidateStatus status);
+    List<JobCandidate> findByProfileIdAndStatus(Long profileId, CandidateStatus status);
     Optional<JobCandidate> findByJobIdAndProfileId(Long jobId, Long profileId);
     List<JobCandidate> findByJobIdAndStatus(Long jobId, CandidateStatus status);
 }

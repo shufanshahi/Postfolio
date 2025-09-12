@@ -46,6 +46,15 @@ public class JobCandidateServiceImpl implements JobCandidateService {
     }
 
     @Override
+    @Transactional(readOnly = true)
+    public List<JobCandidateResponse> getProcessingCandidatesByProfileId(Long profileId) {
+        return jobCandidateRepository.findByProfileIdAndStatus(profileId, CandidateStatus.PROCESSING)
+                .stream()
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
+    }
+
+    @Override
     public List<JobCandidateResponse> activateAllCandidatesForJob(Long jobId, Integer desiredSelectNumber, LocalDate expireDate) {
         // Find all candidates for the specific job
         List<JobCandidate> candidates = jobCandidateRepository.findByJobId(jobId);
