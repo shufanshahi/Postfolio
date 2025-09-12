@@ -298,6 +298,36 @@ function JobOffers() {
     }
   };
 
+  const handleRejectOffer = async (candidateId, jobId) => {
+    try {
+      const token = localStorage.getItem("token");
+      
+      // Call the job candidate status update endpoint with proceed: true for rejection
+      const statusResponse = await fetch(`http://localhost:8080/api/job-candidates/job/${jobId}/profile/${profile.id}/status`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          status: 'REJECTED',
+          proceed: true
+        })
+      });
+
+      if (statusResponse.ok) {
+        // Refresh the data
+        fetchProfileAndJobOffers();
+        alert('Offer rejected successfully!');
+      } else {
+        alert('Failed to reject offer. Please try again.');
+      }
+    } catch (error) {
+      console.error("Error rejecting offer:", error);
+      alert("Error rejecting offer.");
+    }
+  };
+
   // Filter candidates based on selected status
   const filteredCandidates = filterStatus === 'All' 
     ? jobCandidates 
@@ -484,6 +514,16 @@ function JobOffers() {
                     >
                       <CheckCircle className="h-4 w-4 mr-2" />
                       Accept Offer
+                    </Button>
+                    <Button
+                      onClick={() => {
+                        handleRejectOffer(selectedOffer.candidate.id, selectedOffer.candidate.jobId);
+                        setShowOfferLetter(false);
+                      }}
+                      className="bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white rounded-full px-8 py-2 shadow-lg"
+                    >
+                      <XCircle className="h-4 w-4 mr-2" />
+                      Reject Offer
                     </Button>
                     <Button
                       variant="outline"
