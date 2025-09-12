@@ -5,6 +5,7 @@ import com.example.postfolio.jobcandidates.dto.JobCandidateResponse;
 import com.example.postfolio.jobcandidates.dto.ActivateCandidatesRequest;
 import com.example.postfolio.jobcandidates.dto.StatusUpdateRequest;
 import com.example.postfolio.jobcandidates.service.JobCandidateService;
+import com.example.postfolio.jobcandidates.service.JobCandidateSchedulerService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -20,6 +21,7 @@ import java.util.List;
 public class JobCandidateController {
     
     private final JobCandidateService jobCandidateService;
+    private final JobCandidateSchedulerService jobCandidateSchedulerService;
 
     @PostMapping
     public ResponseEntity<JobCandidateResponse> createJobCandidate(@RequestBody JobCandidateRequest request) {
@@ -82,6 +84,22 @@ public class JobCandidateController {
         } catch (Exception e) {
             log.error("Unexpected error updating candidate status for job: " + jobId + " and profile: " + profileId, e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
+    /**
+     * Manual endpoint to trigger candidate expiry process (useful for testing)
+     */
+    @PostMapping("/admin/trigger-expiry-process")
+    public ResponseEntity<String> triggerExpiryProcess() {
+        try {
+            log.info("Manual trigger for candidate expiry process initiated");
+            jobCandidateSchedulerService.triggerCandidateExpiryProcess();
+            return ResponseEntity.ok("Candidate expiry process has been triggered successfully");
+        } catch (Exception e) {
+            log.error("Error triggering candidate expiry process", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Error occurred while triggering expiry process: " + e.getMessage());
         }
     }
 }
