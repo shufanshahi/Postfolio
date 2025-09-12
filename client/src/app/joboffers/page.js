@@ -180,7 +180,7 @@ function JobOffers() {
     const statusConfig = {
       PROCESSING: { 
         color: "bg-gradient-to-r from-blue-500 to-blue-600 text-white ring-1 ring-blue-400/50", 
-        text: "Processing",
+        text: "Offered",
         icon: <Activity className="h-3 w-3" />
       },
       ACCEPTED: { 
@@ -281,7 +281,7 @@ function JobOffers() {
 
   const filterOptions = [
     { value: 'All', label: 'All Offers', count: jobCandidates.length },
-    { value: 'PROCESSING', label: 'Processing', count: jobCandidates.filter(c => c.status === 'PROCESSING').length },
+    { value: 'PROCESSING', label: 'Offered', count: jobCandidates.filter(c => c.status === 'PROCESSING').length },
     { value: 'ACCEPTED', label: 'Accepted', count: jobCandidates.filter(c => c.status === 'ACCEPTED').length },
     { value: 'REJECTED', label: 'Rejected', count: jobCandidates.filter(c => c.status === 'REJECTED').length }
   ];
@@ -291,36 +291,7 @@ function JobOffers() {
     <Dialog open={showOfferLetter} onOpenChange={setShowOfferLetter}>
       <DialogContent className="max-w-6xl w-[95vw] max-h-[90vh] overflow-y-auto p-0">
         <div className="bg-white dark:bg-slate-900 rounded-lg shadow-2xl">
-          {/* Header */}
-          {/* <div className="flex items-center justify-between p-6 border-b border-slate-200 dark:border-slate-700 bg-gradient-to-r from-teal-50 to-indigo-50 dark:from-slate-800 dark:to-slate-700">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-gradient-to-br from-teal-500 to-teal-600 rounded-lg text-white shadow-sm">
-                <FileText className="h-5 w-5" />
-              </div>
-              <div>
-                <DialogTitle className="text-xl font-semibold text-slate-800 dark:text-slate-100">
-                  Official Job Offer Letter
-                </DialogTitle>
-                <p className="text-sm text-slate-600 dark:text-slate-400">
-                  {selectedOffer?.companyName} • {selectedOffer?.jobData?.title}
-                </p>
-              </div>
-            </div>
-            <div className="flex items-center gap-2">
-              <Button variant="outline" size="sm" className="rounded-full border-teal-300/60 bg-white/80 backdrop-blur hover:bg-white text-teal-700">
-                <Download className="h-4 w-4 mr-2" />
-                Download PDF
-              </Button>
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                onClick={() => setShowOfferLetter(false)}
-                className="rounded-full hover:bg-red-100 dark:hover:bg-red-900/20 text-slate-600 hover:text-red-600"
-              >
-                <X className="h-4 w-4" />
-              </Button>
-            </div>
-          </div> */}
+
 
           {/* Letter Content */}
           {selectedOffer && (
@@ -360,59 +331,11 @@ function JobOffers() {
                 </h3>
               </div>
 
-              {/* Job Offer Details */}
-              {/* <div className="mb-8 p-6 bg-gradient-to-r from-teal-50 to-indigo-50 dark:from-slate-800 dark:to-slate-700 rounded-xl border border-teal-200 dark:border-slate-600">
-                <h4 className="text-xl font-bold text-slate-800 dark:text-slate-100 mb-4 flex items-center gap-2">
-                  <Award className="h-5 w-5 text-teal-600" />
-                  Job Offer: {selectedOffer.jobData?.title}
-                </h4>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="flex items-center gap-2">
-                    <Briefcase className="h-4 w-4 text-slate-600 dark:text-slate-400" />
-                    <span className="text-sm text-slate-600 dark:text-slate-400">Position:</span>
-                    <span className="font-medium text-slate-800 dark:text-slate-100">
-                      {selectedOffer.jobData?.position}
-                    </span>
-                  </div>
-                  {selectedOffer.jobData?.salary && (
-                    <div className="flex items-center gap-2">
-                      <DollarSign className="h-4 w-4 text-slate-600 dark:text-slate-400" />
-                      <span className="text-sm text-slate-600 dark:text-slate-400">Salary:</span>
-                      <span className="font-medium text-slate-800 dark:text-slate-100">
-                        {selectedOffer.jobData.salary}
-                      </span>
-                    </div>
-                  )}
-                  {selectedOffer.candidate?.score && (
-                    <div className="flex items-center gap-2">
-                      <Star className="h-4 w-4 text-amber-500" />
-                      <span className="text-sm text-slate-600 dark:text-slate-400">Your Score:</span>
-                      <span className="font-medium text-slate-800 dark:text-slate-100">
-                        {selectedOffer.candidate.score}
-                      </span>
-                    </div>
-                  )}
-                  {selectedOffer.candidate?.expireDate && (
-                    <div className="flex items-center gap-2">
-                      <Calendar className="h-4 w-4 text-red-500" />
-                      <span className="text-sm text-slate-600 dark:text-slate-400">Expires:</span>
-                      <span className="font-medium text-red-600 dark:text-red-400">
-                        {new Date(selectedOffer.candidate.expireDate).toLocaleDateString()}
-                      </span>
-                    </div>
-                  )}
-                </div>
-              </div> */}
+              
 
               {/* Offer Letter Body */}
               <div className="mb-8">
-                {/* Letter Introduction */}
-                {/* <div className="mb-6 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-slate-700 dark:to-slate-600 rounded-lg border border-blue-200 dark:border-slate-500">
-                  <p className="text-slate-700 dark:text-slate-300 font-medium text-center">
-                    📧 <strong>Official Job Offer Letter</strong>
-                  </p>
-                </div> */}
-
+                
                 <div className="prose prose-slate dark:prose-invert max-w-none">
                   {selectedOffer.jobData?.offerLetter ? (
                     <div className="bg-white dark:bg-slate-800 p-6 rounded-lg border border-slate-200 dark:border-slate-600 shadow-inner">
@@ -522,59 +445,7 @@ function JobOffers() {
                 </div>
               </div>
 
-              {/* Signature */}
-              {/* <div className="border-t border-slate-200 dark:border-slate-700 pt-6">
-                <div className="bg-gradient-to-r from-slate-50 to-white dark:from-slate-800 dark:to-slate-700 p-6 rounded-lg border border-slate-200 dark:border-slate-600">
-                  <div className="flex justify-between items-end">
-                    <div className="space-y-3">
-                      <p className="text-slate-800 dark:text-slate-100 font-medium text-base">
-                        Sincerely,
-                      </p>
-                      <div className="space-y-1">
-                        <div className="h-12 w-48 border-b border-slate-400 dark:border-slate-500 relative">
-                          <span className="absolute -bottom-6 left-0 text-xs text-slate-500 dark:text-slate-400 italic">
-                            Authorized Signature
-                          </span>
-                        </div>
-                      </div>
-                      <div className="mt-8">
-                        <p className="text-slate-800 dark:text-slate-100 font-bold text-lg">
-                          {selectedOffer.companyName}
-                        </p>
-                        <p className="text-slate-600 dark:text-slate-400 text-sm font-medium">
-                          Human Resources Department
-                        </p>
-                        <p className="text-slate-500 dark:text-slate-500 text-xs mt-1">
-                          This is an official offer letter
-                        </p>
-                      </div>
-                    </div>
-                    <div className="text-right space-y-2">
-                      <div className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400">
-                        <Mail className="h-4 w-4" />
-                        <span>{selectedOffer.employerData?.email || 'hr@company.com'}</span>
-                      </div>
-                      <div className="text-xs text-slate-500 dark:text-slate-500">
-                        Document ID: #{selectedOffer.candidate?.id || '000'}
-                      </div>
-                      <div className="text-xs text-slate-500 dark:text-slate-500">
-                        Generated: {new Date().toLocaleDateString('en-US', { 
-                          year: 'numeric', 
-                          month: 'short', 
-                          day: 'numeric',
-                          hour: '2-digit',
-                          minute: '2-digit'
-                        })}
-                      </div>
-                      <div className="mt-3 p-2 bg-slate-100 dark:bg-slate-600 rounded border">
-                        <p className="text-xs text-slate-600 dark:text-slate-300 font-mono">
-                          🔒 Confidential Document
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div> */}
+
 
               {/* Action Buttons */}
               {selectedOffer.candidate?.status === 'PROCESSING' && (
@@ -725,7 +596,7 @@ function JobOffers() {
                     <div className="text-2xl font-bold text-slate-800 dark:text-slate-100">
                       {jobCandidates.filter(c => c.status === 'PROCESSING').length}
                     </div>
-                    <div className="text-slate-600 dark:text-slate-400 text-sm font-medium">Processing</div>
+                    <div className="text-slate-600 dark:text-slate-400 text-sm font-medium">Offered</div>
                   </div>
                 </div>
               </div>
@@ -860,12 +731,12 @@ function JobOffers() {
                                   {jobDetails[candidate.jobId].salary}
                                 </p>
                               )}
-                              {candidate.score && (
+                              {/* {candidate.score && (
                                 <p className="text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
                                   <Star className="h-3 w-3 text-amber-600 dark:text-amber-400" />
                                   Score: {candidate.score}
                                 </p>
-                              )}
+                              )} */}
                               {candidate.expireDate && (
                                 <p className="text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
                                   <Calendar className="h-3 w-3 text-red-600 dark:text-red-400" />
@@ -884,16 +755,7 @@ function JobOffers() {
                         <div className="flex items-center space-x-4 ml-4">
                           {getStatusBadge(candidate.status)}
                           <div className="flex space-x-2">
-                            {candidate.status === 'PROCESSING' && (
-                              <Button
-                                size="sm"
-                                onClick={() => handleAcceptOffer(candidate.id, candidate.jobId)}
-                                className="bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-700 hover:to-emerald-800 text-white rounded-full px-4 py-2 text-sm shadow-sm ring-1 ring-emerald-500/50"
-                              >
-                                <CheckCircle className="h-4 w-4 mr-1.5" />
-                                Accept Offer
-                              </Button>
-                            )}
+
                             <Button
                               variant="outline"
                               size="sm"
