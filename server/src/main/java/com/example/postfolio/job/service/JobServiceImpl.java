@@ -16,6 +16,8 @@ import com.example.postfolio.profile.repository.ProfileRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -196,6 +198,14 @@ public class JobServiceImpl implements JobService {
         job.setDesiredSelectNumber(request.getDesiredSelectNumber());
         job.setLetterExpiry(request.getLetterExpiry());
         
+        // Calculate expiry interval between letterExpiry and current date
+        if (request.getLetterExpiry() != null) {
+            LocalDate currentDate = LocalDate.now();
+            LocalDate expiryDate = request.getLetterExpiry();
+            long daysBetween = ChronoUnit.DAYS.between(currentDate, expiryDate);
+            job.setExpiryInterval(daysBetween);
+        }
+        
         Job savedJob = jobRepository.save(job);
         
         // Invalidate job matching cache for this updated job
@@ -230,6 +240,7 @@ public class JobServiceImpl implements JobService {
         res.setOfferLetter(job.getOfferLetter());
         res.setDesiredSelectNumber(job.getDesiredSelectNumber());
         res.setLetterExpiry(job.getLetterExpiry());
+        res.setExpiryInterval(job.getExpiryInterval());
         res.setAcceptedByProfileIds(job.getAcceptedByProfileIds());
         
         return res;
@@ -261,6 +272,7 @@ public class JobServiceImpl implements JobService {
         res.setOfferLetter(job.getOfferLetter());
         res.setDesiredSelectNumber(job.getDesiredSelectNumber());
         res.setLetterExpiry(job.getLetterExpiry());
+        res.setExpiryInterval(job.getExpiryInterval());
         res.setAcceptedByProfileIds(job.getAcceptedByProfileIds());
         
         return res;

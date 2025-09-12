@@ -80,6 +80,8 @@ public class Job {
 
     private LocalDate letterExpiry;
 
+    private Long expiryInterval;
+
     @ElementCollection
     @CollectionTable(name = "job_accepted_profiles", joinColumns = @JoinColumn(name = "job_id"))
     @Column(name = "profile_id")

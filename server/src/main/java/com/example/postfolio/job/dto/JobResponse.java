@@ -32,5 +32,6 @@ public class JobResponse {
     private String offerLetter;
     private Integer desiredSelectNumber;
     private LocalDate letterExpiry;
+    private Long expiryInterval;
     private List<Long> acceptedByProfileIds;
 }
