@@ -72,6 +72,7 @@ export default function JobApplicants() {
   const [scoreInput, setScoreInput] = useState("");
   const [scoreError, setScoreError] = useState("");
   const [scoreLoading, setScoreLoading] = useState(false);
+  const [profilePictures, setProfilePictures] = useState({});
   
   const handleScheduleClick = (applicantId) => {
     setSelectedApplicant(applicantId);
@@ -346,7 +347,17 @@ export default function JobApplicants() {
       });
 
       if (res.ok) {
-        return await res.json();
+        const profileData = await res.json();
+        
+        // Store profile picture if available
+        if (profileData && profileData.pictureBase64) {
+          setProfilePictures(prev => ({
+            ...prev,
+            [profileId]: profileData.pictureBase64
+          }));
+        }
+        
+        return profileData;
       }
       return null;
     } catch (error) {
@@ -766,7 +777,13 @@ export default function JobApplicants() {
                           <div className="flex items-center justify-between">
                             <div className="flex items-center space-x-4">
                               <Avatar className="h-12 w-12 ring-2 ring-white/60 dark:ring-slate-600/60 shadow-sm">
-                                <AvatarImage src={profile?.profilePicture} alt={profile?.name} />
+                                <AvatarImage 
+                                  src={profilePictures[applicantId] 
+                                    ? `data:image/jpeg;base64,${profilePictures[applicantId]}`
+                                    : (profile?.profilePicture || `https://api.dicebear.com/7.x/avataaars/svg?seed=${applicantId}`)
+                                  } 
+                                  alt={profile?.name} 
+                                />
                                 <AvatarFallback className="bg-gradient-to-br from-teal-400 to-indigo-500 text-white font-semibold">
                                   {profile?.name ? profile.name.charAt(0).toUpperCase() : index + 1}
                                 </AvatarFallback>
@@ -1163,7 +1180,13 @@ export default function JobApplicants() {
                         <CardContent className="p-6">
                           <div className="flex items-center space-x-4">
                             <Avatar className="h-12 w-12 ring-2 ring-red-200/60 dark:ring-red-400/30 shadow-sm opacity-75">
-                              <AvatarImage src={profile?.profilePicture} alt={profile?.name} />
+                              <AvatarImage 
+                                src={profilePictures[applicantId] 
+                                  ? `data:image/jpeg;base64,${profilePictures[applicantId]}`
+                                  : (profile?.profilePicture || `https://api.dicebear.com/7.x/avataaars/svg?seed=${applicantId}`)
+                                } 
+                                alt={profile?.name} 
+                              />
                               <AvatarFallback className="bg-gradient-to-br from-red-400 to-red-600 text-white font-semibold">
                                 {profile?.name ? profile.name.charAt(0).toUpperCase() : 'R'}
                               </AvatarFallback>
@@ -1233,7 +1256,13 @@ export default function JobApplicants() {
                           <div className="flex items-center justify-between">
                             <div className="flex items-center space-x-4">
                               <Avatar className="h-12 w-12 ring-2 ring-green-200/60 dark:ring-green-400/30 shadow-sm">
-                                <AvatarImage src={profile?.profilePicture} alt={profile?.name} />
+                                <AvatarImage 
+                                  src={profilePictures[applicantId] 
+                                    ? `data:image/jpeg;base64,${profilePictures[applicantId]}`
+                                    : (profile?.profilePicture || `https://api.dicebear.com/7.x/avataaars/svg?seed=${applicantId}`)
+                                  } 
+                                  alt={profile?.name} 
+                                />
                                 <AvatarFallback className="bg-gradient-to-br from-green-400 to-green-600 text-white font-semibold">
                                   {profile?.name ? profile.name.charAt(0).toUpperCase() : '✓'}
                                 </AvatarFallback>
@@ -1315,7 +1344,13 @@ export default function JobApplicants() {
                           <div className="flex items-center justify-between">
                             <div className="flex items-center space-x-4">
                               <Avatar className="h-12 w-12 ring-2 ring-amber-200/60 dark:ring-amber-400/30 shadow-sm">
-                                <AvatarImage src={profile?.profilePicture} alt={profile?.name} />
+                                <AvatarImage 
+                                  src={profilePictures[profileId] 
+                                    ? `data:image/jpeg;base64,${profilePictures[profileId]}`
+                                    : (profile?.profilePicture || `https://api.dicebear.com/7.x/avataaars/svg?seed=${profileId}`)
+                                  } 
+                                  alt={profile?.name} 
+                                />
                                 <AvatarFallback className="bg-gradient-to-br from-amber-400 to-amber-600 text-white font-semibold">
                                   {profile?.name ? profile.name.charAt(0).toUpperCase() : '🎉'}
                                 </AvatarFallback>
