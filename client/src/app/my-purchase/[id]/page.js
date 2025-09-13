@@ -50,6 +50,7 @@ export default function MyMentorshipPage() {
   const [selectedEnrollment, setSelectedEnrollment] = useState(null);
   const [userRating, setUserRating] = useState(0);
   const [submittingRating, setSubmittingRating] = useState(false);
+  const [profilePictures, setProfilePictures] = useState({});
 
   // Fetch enrollment data and mentorship details
   useEffect(() => {
@@ -113,6 +114,9 @@ export default function MyMentorshipPage() {
         
         // Fetch average ratings for each mentorship
         await fetchAverageRatings(enrichedEnrollments);
+        
+        // Fetch profile pictures for each mentorship
+        await fetchProfilePictures(enrichedEnrollments);
       } catch (err) {
         console.error('Error fetching enrollment data:', err);
         setError(err.message || 'Failed to load enrollment data');
@@ -163,6 +167,43 @@ export default function MyMentorshipPage() {
       setAverageRatings(ratingsMap);
     } catch (error) {
       console.error('Error fetching average ratings:', error);
+    }
+  };
+
+  // Fetch profile pictures for mentorships
+  const fetchProfilePictures = async (enrollments) => {
+    try {
+      const picturesMap = {};
+      const profileIds = [...new Set(enrollments
+        .map(e => e.mentorship?.profileId)
+        .filter(Boolean)
+      )];
+      
+      await Promise.all(
+        profileIds.map(async (profileId) => {
+          try {
+            const response = await fetch(`http://localhost:8080/api/profile/${profileId}`, {
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+              }
+            });
+            
+            if (response.ok) {
+              const profileData = await response.json();
+              if (profileData.pictureBase64) {
+                picturesMap[profileId] = profileData.pictureBase64;
+              }
+            }
+          } catch (error) {
+            console.error(`Error fetching profile picture for profileId ${profileId}:`, error);
+          }
+        })
+      );
+      
+      setProfilePictures(picturesMap);
+    } catch (error) {
+      console.error('Error fetching profile pictures:', error);
     }
   };
 
@@ -446,7 +487,12 @@ export default function MyMentorshipPage() {
                 <div className="flex items-start justify-between">
                   <div className="flex items-center gap-3">
                     <Avatar className="h-12 w-12 ring-2 ring-white/40 shadow-sm">
-                      <AvatarImage src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${enrollment.mentorshipId}`} />
+                      <AvatarImage 
+                        src={enrollment.mentorship?.profileId && profilePictures[enrollment.mentorship.profileId] 
+                          ? `data:image/jpeg;base64,${profilePictures[enrollment.mentorship.profileId]}`
+                          : `https://api.dicebear.com/7.x/avataaars/svg?seed=${enrollment.mentorshipId}`
+                        } 
+                      />
                       <AvatarFallback className="bg-gradient-to-br from-teal-500 to-indigo-500 text-white">
                         <Book className="h-6 w-6" />
                       </AvatarFallback>
