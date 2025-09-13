@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useEffect, useState } from 'react';
@@ -8,7 +9,8 @@ import { apiFetch } from '@/lib/api';
 import {
   User, Users, FileText, Rss, LogOut, Bell, Search, Video, Briefcase,
   TrendingUp, Calendar, MessageSquare, Settings, ChevronRight, Plus,
-  Activity, Target, Award, Clock, BarChart3, Loader2, LaptopMinimal, MapPin, DollarSign
+  Activity, Target, Award, Clock, BarChart3, Loader2, LaptopMinimal,
+  MapPin, DollarSign, Trophy, Star
 } from 'lucide-react';
 import {
   Card, CardHeader, CardTitle, CardDescription, CardContent
@@ -38,7 +40,7 @@ import {
   Alert, AlertDescription
 } from '@/components/ui/alert';
 import Navbar from '@/components/Navbar';
-
+import MyFeed from '@/components/MyFeed';
 // Design tokens (fallback if Tailwind classes adjusted later)
 const gradientPanel = 'bg-gradient-to-br from-teal-50/70 via-white/50 to-indigo-50/70 dark:from-slate-800/60 dark:via-slate-800/50 dark:to-slate-800/60 backdrop-blur-xl border border-white/40 dark:border-slate-700/50 shadow-sm';
 // Softer, tinted cards matching new palette (reduces stark white feel)
@@ -330,113 +332,90 @@ function FunctionalDashboard() {
         <div className="absolute top-1/3 -right-32 h-[34rem] w-[34rem] bg-gradient-to-tr from-indigo-200 via-white to-amber-100 dark:from-indigo-700/30 dark:via-transparent dark:to-teal-700/20 blur-3xl opacity-60" />
       </div>
       <Navbar />
-      <div className="max-w-7xl mx-auto py-10 px-6 space-y-10">
-        <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-6">
-          <div className="space-y-2">
-            <h1 className="text-4xl font-semibold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-teal-700 via-indigo-700 to-amber-600 dark:from-teal-200 dark:via-indigo-200 dark:to-amber-200">
-              Welcome back, {userData?.name?.split(' ')[0] || 'there'}
-            </h1>
-            <p className="text-slate-600 dark:text-slate-300 text-sm md:text-base flex items-center gap-2">
-              <span className="inline-flex h-2 w-2 rounded-full bg-teal-500 animate-pulse" />
-              Personalized snapshot for your career growth
-            </p>
-          </div>
-          <div className="flex items-center gap-3">
-            <Button variant="outline" className="rounded-full border-slate-300/60 bg-white/60 backdrop-blur hover:bg-white shadow-sm text-slate-700 text-sm">
-              Refresh
-            </Button>
-            <Button className="rounded-full bg-teal-600 hover:bg-teal-700 shadow-sm text-sm">
-              New Action
-            </Button>
-          </div>
-        </div>
 
-        {/* Stats Overview */}
-        {/* <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          {(dashboardData.stats.length > 0 ? dashboardData.stats : defaultStats).map((stat, i) => (
-            <Card key={i} className="hover:shadow-md transition-shadow duration-200 border-0 shadow-sm bg-white/70 backdrop-blur-sm">
+      {/* LinkedIn-style Layout */}
+      <div className="max-w-7xl mx-auto py-6 px-4">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+          {/* Left Sidebar - Profile Card */}
+          <div className="lg:col-span-3 space-y-4">
+            <Card className={`rounded-2xl ${subtleCard} shadow-sm`}>
               <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 bg-stone-100 rounded-lg">
-                      {stat.icon}
+                <div className="text-center space-y-4">
+                  <div className="relative">
+                    <div className="w-20 h-20 mx-auto bg-gradient-to-br from-teal-500 via-indigo-500 to-amber-500 rounded-2xl flex items-center justify-center text-white font-bold text-xl shadow-lg ring-4 ring-white/60 dark:ring-slate-800/60">
+                      {userData?.name?.split(' ').map(n => n[0]).join('') || 'U'}
                     </div>
-                    <div>
-                      <p className="text-2xl font-bold text-slate-800">{stat.value}</p>
-                      <p className="text-sm text-slate-600">{stat.label}</p>
+                    <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-emerald-500 rounded-full border-2 border-white dark:border-slate-800"></div>
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-slate-800 dark:text-slate-100 text-lg">
+                      {userData?.name || 'Welcome'}
+                    </h3>
+                    <p className="text-slate-500 dark:text-slate-400 text-sm">
+                      {userData?.role || 'Member'}
+                    </p>
+                  </div>
+                  <Separator className="bg-gradient-to-r from-transparent via-slate-200/80 to-transparent dark:via-slate-700/60" />
+                  <div className="space-y-3">
+                    <div className="flex justify-between text-sm">
+                      <span className="text-slate-600 dark:text-slate-400">Profile views</span>
+                      <span className="font-medium text-slate-800 dark:text-slate-100">25</span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-slate-600 dark:text-slate-400">Connections</span>
+                      <span className="font-medium text-slate-800 dark:text-slate-100">{userData?.connectionCount || '0'}</span>
                     </div>
                   </div>
-                  <div className={`text-xs font-medium px-2 py-1 rounded-full ${
-                    stat.trend === 'up' ? 'text-emerald-700 bg-emerald-100' : 'text-rose-700 bg-rose-100'
-                  }`}>
-                    {stat.change}
-                  </div>
+                  <Button
+                    onClick={() => handleNavigation('/profile')}
+                    className="w-full bg-teal-600 hover:bg-teal-700 text-white text-sm"
+                  >
+                    View Profile
+                  </Button>
                 </div>
               </CardContent>
             </Card>
-          ))}
-        </div> */}
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
-
-          {/* Main Feature Cards */}
-          <div className="lg:col-span-2 space-y-8">
-            <div className="flex items-center justify-between">
-              <h2 className="text-lg font-medium tracking-wide text-slate-700 dark:text-slate-200 uppercase">Core Panels</h2>
-              <Button variant="ghost" size="sm" className="text-slate-500 hover:text-teal-600 dark:hover:text-teal-400" onClick={() => handleNavigation('/settings')}>
-                <Plus className="h-4 w-4 mr-2" /> Customize
-              </Button>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-7">
-              {getMainCards().map((card, i) => (
-                <Card
-                  key={i}
-                  className={`group overflow-hidden cursor-pointer relative rounded-2xl ${subtleCard} shadow-sm hover:shadow-md transition-all duration-300 hover:-translate-y-0.5`}
-                  onClick={card.onClick}
-                >
-                  <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-gradient-to-br from-teal-50/70 via-transparent to-amber-50/60 dark:from-teal-500/10 dark:to-indigo-500/10" />
-                  <CardContent className="relative p-6 space-y-4">
-                    <div className="flex items-start justify-between">
-                      <div className="flex items-center gap-3">
-                        <div className={`p-3 rounded-xl bg-gradient-to-br ${card.iconBg} text-white shadow-sm ring-1 ring-white/40`}>{card.icon}</div>
-                        <div>
-                          <h3 className="font-semibold text-slate-800 dark:text-slate-100 text-base">{card.title}</h3>
-                          <p className="text-slate-600 dark:text-slate-400 text-xs leading-relaxed max-w-[16ch]">{card.description}</p>
-                        </div>
-                      </div>
-                      <ChevronRight className="h-4 w-4 text-slate-400 group-hover:text-teal-600 dark:group-hover:text-teal-400 transition-colors" />
+            {/* Quick Actions */}
+            <Card className={`rounded-2xl ${subtleCard} shadow-sm`}>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-slate-800 dark:text-slate-100 text-base font-semibold">Quick Actions</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-2">
+                {quickActions.slice(0, 4).map((action, i) => (
+                  <button
+                    key={i}
+                    onClick={action.action}
+                    className="w-full flex items-center gap-3 p-3 rounded-xl text-left hover:bg-white/60 dark:hover:bg-slate-900/40 transition-colors group"
+                  >
+                    <div className={`p-2 rounded-lg ${action.color} shadow-sm group-hover:shadow transition-shadow`}>
+                      {action.icon}
                     </div>
-
-                    {card.progress !== undefined && (
-                      <div className="space-y-2">
-                        <div className="flex justify-between text-[11px] font-medium tracking-wide uppercase text-slate-500 dark:text-slate-400">
-                          <span>Completion</span>
-                          <span className="text-slate-700 dark:text-slate-200">{card.progress}%</span>
-                        </div>
-                        <Progress value={card.progress} className="h-1.5 overflow-hidden rounded-full" />
-                      </div>
-                    )}
-
-                    {card.count && (
-                      <div className="flex items-center justify-between">
-                        <Badge variant="secondary" className="font-medium bg-slate-100/80 dark:bg-slate-700/60 text-slate-700 dark:text-slate-200 ring-1 ring-inset ring-white/40">
-                          {card.count}
-                        </Badge>
-                      </div>
-                    )}
-
-                    <Button className="w-full mt-2 h-9 bg-teal-600 hover:bg-teal-700 dark:bg-teal-500 dark:hover:bg-teal-400 text-[13px] tracking-wide shadow-sm">
-                      {card.action}
-                    </Button>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
+                    <span className="text-sm font-medium text-slate-700 dark:text-slate-200">{action.label}</span>
+                  </button>
+                ))}
+              </CardContent>
+            </Card>
           </div>
 
-          {/* Sidebar */}
-          <div className="space-y-8">
+          {/* Center - Feed */}
+          <div className="lg:col-span-6 space-y-6">
+            <div className="space-y-2">
+              <h1 className="text-3xl font-semibold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-teal-700 via-indigo-700 to-amber-600 dark:from-teal-200 dark:via-indigo-200 dark:to-amber-200">
+                Welcome back, {userData?.name?.split(' ')[0] || 'there'}
+              </h1>
+              <p className="text-slate-600 dark:text-slate-300 text-sm flex items-center gap-2">
+                <span className="inline-flex h-2 w-2 rounded-full bg-teal-500 animate-pulse" />
+                Stay connected with your professional network
+              </p>
+            </div>
+            <MyFeed showNavbar={false} />
+          </div>
+
+          {/* Right Sidebar */}
+          <div className="lg:col-span-3 space-y-4">
+            {/* Recent Activity */}
             <Card className={`rounded-2xl ${subtleCard} shadow-sm`}>
               <CardHeader className="pb-3">
                 <CardTitle className="flex items-center gap-2 text-slate-800 dark:text-slate-100 text-base font-semibold">
@@ -464,30 +443,65 @@ function FunctionalDashboard() {
               </CardContent>
             </Card>
 
+            {/* Trending Now */}
+            <Card className={`rounded-2xl ${subtleCard} shadow-sm`}>
+              <CardHeader className="pb-3">
+                <CardTitle className="flex items-center gap-2 text-slate-800 dark:text-slate-100 text-base font-semibold">
+                  <TrendingUp className="h-4 w-4 text-amber-500" /> Trending Now
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div className="space-y-3">
+                  <div className="flex items-start gap-2">
+                    <div className="w-2 h-2 rounded-full bg-amber-500 mt-2"></div>
+                    <div>
+                      <p className="text-sm font-medium text-slate-700 dark:text-slate-200">AI in Recruitment</p>
+                      <p className="text-xs text-slate-500 dark:text-slate-400">2.5k discussions</p>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <div className="w-2 h-2 rounded-full bg-emerald-500 mt-2"></div>
+                    <div>
+                      <p className="text-sm font-medium text-slate-700 dark:text-slate-200">Remote Work Culture</p>
+                      <p className="text-xs text-slate-500 dark:text-slate-400">1.8k discussions</p>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <div className="w-2 h-2 rounded-full bg-indigo-500 mt-2"></div>
+                    <div>
+                      <p className="text-sm font-medium text-slate-700 dark:text-slate-200">Tech Skills 2024</p>
+                      <p className="text-xs text-slate-500 dark:text-slate-400">1.2k discussions</p>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Weekly Summary */}
             <Card className={`rounded-2xl relative overflow-hidden ${gradientPanel}`}>
               <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,theme(colors.teal.200)/40,transparent_60%)] dark:bg-[radial-gradient(circle_at_20%_20%,oklch(0.3_0.05_210)/40,transparent_60%)]" />
               <CardHeader className="relative">
                 <CardTitle className="text-slate-800 dark:text-slate-100 text-base font-semibold">This Week</CardTitle>
-                <CardDescription className="text-slate-600 dark:text-slate-400 text-xs">Engagement summary snapshot</CardDescription>
+                <CardDescription className="text-slate-600 dark:text-slate-400 text-xs">Your engagement summary</CardDescription>
               </CardHeader>
               <CardContent className="relative space-y-4">
-                <div className="grid grid-cols-3 gap-4 text-[13px]">
+                <div className="grid grid-cols-1 gap-4 text-[13px]">
                   <div className="space-y-1">
                     <p className="text-slate-500 dark:text-slate-400">New connections</p>
                     <p className="font-semibold text-slate-800 dark:text-slate-100">+{engagementData?.newConnections || 0}</p>
                   </div>
                   <div className="space-y-1">
-                    <p className="text-slate-500 dark:text-slate-400">Messages sent</p>
-                    <p className="font-semibold text-slate-800 dark:text-slate-100">{engagementData?.messagesSent || 0}</p>
+                    <p className="text-slate-500 dark:text-slate-400">Profile views</p>
+                    <p className="font-semibold text-slate-800 dark:text-slate-100">{engagementData?.profileViews || 0}</p>
                   </div>
                   <div className="space-y-1">
-                    <p className="text-slate-500 dark:text-slate-400">Total reactions</p>
+                    <p className="text-slate-500 dark:text-slate-400">Post reactions</p>
                     <p className="font-semibold text-slate-800 dark:text-slate-100">{engagementData?.totalReactions || 0}</p>
                   </div>
                 </div>
                 <Separator className="bg-gradient-to-r from-transparent via-slate-200/80 to-transparent dark:via-slate-700/60" />
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-medium tracking-wide uppercase text-slate-600 dark:text-slate-400">Total engagement</span>
+                  <span className="text-xs font-medium tracking-wide uppercase text-slate-600 dark:text-slate-400">Growth</span>
                   <Badge className="bg-emerald-500/15 text-emerald-700 dark:bg-emerald-400/15 dark:text-emerald-300 rounded-full px-3 py-1 h-6 text-[12px] font-medium">
                     <TrendingUp className="h-3 w-3 mr-1" /> +{engagementData?.engagementGrowth || 0}%
                   </Badge>
