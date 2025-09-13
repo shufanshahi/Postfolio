@@ -11,6 +11,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface PostRepository extends JpaRepository<Post, Long> {
@@ -67,4 +68,8 @@ public interface PostRepository extends JpaRepository<Post, Long> {
                      "JOIN FETCH pr.user u " +
                      "WHERE p.id = :postId")
        Post findByIdWithProfileAndUser(@Param("postId") Long postId);
+       
+       // NEW: Find post by ID and profile ID for ownership verification
+       @Query("SELECT p FROM Post p WHERE p.id = :postId AND p.profile.id = :profileId")
+       Optional<Post> findByIdAndProfileId(@Param("postId") Long postId, @Param("profileId") Long profileId);
 }

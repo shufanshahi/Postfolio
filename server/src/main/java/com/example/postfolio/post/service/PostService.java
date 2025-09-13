@@ -448,6 +448,85 @@ public class PostService {
                 .build();
     }
 
+    @Transactional
+    public Post manuallyEditPost(Long postId, Long profileId, String category, List<String> skills, 
+                                String companyName, String position) {
+        // Verify ownership
+        Post post = postRepository.findByIdAndProfileId(postId, profileId)
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND, "Post not found or access denied"));
+        
+        Profile profile = profileService.getProfileById(profileId);
+        
+        // Convert category string to PostType
+        PostType postType;
+        List<String> tags = new ArrayList<>();
+        String cvHeading = post.getCvHeading(); // Keep existing heading by default
+        
+        switch (category.toUpperCase()) {
+            case "ACHIEVEMENT":
+                postType = PostType.ACHIEVEMENT;
+                tags = skills != null ? new ArrayList<>(skills) : new ArrayList<>();
+                if (cvHeading.equals("Processing...") || cvHeading.equals("General Post")) {
+                    cvHeading = "Achievement";
+                }
+                break;
+                
+            case "PROJECT": 
+                postType = PostType.PROJECT;
+                tags = skills != null ? new ArrayList<>(skills) : new ArrayList<>();
+                if (cvHeading.equals("Processing...") || cvHeading.equals("General Post")) {
+                    cvHeading = "Project";
+                }
+                break;
+                
+            case "PROFESSIONAL_EXPERIENCE":
+                postType = PostType.EXPERIENCE;
+                // For experience, tags format: Company,Position,Date
+                if (companyName != null && position != null) {
+                    tags.add(companyName + "," + position + ",none");
+                    cvHeading = "Started " + position + " at " + companyName;
+                    
+                    // Also create/update Work entry if it's professional experience
+                    createOrUpdateWorkEntry(profile, companyName, position);
+                }
+                break;
+                
+            default:
+                throw new ResponseStatusException(
+                        HttpStatus.BAD_REQUEST, "Invalid category: " + category);
+        }
+        
+        // Update the post
+        post.setType(postType);
+        post.setTags(tags);
+        post.setCvHeading(cvHeading);
+        post.setAutoTagged(false); // Mark as manually tagged
+        post.setUpdatedAt(LocalDateTime.now());
+        
+        Post savedPost = postRepository.save(post);
+        
+        // Update CV entries based on the new categorization
+        cvUpdateService.updateCvFromPost(savedPost);
+        
+        log.info("Post {} manually edited to category: {}", postId, category);
+        return savedPost;
+    }
+    
+    private void createOrUpdateWorkEntry(Profile profile, String companyName, String position) {
+        // Check if a work entry with this company and position already exists
+        boolean workExists = profile.getWorks().stream()
+                .anyMatch(work -> work.getCompanyName().equalsIgnoreCase(companyName) && 
+                         work.getPosition().equalsIgnoreCase(position));
+        
+        if (!workExists) {
+            // Create new work entry - this will be saved when profile is saved
+            // Note: You might want to add a proper Work service for this
+            log.info("Work entry should be created for {} at {} - implement proper Work service integration", 
+                    position, companyName);
+        }
+    }
+
     private List<String> validateAndCleanImages(List<String> images) {
         if (images == null) {
             return new ArrayList<>();

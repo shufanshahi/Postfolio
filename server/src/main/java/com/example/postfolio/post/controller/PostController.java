@@ -130,6 +130,21 @@ public class PostController {
         return ResponseEntity.ok(convertToDto(post));
     }
 
+    @PutMapping("/{postId}/manual-edit")
+    public ResponseEntity<PostResponseDTO> manuallyEditPost(
+            @PathVariable Long postId,
+            @RequestBody @Valid ManualPostEditDTO editDTO) {
+        Post post = postService.manuallyEditPost(
+                postId,
+                editDTO.getProfileId(),
+                editDTO.getCategory(),
+                editDTO.getSkills(),
+                editDTO.getCompanyName(),
+                editDTO.getPosition()
+        );
+        return ResponseEntity.ok(convertToDto(post));
+    }
+
     @PostMapping("/{postId}/celebrate")
     public ResponseEntity<Map<String, Object>> celebratePost(@PathVariable Long postId) {
         boolean isCelebrated = postService.toggleCelebratePost(postId);

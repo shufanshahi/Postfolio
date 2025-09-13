@@ -15,19 +15,39 @@ import {
     Briefcase,
     Loader2,
     AlertCircle,
-    MoreHorizontal
+    MoreHorizontal,
+    Edit
 } from 'lucide-react';
+import EditPostModal from './EditPostModal';
 
 export default function PostModal({ isOpen, onClose, postId, cvHeading }) {
     const [post, setPost] = useState(null);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
+    const [showEditModal, setShowEditModal] = useState(false);
+    const [showDropdown, setShowDropdown] = useState(false);
+    const [currentUser, setCurrentUser] = useState(null);
 
     useEffect(() => {
         if (isOpen && postId) {
             fetchPost();
+            fetchCurrentUser();
         }
     }, [isOpen, postId]);
+
+    const fetchCurrentUser = async () => {
+        try {
+            const response = await apiFetch('/api/profiles/me', {
+                method: 'GET',
+            });
+            if (response.ok) {
+                const userData = await response.json();
+                setCurrentUser(userData);
+            }
+        } catch (err) {
+            console.error('Error fetching current user:', err);
+        }
+    };
 
     const fetchPost = async () => {
         setLoading(true);
@@ -224,8 +244,31 @@ export default function PostModal({ isOpen, onClose, postId, cvHeading }) {
         );
     };
 
+    const handleEditSave = (updatedPost) => {
+        setPost(updatedPost);
+        // Close dropdown if it's still open
+        setShowDropdown(false);
+    };
+
+    const handleCloseModal = () => {
+        setShowDropdown(false);
+        onClose();
+    };
+
+    // Close dropdown when clicking outside
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (showDropdown && !event.target.closest('.relative')) {
+                setShowDropdown(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, [showDropdown]);
+
     return (
-        <Dialog open={isOpen} onOpenChange={onClose}>
+        <>
+        <Dialog open={isOpen} onOpenChange={handleCloseModal}>
             <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto p-0 bg-gradient-to-br from-teal-50/70 via-white/50 to-indigo-50/70 dark:from-slate-800/60 dark:via-slate-800/50 dark:to-slate-800/60 backdrop-blur-xl border border-white/40 dark:border-slate-700/50 shadow-sm">
                 {/* Close button */}
                 <button
@@ -307,9 +350,31 @@ export default function PostModal({ isOpen, onClose, postId, cvHeading }) {
                                         <p className="text-sm text-gray-500 dark:text-gray-400">{formatDate(post.createdAt)}</p>
                                     </div>
                                 </div>
-                                <button className="p-2 hover:bg-teal-100/50 dark:hover:bg-slate-700/50 rounded-full transition-colors backdrop-blur-sm">
-                                    <MoreHorizontal className="h-5 w-5 text-gray-500 dark:text-gray-400" />
-                                </button>
+                                {/* More options dropdown */}
+                                {currentUser && currentUser.id === post.profileId && (
+                                    <div className="relative">
+                                        <button 
+                                            className="p-2 hover:bg-teal-100/50 dark:hover:bg-slate-700/50 rounded-full transition-colors backdrop-blur-sm"
+                                            onClick={() => setShowDropdown(!showDropdown)}
+                                        >
+                                            <MoreHorizontal className="h-5 w-5 text-gray-500 dark:text-gray-400" />
+                                        </button>
+                                        {showDropdown && (
+                                            <div className="absolute right-0 top-full mt-2 w-48 bg-white dark:bg-slate-800 rounded-lg shadow-lg border border-slate-200 dark:border-slate-700 z-20">
+                                                <button
+                                                    className="flex items-center gap-2 w-full px-4 py-2 text-left text-sm hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg"
+                                                    onClick={() => {
+                                                        setShowEditModal(true);
+                                                        setShowDropdown(false);
+                                                    }}
+                                                >
+                                                    <Edit className="h-4 w-4" />
+                                                    Edit Category
+                                                </button>
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
                             </div>
                         </div>
 
@@ -340,5 +405,14 @@ export default function PostModal({ isOpen, onClose, postId, cvHeading }) {
                 )}
             </DialogContent>
         </Dialog>
+
+        {/* Edit Post Modal */}
+        <EditPostModal
+            isOpen={showEditModal}
+            onClose={() => setShowEditModal(false)}
+            post={post}
+            onSave={handleEditSave}
+        />
+        </>
     );
 } 

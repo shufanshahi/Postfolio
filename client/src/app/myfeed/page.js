@@ -4,6 +4,7 @@ import withAuth from '@/components/withAuth';
 import Navbar from '@/components/Navbar';
 import CelebrateButton from '@/components/CelebrateButton';
 import GriefButton from '@/components/GriefButton';
+import EditPostModal from '@/components/EditPostModal';
 import React, { useState, useEffect, useRef } from 'react';
 // Reuse design tokens from dashboard for consistent theming
 const gradientPanel = 'bg-gradient-to-br from-teal-50/70 via-white/50 to-indigo-50/70 dark:from-slate-800/60 dark:via-slate-800/50 dark:to-slate-800/60 backdrop-blur-xl border border-white/40 dark:border-slate-700/50 shadow-sm';
@@ -26,6 +27,8 @@ function MyFeedPage() {
     const [celebratedPosts, setCelebratedPosts] = useState({});
     const [griefedPosts, setGriefedPosts] = useState({});
     const [showCelebratedModal, setShowCelebratedModal] = useState(false);
+    const [showDropdown, setShowDropdown] = useState({});
+    const [editModalPost, setEditModalPost] = useState(null);
     const fileInputRef = useRef(null);
 
     // Icons using the same style as your dashboard
@@ -82,6 +85,17 @@ function MyFeedPage() {
             fetchFeed();
         }
     }, [filter, profileId]);
+
+    useEffect(() => {
+        // Close dropdowns when clicking outside
+        const handleClickOutside = (event) => {
+            if (!event.target.closest('.dropdown-container')) {
+                setShowDropdown({});
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
 
     const fetchProfileId = async () => {
         try {
@@ -281,6 +295,31 @@ function MyFeedPage() {
 
     const openImagePreview = (image) => {
         setImagePreviewModal({ show: true, image });
+    };
+
+    const toggleDropdown = (postId) => {
+        setShowDropdown(prev => ({
+            ...prev,
+            [postId]: !prev[postId]
+        }));
+    };
+
+    const handleEditPost = (post) => {
+        setEditModalPost(post);
+        setShowDropdown({});
+    };
+
+    const handlePostUpdated = (updatedPost) => {
+        setPosts(prevPosts => 
+            prevPosts.map(post => 
+                post.id === updatedPost.id ? updatedPost : post
+            )
+        );
+        setEditModalPost(null);
+    };
+
+    const isOwnPost = (post) => {
+        return user && post.profileId === profileId;
     };
 
     if (loading) {
@@ -500,9 +539,27 @@ function MyFeedPage() {
                                                 </div>
                                                 <div className="flex items-center space-x-1">
                                                     {getAchievementIcon(post)}
-                                                    <button className="text-slate-400 hover:text-slate-600">
-                                                        <MoreHorizontal className="h-4 w-4" />
-                                                    </button>
+                                                    {isOwnPost(post) && (
+                                                        <div className="relative dropdown-container">
+                                                            <button 
+                                                                className="text-slate-400 hover:text-slate-600 p-1 rounded-full hover:bg-slate-100 transition-colors"
+                                                                onClick={() => toggleDropdown(post.id)}
+                                                            >
+                                                                <MoreHorizontal className="h-4 w-4" />
+                                                            </button>
+                                                            {showDropdown[post.id] && (
+                                                                <div className="absolute right-0 top-full mt-1 w-48 bg-white dark:bg-slate-800 rounded-lg shadow-lg border border-slate-200 dark:border-slate-700 z-20">
+                                                                    <button
+                                                                        onClick={() => handleEditPost(post)}
+                                                                        className="w-full px-4 py-2 text-left text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 flex items-center gap-2 rounded-t-lg"
+                                                                    >
+                                                                        <Settings className="h-4 w-4" />
+                                                                        Edit Category
+                                                                    </button>
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    )}
                                                 </div>
                                             </div>
 
@@ -708,6 +765,14 @@ function MyFeedPage() {
                     </div>
                 )}
             </div>
+
+            {/* Edit Post Modal */}
+            <EditPostModal
+                isOpen={editModalPost !== null}
+                onClose={() => setEditModalPost(null)}
+                post={editModalPost}
+                onSave={handlePostUpdated}
+            />
         </div>
     );
 }
