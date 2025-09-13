@@ -36,22 +36,30 @@ public class RabbitMQConfig {
     // Processing Queues (where we send requests)
     @Bean
     public Queue postProcessingQueue() {
-        return QueueBuilder.durable(POST_PROCESSING_QUEUE).build();
+        return QueueBuilder.durable(POST_PROCESSING_QUEUE)
+                .withArgument("x-dead-letter-exchange", "ai.dlx")
+                .build();
     }
 
     @Bean
     public Queue jobMatchingQueue() {
-        return QueueBuilder.durable(JOB_MATCHING_QUEUE).build();
+        return QueueBuilder.durable(JOB_MATCHING_QUEUE)
+                .withArgument("x-dead-letter-exchange", "ai.dlx")
+                .build();
     }
 
     @Bean
     public Queue mcqGenerationQueue() {
-        return QueueBuilder.durable(MCQ_GENERATION_QUEUE).build();
+        return QueueBuilder.durable(MCQ_GENERATION_QUEUE)
+                .withArgument("x-dead-letter-exchange", "ai.dlx")
+                .build();
     }
 
     @Bean
     public Queue interviewGenerationQueue() {
-        return QueueBuilder.durable(INTERVIEW_GENERATION_QUEUE).build();
+        return QueueBuilder.durable(INTERVIEW_GENERATION_QUEUE)
+                .withArgument("x-dead-letter-exchange", "ai.dlx")
+                .build();
     }
 
     // Result Queues (where we receive results)
@@ -102,6 +110,24 @@ public class RabbitMQConfig {
         return BindingBuilder.bind(interviewGenerationQueue())
                 .to(aiExchange())
                 .with("ai.interview.generate");
+    }
+
+    // Dead Letter Exchange
+    @Bean
+    public DirectExchange deadLetterExchange() {
+        return new DirectExchange("ai.dlx");
+    }
+
+    @Bean
+    public Queue deadLetterQueue() {
+        return QueueBuilder.durable("ai.dlq").build();
+    }
+
+    @Bean
+    public Binding deadLetterBinding() {
+        return BindingBuilder.bind(deadLetterQueue())
+                .to(deadLetterExchange())
+                .with("ai.dlq");
     }
 
     // Message Converter

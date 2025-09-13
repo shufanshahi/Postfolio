@@ -56,12 +56,12 @@ public class ProfileService {
             profile.setBirthDate(LocalDate.parse(request.birthDate));
         }
 
-//        profile.setSscResult(request.sscResult);
-//        profile.setHscResult(request.hscResult);
-//        profile.setUniversityResult(request.universityResult);
+        // profile.setSscResult(request.sscResult);
+        // profile.setHscResult(request.hscResult);
+        // profile.setUniversityResult(request.universityResult);
 
         Profile savedProfile = profileRepository.save(profile);
-        
+
         // Invalidate job matching cache for this profile
         jobMatchingService.invalidateProfileCache(savedProfile);
     }
@@ -70,7 +70,7 @@ public class ProfileService {
     public Optional<ProfileResponse> getMyProfileResponse() {
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
         return userRepository.findByEmail(email)
-                .flatMap(profileRepository::findByUserWithUser)
+                .flatMap(user -> profileRepository.findByUserWithUser(user))
                 .map(ProfileResponse::fromProfile);
     }
 
@@ -85,7 +85,7 @@ public class ProfileService {
     public Optional<Profile> getMyProfile() {
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
         return userRepository.findByEmail(email)
-                .flatMap(profileRepository::findByUser);
+                .flatMap(user -> profileRepository.findByUser(user));
     }
 
     // Method that returns Profile entity for internal service calls

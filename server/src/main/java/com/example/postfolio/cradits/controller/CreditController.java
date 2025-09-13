@@ -17,7 +17,6 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/credits")
-@CrossOrigin(origins = "*")
 public class CreditController {
     
     private final CreditService creditService;

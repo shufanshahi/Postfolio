@@ -56,16 +56,17 @@ public class SummaryService {
      */
     private String generateSummaryWithAI(String documentContent) {
         try {
-            log.info("Sending summarization request to AI service");
+            log.info("Sending summarization request to AI service via API Gateway");
 
             // Create request payload for AI service
             SummaryAIRequest request = SummaryAIRequest.builder()
                     .documentContent(documentContent)
                     .build();
 
-            // Call AI microservice synchronously
+            // Call AI microservice through API Gateway
             Mono<String> summaryMono = webClient.post()
-                    .uri("http://localhost:8081/api/ai/summarize")
+                    .uri("http://localhost:8080/api/ai/summarize")
+                    .header("X-Service-Name", "summary-service")
                     .bodyValue(request)
                     .retrieve()
                     .bodyToMono(String.class);
@@ -79,7 +80,7 @@ public class SummaryService {
             return summary;
 
         } catch (Exception e) {
-            log.error("Error calling AI service for summarization: {}", e.getMessage(), e);
+            log.error("Error calling AI service via gateway for summarization: {}", e.getMessage(), e);
             // Fallback to simple summarization
             return generateFallbackSummary(documentContent);
         }

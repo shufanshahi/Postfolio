@@ -5,13 +5,14 @@ import com.example.postfolio.auth.dto.AuthResponse;
 import com.example.postfolio.auth.dto.RegisterRequest;
 import com.example.postfolio.auth.service.AuthService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-@CrossOrigin(origins = "*")
 @RestController
 @RequestMapping("/api/auth")
 @RequiredArgsConstructor
+@Slf4j
 public class AuthController {
 
     private final AuthService authService;

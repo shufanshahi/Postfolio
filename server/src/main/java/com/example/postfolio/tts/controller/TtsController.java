@@ -11,7 +11,6 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/tts")
-@CrossOrigin(origins = "*")
 public class TtsController {
 
     @Autowired
