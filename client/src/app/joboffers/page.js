@@ -58,6 +58,7 @@ function JobOffers() {
   const [filterStatus, setFilterStatus] = useState('All');
   const [showOfferLetter, setShowOfferLetter] = useState(false);
   const [selectedOffer, setSelectedOffer] = useState(null);
+  const [profilePictures, setProfilePictures] = useState({});
 
   // Design tokens matching dashboard and my-interviews
   const gradientPanel = 'bg-gradient-to-br from-teal-50/70 via-white/50 to-indigo-50/70 dark:from-slate-800/60 dark:via-slate-800/50 dark:to-slate-800/60 backdrop-blur-xl border border-white/40 dark:border-slate-700/50 shadow-sm';
@@ -130,6 +131,14 @@ function JobOffers() {
                   if (employerRes.ok) {
                     const employerData = await employerRes.json();
                     employerProfilesMap[jobData.employerId] = employerData;
+                    
+                    // Store profile picture if available
+                    if (employerData.pictureBase64) {
+                      setProfilePictures(prev => ({
+                        ...prev,
+                        [jobData.employerId]: employerData.pictureBase64
+                      }));
+                    }
                   } else {
                     employerProfilesMap[jobData.employerId] = {
                       name: 'Company not available'
@@ -387,7 +396,11 @@ function JobOffers() {
               <div className="flex items-center gap-4 mb-8 pb-6 border-b border-slate-200 dark:border-slate-700">
                 <Avatar className="h-16 w-16 ring-2 ring-teal-200 dark:ring-teal-700">
                   <AvatarImage 
-                    src={selectedOffer.employerData?.profileImage || '/default-company-logo.png'} 
+                    src={
+                      selectedOffer.jobData?.employerId && profilePictures[selectedOffer.jobData.employerId]
+                        ? `data:image/jpeg;base64,${profilePictures[selectedOffer.jobData.employerId]}`
+                        : selectedOffer.employerData?.profileImage || '/default-company-logo.png'
+                    } 
                     alt="Company Logo" 
                   />
                   <AvatarFallback className="bg-gradient-to-br from-teal-500 to-teal-600 text-white text-lg font-bold">
