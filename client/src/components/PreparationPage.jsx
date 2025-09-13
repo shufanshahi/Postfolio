@@ -11,7 +11,8 @@ const PreparationPage = () => {
   const [questionCount, setQuestionCount] = useState(10);
   const [mcqSets, setMcqSets] = useState([]);
   const [currentMCQSet, setCurrentMCQSet] = useState(null);
-  const [loading, setLoading] = useState(false);
+  const [mcqLoading, setMcqLoading] = useState(false);
+  const [summaryLoading, setSummaryLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const fileInputRef = useRef(null);
@@ -20,11 +21,14 @@ const PreparationPage = () => {
     const file = event.target.files[0];
     if (!file) return;
 
-    if (file.type === 'text/plain' || file.name.endsWith('.txt')) {
+    const isTextFile = file.type === 'text/plain' || file.name.endsWith('.txt');
+    const isPdfFile = file.type === 'application/pdf' || file.name.endsWith('.pdf');
+
+    if (isTextFile || isPdfFile) {
       setSelectedFile(file);
       setError('');
     } else {
-      setError('Please select a text file (.txt)');
+      setError('Please select a text file (.txt) or PDF file (.pdf)');
       setSelectedFile(null);
     }
   };
@@ -60,7 +64,7 @@ const PreparationPage = () => {
   const generateMCQs = async () => {
     if (!validateInputs()) return;
 
-    setLoading(true);
+    setMcqLoading(true);
     setError('');
     setSuccess('');
 
@@ -111,7 +115,71 @@ const PreparationPage = () => {
     } catch (err) {
       setError(err.message || 'An error occurred. Please try again.');
     } finally {
-      setLoading(false);
+      setMcqLoading(false);
+    }
+  };
+
+  const generateSummary = async () => {
+    if (!validateInputs()) return;
+
+    setSummaryLoading(true);
+    setError('');
+    setSuccess('');
+
+    try {
+      let response;
+      if (activeTab === 'upload') {
+        const formData = new FormData();
+        formData.append('document', selectedFile);
+        response = await fetch('http://localhost:8080/api/preparation/generate-summary', {
+          method: 'POST',
+          body: formData,
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+          }
+        });
+      } else {
+        response = await fetch('http://localhost:8080/api/preparation/generate-summary-text', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+          },
+          body: JSON.stringify({
+            documentContent: textContent,
+            documentName: documentName
+          })
+        });
+      }
+
+      if (!response.ok) throw new Error('Failed to generate summary');
+
+      // Handle PDF download
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.style.display = 'none';
+      a.href = url;
+      a.download = `${activeTab === 'upload' ? selectedFile.name.replace(/\.[^/.]+$/, '') : documentName}_summary.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+
+      setSuccess('Summary PDF generated and downloaded successfully!');
+
+      // Reset form
+      if (activeTab === 'upload') {
+        setSelectedFile(null);
+        if (fileInputRef.current) fileInputRef.current.value = '';
+      } else {
+        setTextContent('');
+        setDocumentName('');
+      }
+
+    } catch (err) {
+      setError(err.message || 'An error occurred while generating summary. Please try again.');
+    } finally {
+      setSummaryLoading(false);
     }
   };
 
@@ -184,8 +252,8 @@ const PreparationPage = () => {
                   <button
                     onClick={() => setActiveTab('upload')}
                     className={`flex-1 py-3 md:py-4 px-4 md:px-6 text-center font-medium transition-colors ${activeTab === 'upload'
-                        ? 'bg-indigo-50 text-indigo-600 border-b-2 border-indigo-600'
-                        : 'text-gray-500 hover:text-gray-700'
+                      ? 'bg-indigo-50 text-indigo-600 border-b-2 border-indigo-600'
+                      : 'text-gray-500 hover:text-gray-700'
                       }`}
                   >
                     <FileUp className="h-5 w-5 inline mr-2" />
@@ -195,8 +263,8 @@ const PreparationPage = () => {
                   <button
                     onClick={() => setActiveTab('text')}
                     className={`flex-1 py-3 md:py-4 px-4 md:px-6 text-center font-medium transition-colors ${activeTab === 'text'
-                        ? 'bg-indigo-50 text-indigo-600 border-b-2 border-indigo-600'
-                        : 'text-gray-500 hover:text-gray-700'
+                      ? 'bg-indigo-50 text-indigo-600 border-b-2 border-indigo-600'
+                      : 'text-gray-500 hover:text-gray-700'
                       }`}
                   >
                     <FileText className="h-5 w-5 inline mr-2" />
@@ -217,12 +285,12 @@ const PreparationPage = () => {
                     >
                       <Upload className="h-10 w-10 md:h-12 md:w-12 text-gray-400 mx-auto mb-3 md:mb-4" />
                       <p className="text-gray-600 mb-3 md:mb-4">
-                        Drag and drop your text file here, or click to browse
+                        Drag and drop your text or PDF file here, or click to browse
                       </p>
                       <input
                         ref={fileInputRef}
                         type="file"
-                        accept=".txt"
+                        accept=".txt,.pdf,text/plain,application/pdf"
                         onChange={handleFileSelect}
                         className="hidden"
                         id="fileInput"
@@ -299,8 +367,8 @@ const PreparationPage = () => {
                         onClick={() => setQuestionCount(count)}
                         type="button"
                         className={`py-2 md:py-3 px-3 md:px-4 rounded-lg text-sm font-medium transition-colors ${questionCount === count
-                            ? 'bg-indigo-600 text-white shadow-sm'
-                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200 border border-gray-300'
+                          ? 'bg-indigo-600 text-white shadow-sm'
+                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200 border border-gray-300'
                           }`}
                       >
                         {count} MCQs
@@ -309,23 +377,43 @@ const PreparationPage = () => {
                   </div>
                 </div>
 
-                <button
-                  onClick={generateMCQs}
-                  disabled={loading || (activeTab === 'upload' ? !selectedFile : !textContent.trim() || !documentName.trim())}
-                  className="w-full mt-4 md:mt-6 bg-indigo-600 text-white py-2 md:py-3 px-4 md:px-6 rounded-lg hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {loading ? (
-                    <span className="flex items-center justify-center">
-                      <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                      </svg>
-                      Generating...
-                    </span>
-                  ) : (
-                    `Generate ${questionCount} MCQs`
-                  )}
-                </button>
+                <div className="space-y-3 mt-4 md:mt-6">
+                  <button
+                    onClick={generateMCQs}
+                    disabled={mcqLoading || summaryLoading || (activeTab === 'upload' ? !selectedFile : !textContent.trim() || !documentName.trim())}
+                    className="w-full bg-indigo-600 text-white py-2 md:py-3 px-4 md:px-6 rounded-lg hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {mcqLoading ? (
+                      <span className="flex items-center justify-center">
+                        <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        Generating...
+                      </span>
+                    ) : (
+                      `Generate ${questionCount} MCQs`
+                    )}
+                  </button>
+
+                  <button
+                    onClick={generateSummary}
+                    disabled={mcqLoading || summaryLoading || (activeTab === 'upload' ? !selectedFile : !textContent.trim() || !documentName.trim())}
+                    className="w-full bg-purple-600 text-white py-2 md:py-3 px-4 md:px-6 rounded-lg hover:bg-purple-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {summaryLoading ? (
+                      <span className="flex items-center justify-center">
+                        <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        Generating...
+                      </span>
+                    ) : (
+                      'Generate Summary PDF'
+                    )}
+                  </button>
+                </div>
               </div>
             </div>
           </div>
@@ -375,7 +463,7 @@ const PreparationPage = () => {
               <ul className="space-y-2 text-xs md:text-sm text-indigo-700">
                 <li className="flex items-start">
                   <span className="bg-indigo-200 text-indigo-800 rounded-full w-4 h-4 md:w-5 md:h-5 flex items-center justify-center text-xs font-bold mr-2 mt-0.5">1</span>
-                  Upload a text document or paste content
+                  Upload a text or PDF document or paste content
                 </li>
                 <li className="flex items-start">
                   <span className="bg-indigo-200 text-indigo-800 rounded-full w-4 h-4 md:w-5 md:h-5 flex items-center justify-center text-xs font-bold mr-2 mt-0.5">2</span>

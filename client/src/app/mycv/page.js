@@ -38,7 +38,7 @@ function CvDownloadButton() {
         fetchProfileId();
     }, []);
 
-    const downloadCv = async () => {
+    const downloadCv = async (endpoint = 'generate', filename = 'professional_cv.pdf') => {
         if (!profileId) return;
 
         setLoading(true);
@@ -46,7 +46,7 @@ function CvDownloadButton() {
         setSuccess(false);
         try {
             const token = localStorage.getItem('token');
-            const response = await fetch(`http://localhost:8080/api/cv/generate/${profileId}`, {
+            const response = await fetch(`http://localhost:8080/api/cv/${endpoint}/${profileId}`, {
                 headers: {
                     'Authorization': `Bearer ${token}`,
                 },
@@ -58,7 +58,42 @@ function CvDownloadButton() {
             const url = window.URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = 'professional_cv.pdf';
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            a.remove();
+
+            setSuccess(true);
+        } catch (err) {
+            setError(err.message);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const downloadLatexSource = async () => {
+        if (!profileId) return;
+
+        setLoading(true);
+        setError(null);
+        setSuccess(false);
+        try {
+            const token = localStorage.getItem('token');
+            const response = await fetch(`http://localhost:8080/api/cv/generate/latex-source/${profileId}`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                },
+            });
+
+            if (!response.ok) throw new Error('Failed to generate LaTeX source');
+
+            const text = await response.text();
+            const blob = new Blob([text], { type: 'text/plain' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'professional_cv.tex';
             document.body.appendChild(a);
             a.click();
             window.URL.revokeObjectURL(url);
@@ -80,10 +115,11 @@ function CvDownloadButton() {
             </div>
             <Navbar />
 
-            {/* Floating download action */}
-            <div className="fixed bottom-6 right-6 z-40">
+            {/* Floating download actions */}
+            <div className="fixed bottom-6 right-6 z-40 flex flex-col gap-3">
+                {/* Main download button */}
                 <Button
-                    onClick={downloadCv}
+                    onClick={() => downloadCv()}
                     disabled={loading || !profileId}
                     className="gap-2 rounded-full bg-teal-600 hover:bg-teal-700 dark:bg-teal-500 dark:hover:bg-teal-400 shadow-lg shadow-teal-500/25"
                     size="lg"
@@ -96,10 +132,25 @@ function CvDownloadButton() {
                     ) : (
                         <>
                             <Download className="h-4 w-4" />
-                            Download CV
+                            Download CV (LaTeX)
                         </>
                     )}
                 </Button>
+
+                {/* Additional download options */}
+                <div className="flex flex-col gap-2">
+
+                    <Button
+                        onClick={downloadLatexSource}
+                        disabled={loading || !profileId}
+                        variant="outline"
+                        className="gap-2 rounded-full border-teal-200 bg-white/90 hover:bg-teal-50 dark:border-teal-700 dark:bg-slate-800/90 dark:hover:bg-teal-900/20 shadow-lg"
+                        size="sm"
+                    >
+                        <Download className="h-3 w-3" />
+                        LaTeX Source
+                    </Button>
+                </div>
             </div>
 
             {/* Alerts */}

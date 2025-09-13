@@ -20,6 +20,8 @@ public class AIProcessingController {
     private final MockInterviewGenerationAIService mockInterviewGenerationAIService;
     private final InterviewEvaluationAIService interviewEvaluationAIService;
     private final NewsSummarizationAIService newsSummarizationAIService;
+    private final RoadmapGenerationAIService roadmapGenerationAIService;
+    private final DocumentSummarizationAIService documentSummarizationAIService;
 
     @PostMapping("/process-post")
     public ResponseEntity<PostProcessingResponse> processPost(@RequestBody PostProcessingRequest request) {
@@ -97,6 +99,21 @@ public class AIProcessingController {
         log.info("Summarizing news content with target audience: {}", request.getTargetAudience());
         NewsSummarizationResponse response = newsSummarizationAIService.summarizeNews(request);
         return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/generate-roadmap")
+    public ResponseEntity<RoadmapGenerationResponse> generateRoadmap(@RequestBody RoadmapGenerationRequest request) {
+        log.info("Generating AI-powered roadmap for job {} and profile {}",
+                request.getJobId(), request.getProfileId());
+        RoadmapGenerationResponse response = roadmapGenerationAIService.generateRoadmap(request);
+        return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/summarize")
+    public ResponseEntity<String> summarizeDocument(@RequestBody DocumentSummarizationRequest request) {
+        log.info("Summarizing document content with {} characters", request.getDocumentContent().length());
+        String summary = documentSummarizationAIService.summarizeDocument(request);
+        return ResponseEntity.ok(summary);
     }
 
     @GetMapping("/health")

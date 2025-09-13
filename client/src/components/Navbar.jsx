@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import { LogOut, User, Settings } from "lucide-react";
 import {
@@ -15,6 +15,27 @@ import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { apiFetch } from "@/lib/api";
 import { NotificationProvider } from "@/contexts/NotificationContext";
 import NotificationBell from "@/components/NotificationBell";
+
+// Navigation Item Component
+const NavItem = ({ icon, label, path }) => {
+  const router = useRouter();
+  const pathname = usePathname();
+  const isActive = pathname === path;
+
+  return (
+    <button
+      onClick={() => router.push(path)}
+      className={`flex flex-col items-center gap-1 px-3 py-2 rounded-lg text-xs font-medium transition-colors min-w-[64px] ${
+        isActive 
+          ? 'text-teal-600 dark:text-teal-400 bg-teal-50/80 dark:bg-teal-500/10' 
+          : 'text-slate-600 dark:text-slate-400 hover:text-teal-600 dark:hover:text-teal-400 hover:bg-teal-50/50 dark:hover:bg-teal-500/5'
+      }`}
+    >
+      <span className="text-base">{icon}</span>
+      <span className="leading-tight">{label}</span>
+    </button>
+  );
+};
 
 export default function Navbar() {
   const router = useRouter();
@@ -43,6 +64,84 @@ export default function Navbar() {
                   Postfolio
                 </span>
               </div>
+            </div>
+
+            {/* Main Navigation */}
+            <div className="hidden md:flex items-center gap-1">
+              <NavItem icon="🏠" label="Home" path="/dashboard" />
+              <NavItem icon="👥" label="Network" path="/connections" />
+              <NavItem icon="💼" label="Jobs" path="/find-jobs" />
+              <NavItem icon="📝" label="My CV" path="/mycv" />
+              <NavItem icon="🎯" label="Prep" path="/myprep" />
+              <NavItem icon="🤝" label="Mentorship" path="/mentorship" />
+              
+              {/* More dropdown */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button className="flex flex-col items-center gap-1 px-3 py-2 rounded-lg text-xs font-medium text-slate-600 dark:text-slate-400 hover:text-teal-600 dark:hover:text-teal-400 hover:bg-teal-50/50 dark:hover:bg-teal-500/5 transition-colors min-w-[64px]">
+                    <span className="text-base">⋯</span>
+                    <span className="leading-tight">More</span>
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="center" className="w-56 backdrop-blur-xl bg-white/80 dark:bg-slate-800/80 border-teal-900/10 dark:border-slate-700/60 shadow-lg">
+                  <DropdownMenuItem onClick={() => router.push('/my-interviews')} className="focus:bg-teal-50 dark:focus:bg-teal-500/20">
+                    🎤 My Interviews
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => router.push('/job-postings')} className="focus:bg-teal-50 dark:focus:bg-teal-500/20">
+                    📋 Job Postings
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => router.push('/joboffers')} className="focus:bg-teal-50 dark:focus:bg-teal-500/20">
+                    🎯 Job Offers
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => router.push('/news-system')} className="focus:bg-teal-50 dark:focus:bg-teal-500/20">
+                    📰 News System
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => router.push('/nearbyjobs')} className="focus:bg-teal-50 dark:focus:bg-teal-500/20">
+                    📍 Nearby Jobs
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+
+            {/* Mobile Navigation */}
+            <div className="md:hidden">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button className="flex items-center gap-2 px-3 py-2 rounded-lg text-slate-600 dark:text-slate-400 hover:text-teal-600 dark:hover:text-teal-400 hover:bg-teal-50/50 dark:hover:bg-teal-500/5 transition-colors">
+                    <span className="text-lg">☰</span>
+                    <span className="text-sm font-medium">Menu</span>
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56 backdrop-blur-xl bg-white/80 dark:bg-slate-800/80 border-teal-900/10 dark:border-slate-700/60 shadow-lg">
+                  <DropdownMenuItem onClick={() => router.push('/dashboard')} className="focus:bg-teal-50 dark:focus:bg-teal-500/20">
+                    🏠 Home
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => router.push('/connections')} className="focus:bg-teal-50 dark:focus:bg-teal-500/20">
+                    👥 Network
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => router.push('/find-jobs')} className="focus:bg-teal-50 dark:focus:bg-teal-500/20">
+                    💼 Jobs
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => router.push('/mycv')} className="focus:bg-teal-50 dark:focus:bg-teal-500/20">
+                    📝 My CV
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => router.push('/myprep')} className="focus:bg-teal-50 dark:focus:bg-teal-500/20">
+                    🎯 Prep
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => router.push('/mentorship')} className="focus:bg-teal-50 dark:focus:bg-teal-500/20">
+                    🤝 Mentorship
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => router.push('/my-interviews')} className="focus:bg-teal-50 dark:focus:bg-teal-500/20">
+                    🎤 My Interviews
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => router.push('/job-postings')} className="focus:bg-teal-50 dark:focus:bg-teal-500/20">
+                    📋 Job Postings
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => router.push('/news-system')} className="focus:bg-teal-50 dark:focus:bg-teal-500/20">
+                    📰 News System
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
 
             {/* Right side */}

@@ -8,7 +8,7 @@ const NotificationContext = createContext();
 export function NotificationProvider({ children, userId }) {
     const [notifications, setNotifications] = useState([]);
     const [unreadCount, setUnreadCount] = useState(0);
-    const { connectionRequestReceived, connectionAccepted, connectionRejected, messageReceived, imageMessageReceived } = useNotifications();
+    const { connectionRequestReceived, connectionAccepted, connectionRejected, messageReceived, imageMessageReceived, postGriefReceived, postCelebrationReceived } = useNotifications();
 
     useEffect(() => {
         if (userId) {
@@ -84,6 +84,12 @@ export function NotificationProvider({ children, userId }) {
                 break;
             case 'CONNECTION_REJECTED':
                 connectionRejected(notification.fromUserName);
+                break;
+            case 'POST_LIKED':
+                postCelebrationReceived(notification.fromUserName);
+                break;
+            case 'POST_GRIEF':
+                postGriefReceived(notification.fromUserName);
                 break;
             case 'MESSAGE':
             case 'MESSAGE_RECEIVED':

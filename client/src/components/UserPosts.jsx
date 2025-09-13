@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import CelebrateButtonUserPosts from '@/components/CelebrateButtonUserPosts';
+import GriefButtonUserPosts from '@/components/GriefButtonUserPosts';
 import {
     MessageSquare,
     Heart,
@@ -20,6 +21,7 @@ export default function UserPosts({ profileId }) {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [celebrateStates, setCelebrateStates] = useState({}); // Track celebrate states for each post
+    const [griefStates, setGriefStates] = useState({}); // Track grief states for each post
     const { showSuccess, showError, showInfo } = useNotifications();
 
     useEffect(() => {
@@ -42,10 +44,12 @@ export default function UserPosts({ profileId }) {
             const data = await response.json();
             setPosts(data);
 
-            // Initialize celebrate states for each post
+            // Initialize celebrate and grief states for each post
             const initialCelebrateStates = {};
+            const initialGriefStates = {};
             for (const post of data) {
                 try {
+                    // Fetch celebration info
                     const celebrateResponse = await apiFetch(`/api/posts/${post.id}/celebration-info`);
                     if (celebrateResponse.ok) {
                         const celebrateData = await celebrateResponse.json();
@@ -61,8 +65,27 @@ export default function UserPosts({ profileId }) {
                         celebrationCount: 0
                     };
                 }
+
+                try {
+                    // Fetch grief info
+                    const griefResponse = await apiFetch(`/api/posts/${post.id}/grief-info`);
+                    if (griefResponse.ok) {
+                        const griefData = await griefResponse.json();
+                        initialGriefStates[post.id] = {
+                            userGriefed: griefData.userGriefed,
+                            griefCount: griefData.griefCount
+                        };
+                    }
+                } catch (err) {
+                    console.error('Failed to fetch grief info for post', post.id);
+                    initialGriefStates[post.id] = {
+                        userGriefed: false,
+                        griefCount: 0
+                    };
+                }
             }
             setCelebrateStates(initialCelebrateStates);
+            setGriefStates(initialGriefStates);
         } catch (err) {
             setError(err.message);
             showError('Error', 'Failed to load posts. Please try again.');
@@ -109,6 +132,7 @@ export default function UserPosts({ profileId }) {
         <div className="space-y-6">
             {posts.map((post) => {
                 const celebrateState = celebrateStates[post.id] || { userCelebrated: false, celebrationCount: 0 };
+                const griefState = griefStates[post.id] || { userGriefed: false, griefCount: 0 };
 
                 return (
                     <Card key={post.id} className="bg-white border border-gray-200 rounded-2xl hover:border-sky-300 transition-all duration-300 shadow-sm">
@@ -166,10 +190,14 @@ export default function UserPosts({ profileId }) {
                             )}
 
                             {/* Interaction Buttons */}
-                            <div className="flex items-center justify-start pt-4 border-t border-gray-200">
+                            <div className="flex items-center justify-start gap-3 pt-4 border-t border-gray-200">
                                 <CelebrateButtonUserPosts
                                     postId={post.id}
                                     initialState={celebrateState}
+                                />
+                                <GriefButtonUserPosts
+                                    postId={post.id}
+                                    initialState={griefState}
                                 />
                             </div>
                         </CardContent>
