@@ -65,6 +65,7 @@ export default function MentorshipPage() {
   const [existingEnrollments, setExistingEnrollments] = useState([]);
   const [statusFilter, setStatusFilter] = useState('all');
   const [mentorshipRatings, setMentorshipRatings] = useState({});
+  const [profilePictures, setProfilePictures] = useState({});
 
   // Create form state
   const [createForm, setCreateForm] = useState({
@@ -121,6 +122,39 @@ export default function MentorshipPage() {
     }
   }, []);
 
+  const fetchProfilePictures = useCallback(async (mentorships) => {
+    try {
+      const token = localStorage.getItem('token');
+      const picturesMap = {};
+      
+      await Promise.all(
+        mentorships.map(async (mentorship) => {
+          try {
+            const response = await fetch(`http://localhost:8080/api/profile/${mentorship.profileId}`, {
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+              }
+            });
+            
+            if (response.ok) {
+              const profileData = await response.json();
+              if (profileData.pictureBase64) {
+                picturesMap[mentorship.profileId] = profileData.pictureBase64;
+              }
+            }
+          } catch (error) {
+            console.error(`Error fetching profile picture for profileId ${mentorship.profileId}:`, error);
+          }
+        })
+      );
+      
+      setProfilePictures(picturesMap);
+    } catch (error) {
+      console.error('Error fetching profile pictures:', error);
+    }
+  }, []);
+
   const fetchMentorships = useCallback(async () => {
     try {
       const token = localStorage.getItem('token');
@@ -137,11 +171,14 @@ export default function MentorshipPage() {
         
         // Fetch ratings for all mentorships
         await fetchMentorshipRatings(data);
+        
+        // Fetch profile pictures for all mentorships
+        await fetchProfilePictures(data);
       }
     } catch (err) {
       console.error('Failed to fetch mentorships:', err);
     }
-  }, [fetchMentorshipRatings]);
+  }, [fetchMentorshipRatings, fetchProfilePictures]);
 
   // Fetch data on component mount
   useEffect(() => {
@@ -676,7 +713,12 @@ export default function MentorshipPage() {
                 <div className="flex items-start justify-between">
                   <div className="flex items-center gap-3">
                     <Avatar className="h-12 w-12 ring-2 ring-white/40 shadow-sm">
-                      <AvatarImage src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${mentorship.profileId}`} />
+                      <AvatarImage 
+                        src={profilePictures[mentorship.profileId] 
+                          ? `data:image/jpeg;base64,${profilePictures[mentorship.profileId]}`
+                          : `https://api.dicebear.com/7.x/avataaars/svg?seed=${mentorship.profileId}`
+                        } 
+                      />
                       <AvatarFallback className="bg-gradient-to-br from-teal-500 to-indigo-500 text-white">
                         <User className="h-6 w-6" />
                       </AvatarFallback>
@@ -990,7 +1032,12 @@ export default function MentorshipPage() {
               <DialogHeader>
                 <DialogTitle className="text-xl font-semibold flex items-center gap-3">
                   <Avatar className="h-12 w-12 ring-2 ring-white/40 shadow-sm">
-                    <AvatarImage src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${selectedMentorship.profileId}`} />
+                    <AvatarImage 
+                      src={profilePictures[selectedMentorship.profileId] 
+                        ? `data:image/jpeg;base64,${profilePictures[selectedMentorship.profileId]}`
+                        : `https://api.dicebear.com/7.x/avataaars/svg?seed=${selectedMentorship.profileId}`
+                      } 
+                    />
                     <AvatarFallback className="bg-gradient-to-br from-teal-500 to-indigo-500 text-white">
                       <User className="h-6 w-6" />
                     </AvatarFallback>
