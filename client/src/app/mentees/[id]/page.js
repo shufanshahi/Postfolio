@@ -26,6 +26,7 @@ export default function MenteesPage() {
   const [refundingIds, setRefundingIds] = useState(new Set());
   const [statusFilter, setStatusFilter] = useState('all');
   const [showStatusDropdown, setShowStatusDropdown] = useState(false);
+  const [profilePictures, setProfilePictures] = useState({});
 
   useEffect(() => {
     async function fetchData() {
@@ -54,8 +55,9 @@ export default function MenteesPage() {
         const enrollmentsData = await enrollmentsRes.json();
         setEnrollments(enrollmentsData);
 
-        // Fetch profile names for each enrollment
+        // Fetch profile names and pictures for each enrollment
         const namesMap = {};
+        const picturesMap = {};
         await Promise.all(enrollmentsData.map(async (enrollment) => {
           if (enrollment.profileId) {
             try {
@@ -68,6 +70,9 @@ export default function MenteesPage() {
               if (profileRes.ok) {
                 const profileData = await profileRes.json();
                 namesMap[enrollment.profileId] = profileData.name || `Profile ${enrollment.profileId}`;
+                if (profileData.pictureBase64) {
+                  picturesMap[enrollment.profileId] = profileData.pictureBase64;
+                }
               } else {
                 namesMap[enrollment.profileId] = `Profile ${enrollment.profileId}`;
               }
@@ -77,6 +82,7 @@ export default function MenteesPage() {
           }
         }));
         setProfileNames(namesMap);
+        setProfilePictures(picturesMap);
       } catch (err) {
         setError(err.message || 'Failed to load mentees data');
       } finally {
@@ -367,7 +373,12 @@ export default function MenteesPage() {
                   <li key={enrollment.id} className="py-4 flex items-center justify-between">
                     <div className="flex items-center gap-4">
                       <Avatar className="h-10 w-10 ring-2 ring-white/40 shadow-sm">
-                        <AvatarImage src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${enrollment.profileId}`} />
+                        <AvatarImage 
+                          src={profilePictures[enrollment.profileId] 
+                            ? `data:image/jpeg;base64,${profilePictures[enrollment.profileId]}`
+                            : `https://api.dicebear.com/7.x/avataaars/svg?seed=${enrollment.profileId}`
+                          } 
+                        />
                         <AvatarFallback className="bg-gradient-to-br from-teal-500 to-indigo-500 text-white">
                           <User className="h-5 w-5" />
                         </AvatarFallback>

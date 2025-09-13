@@ -438,12 +438,12 @@ export default function MyMentorshipPage() {
               <CardHeader className="relative pb-4">
                 <div className="flex items-start justify-between">
                   <div className="flex items-center gap-3">
-                    <Avatar className="h-12 w-12 ring-2 ring-white/40 shadow-sm">
+                    {/* <Avatar className="h-12 w-12 ring-2 ring-white/40 shadow-sm">
                       <AvatarImage src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${mentorship.id}`} />
                       <AvatarFallback className="bg-gradient-to-br from-teal-500 to-indigo-500 text-white">
                         <BookOpen className="h-6 w-6" />
                       </AvatarFallback>
-                    </Avatar>
+                    </Avatar> */}
                     <div className="flex-1 min-w-0">
                       <CardTitle className="text-lg font-semibold text-slate-800 dark:text-slate-100 truncate">
                         {mentorship.name}
