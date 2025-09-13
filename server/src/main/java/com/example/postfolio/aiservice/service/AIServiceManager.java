@@ -57,6 +57,13 @@ public class AIServiceManager {
     }
 
     /**
+     * Evaluate interview synchronously via HTTP
+     */
+    public InterviewEvaluationResponse evaluateInterview(InterviewEvaluationRequest request) {
+        return aiServiceClient.evaluateInterview(request);
+    }
+
+    /**
      * Generate MCQ asynchronously via RabbitMQ
      */
     @Async

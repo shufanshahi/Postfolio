@@ -129,6 +129,40 @@ public class AIServiceClient {
         }
     }
 
+    @CircuitBreaker(name = "ai-service", fallbackMethod = "fallbackEvaluateInterview")
+    public InterviewEvaluationResponse evaluateInterview(InterviewEvaluationRequest request) {
+        try {
+            log.debug("Sending interview evaluation request to AI service with {} Q&A pairs", 
+                    request.getQuestionAnswers().size());
+
+            WebClient webClient = webClientBuilder.baseUrl(aiServiceBaseUrl).build();
+
+            ResponseEntity<InterviewEvaluationResponse> response = webClient.post()
+                    .uri("/api/ai/evaluate-interview")
+                    .bodyValue(request)
+                    .retrieve()
+                    .toEntity(InterviewEvaluationResponse.class)
+                    .timeout(Duration.ofMillis(timeout))
+                    .block();
+
+            if (response != null && response.getStatusCode() == HttpStatus.OK) {
+                log.debug("Successfully evaluated interview with {} Q&A pairs", 
+                        request.getQuestionAnswers().size());
+                return response.getBody();
+            } else {
+                log.error("AI service returned non-OK status: {}",
+                        response != null ? response.getStatusCode() : "null");
+                throw new RuntimeException("AI service returned error status");
+            }
+        } catch (WebClientResponseException e) {
+            log.error("AI service request failed with status: {} for interview evaluation", e.getStatusCode(), e);
+            throw new RuntimeException("AI service call failed: " + e.getMessage(), e);
+        } catch (Exception e) {
+            log.error("Error calling AI service for interview evaluation", e);
+            throw new RuntimeException("AI service call failed: " + e.getMessage(), e);
+        }
+    }
+
     // Fallback methods for circuit breaker
     public PostProcessingResponse fallbackProcessPost(PostProcessingRequest request, Exception ex) {
         log.warn("AI service fallback triggered for post processing. Post ID: {}. Error: {}",
@@ -172,6 +206,19 @@ public class AIServiceClient {
                 .interviewType(request.getInterviewType())
                 .introduction("Unable to generate interview questions at this time.")
                 .questions(new ArrayList<>())
+                .success(false)
+                .errorMessage("AI service temporarily unavailable")
+                .build();
+    }
+
+    public InterviewEvaluationResponse fallbackEvaluateInterview(InterviewEvaluationRequest request, Exception ex) {
+        log.warn("AI service fallback triggered for interview evaluation. Error: {}", ex.getMessage());
+
+        return InterviewEvaluationResponse.builder()
+                .rating(0)
+                .strengths(new ArrayList<>())
+                .weaknesses(new ArrayList<>())
+                .improvements(new ArrayList<>())
                 .success(false)
                 .errorMessage("AI service temporarily unavailable")
                 .build();

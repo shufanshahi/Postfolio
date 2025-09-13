@@ -18,6 +18,7 @@ public class AIProcessingController {
     private final MCQGenerationAIService mcqGenerationAIService;
     private final InterviewGenerationAIService interviewGenerationAIService;
     private final MockInterviewGenerationAIService mockInterviewGenerationAIService;
+    private final InterviewEvaluationAIService interviewEvaluationAIService;
     private final NewsSummarizationAIService newsSummarizationAIService;
 
     @PostMapping("/process-post")
@@ -80,6 +81,14 @@ public class AIProcessingController {
         log.info("Generating custom interview for role: {}, experience: {}, type: {}, questions: {}", 
                 request.getRole(), request.getExperience(), request.getInterviewType(), request.getNumQuestions());
         MockInterviewGenerationResponse response = mockInterviewGenerationAIService.generateCustomInterview(request);
+        return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/evaluate-interview")
+    public ResponseEntity<InterviewEvaluationResponse> evaluateInterview(
+            @RequestBody InterviewEvaluationRequest request) {
+        log.info("Evaluating interview with {} Q&A pairs", request.getQuestionAnswers().size());
+        InterviewEvaluationResponse response = interviewEvaluationAIService.evaluateInterview(request);
         return ResponseEntity.ok(response);
     }
 
