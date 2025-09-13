@@ -9,6 +9,8 @@ import com.example.postfolio.post.models.PostType;
 import com.example.postfolio.post.repository.PostRepository;
 import com.example.postfolio.profile.entity.Profile;
 import com.example.postfolio.profile.service.ProfileService;
+import com.example.postfolio.profile.service.WorkService;
+import com.example.postfolio.profile.dto.WorkDto;
 import com.example.postfolio.user.entity.User;
 import com.example.postfolio.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -22,6 +24,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDateTime;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -43,6 +46,7 @@ public class PostService {
     private final ReactionRepository reactionRepository;
     private final NotificationService notificationService;
     private final AIServiceManager aiServiceManager;
+    private final WorkService workService;
 
     @Transactional
     public Post createPost(Long profileId, String content, List<String> images) {
@@ -449,20 +453,20 @@ public class PostService {
     }
 
     @Transactional
-    public Post manuallyEditPost(Long postId, Long profileId, String category, List<String> skills, 
-                                String companyName, String position) {
+    public Post manuallyEditPost(Long postId, Long profileId, String category, List<String> skills,
+            String companyName, String position) {
         // Verify ownership
         Post post = postRepository.findByIdAndProfileId(postId, profileId)
                 .orElseThrow(() -> new ResponseStatusException(
                         HttpStatus.NOT_FOUND, "Post not found or access denied"));
-        
+
         Profile profile = profileService.getProfileById(profileId);
-        
+
         // Convert category string to PostType
         PostType postType;
         List<String> tags = new ArrayList<>();
         String cvHeading = post.getCvHeading(); // Keep existing heading by default
-        
+
         switch (category.toUpperCase()) {
             case "ACHIEVEMENT":
                 postType = PostType.ACHIEVEMENT;
@@ -471,59 +475,90 @@ public class PostService {
                     cvHeading = "Achievement";
                 }
                 break;
-                
-            case "PROJECT": 
+
+            case "PROJECT":
                 postType = PostType.PROJECT;
                 tags = skills != null ? new ArrayList<>(skills) : new ArrayList<>();
                 if (cvHeading.equals("Processing...") || cvHeading.equals("General Post")) {
                     cvHeading = "Project";
                 }
                 break;
-                
+
             case "PROFESSIONAL_EXPERIENCE":
-                postType = PostType.EXPERIENCE;
-                // For experience, tags format: Company,Position,Date
+                // For professional experience, create work entry and set post as GENERAL
+                // (same logic as AI processing)
                 if (companyName != null && position != null) {
-                    tags.add(companyName + "," + position + ",none");
-                    cvHeading = "Started " + position + " at " + companyName;
-                    
-                    // Also create/update Work entry if it's professional experience
+                    // Create work entry from the provided data
                     createOrUpdateWorkEntry(profile, companyName, position);
+                    cvHeading = "Started " + position + " at " + companyName;
                 }
+
+                // Set post type to GENERAL to not show in CV (same as AI processing)
+                postType = PostType.GENERAL;
+                tags = new ArrayList<>(); // Clear tags since it's now GENERAL
                 break;
-                
+
             default:
                 throw new ResponseStatusException(
                         HttpStatus.BAD_REQUEST, "Invalid category: " + category);
         }
-        
+
         // Update the post
         post.setType(postType);
         post.setTags(tags);
         post.setCvHeading(cvHeading);
         post.setAutoTagged(false); // Mark as manually tagged
         post.setUpdatedAt(LocalDateTime.now());
-        
+
         Post savedPost = postRepository.save(post);
-        
-        // Update CV entries based on the new categorization
-        cvUpdateService.updateCvFromPost(savedPost);
-        
+
+        // Handle CV updates based on the categorization
+        if (category.toUpperCase().equals("PROFESSIONAL_EXPERIENCE")) {
+            // For professional experience, remove from CV since it's now GENERAL type
+            cvUpdateService.removeCvEntriesByPostId(postId);
+            log.info("PROFESSIONAL_EXPERIENCE post {} converted to GENERAL and removed from CV", postId);
+        } else {
+            // Update CV entries for other categories (ACHIEVEMENT, PROJECT)
+            cvUpdateService.updateCvFromPost(savedPost);
+        }
+
         log.info("Post {} manually edited to category: {}", postId, category);
         return savedPost;
     }
-    
+
     private void createOrUpdateWorkEntry(Profile profile, String companyName, String position) {
-        // Check if a work entry with this company and position already exists
-        boolean workExists = profile.getWorks().stream()
-                .anyMatch(work -> work.getCompanyName().equalsIgnoreCase(companyName) && 
-                         work.getPosition().equalsIgnoreCase(position));
-        
-        if (!workExists) {
-            // Create new work entry - this will be saved when profile is saved
-            // Note: You might want to add a proper Work service for this
-            log.info("Work entry should be created for {} at {} - implement proper Work service integration", 
-                    position, companyName);
+        try {
+            // Check if a work entry with this company and position already exists
+            boolean workExists = profile.getWorks().stream()
+                    .anyMatch(work -> work.getCompanyName().equalsIgnoreCase(companyName) &&
+                            work.getPosition().equalsIgnoreCase(position));
+
+            if (!workExists) {
+                log.info("Creating new work entry for {} at {}", position, companyName);
+
+                // Create WorkDto
+                WorkDto workDto = WorkDto.builder()
+                        .companyName(companyName)
+                        .position(position)
+                        .startDate(LocalDate.now()) // Use current date as start date
+                        .endDate(null) // No end date as it's a new position
+                        .isCurrent(true) // Assume it's current position
+                        .build();
+
+                // Get the user from profile
+                User user = profile.getUser();
+                if (user != null) {
+                    // Create work entry using the work service
+                    workService.createWork(workDto, user);
+                    log.info("Successfully created work entry: {} at {}", position, companyName);
+                } else {
+                    log.warn("Could not find user for profile {}", profile.getId());
+                }
+            } else {
+                log.info("Work entry already exists for {} at {}, skipping creation", position, companyName);
+            }
+        } catch (Exception e) {
+            log.error("Failed to create work entry for {} at {}: {}", position, companyName, e.getMessage(), e);
         }
     }
 

@@ -15,12 +15,12 @@ import java.util.List;
 public class ManualPostEditDTO {
     @NotNull
     private Long profileId;
-    
+
     @NotNull
     private String category; // "ACHIEVEMENT", "PROJECT", "PROFESSIONAL_EXPERIENCE"
-    
+
     private List<String> skills; // For ACHIEVEMENT and PROJECT
-    
+
     private String companyName; // For PROFESSIONAL_EXPERIENCE
     private String position; // For PROFESSIONAL_EXPERIENCE
 }

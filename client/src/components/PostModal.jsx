@@ -268,151 +268,151 @@ export default function PostModal({ isOpen, onClose, postId, cvHeading }) {
 
     return (
         <>
-        <Dialog open={isOpen} onOpenChange={handleCloseModal}>
-            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto p-0 bg-gradient-to-br from-teal-50/70 via-white/50 to-indigo-50/70 dark:from-slate-800/60 dark:via-slate-800/50 dark:to-slate-800/60 backdrop-blur-xl border border-white/40 dark:border-slate-700/50 shadow-sm">
-                {/* Close button */}
-                <button
-                    onClick={onClose}
-                    className="absolute top-4 right-4 z-10 p-2 bg-black/20 backdrop-blur-sm rounded-full text-gray-700 dark:text-white hover:bg-black/30 transition-all"
-                >
-                    <X className="h-5 w-5" />
-                </button>
+            <Dialog open={isOpen} onOpenChange={handleCloseModal}>
+                <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto p-0 bg-gradient-to-br from-teal-50/70 via-white/50 to-indigo-50/70 dark:from-slate-800/60 dark:via-slate-800/50 dark:to-slate-800/60 backdrop-blur-xl border border-white/40 dark:border-slate-700/50 shadow-sm">
+                    {/* Close button */}
+                    <button
+                        onClick={onClose}
+                        className="absolute top-4 right-4 z-10 p-2 bg-black/20 backdrop-blur-sm rounded-full text-gray-700 dark:text-white hover:bg-black/30 transition-all"
+                    >
+                        <X className="h-5 w-5" />
+                    </button>
 
-                {loading && (
-                    <div className="flex items-center justify-center py-20">
-                        <div className="flex flex-col items-center gap-4">
-                            <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
-                            <p className="text-gray-600">Loading post...</p>
-                        </div>
-                    </div>
-                )}
-
-                {error && (
-                    <div className="flex items-center justify-center py-20">
-                        <div className="text-center">
-                            <div className="w-16 h-16 mx-auto mb-4 bg-red-100 rounded-full flex items-center justify-center">
-                                <AlertCircle className="h-8 w-8 text-red-500" />
+                    {loading && (
+                        <div className="flex items-center justify-center py-20">
+                            <div className="flex flex-col items-center gap-4">
+                                <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
+                                <p className="text-gray-600">Loading post...</p>
                             </div>
-                            <h3 className="text-lg font-semibold text-gray-900 mb-2">Error loading post</h3>
-                            <p className="text-gray-600">{error}</p>
                         </div>
-                    </div>
-                )}
+                    )}
 
-                {post && !loading && (
-                    <div className="bg-gradient-to-br from-teal-50/65 via-white/55 to-indigo-50/60 dark:from-slate-800/70 dark:via-slate-800/60 dark:to-slate-800/70 backdrop-blur-md border border-teal-900/5 dark:border-slate-700/60">
-                        {/* CV Heading Banner */}
-                        <div className="bg-gradient-to-r from-teal-500 to-indigo-600 text-white p-4 backdrop-blur-sm">
-                            <div className="flex items-center gap-2 mb-2">
-                                <Award className="h-5 w-5" />
-                                <span className="text-sm font-medium">CV Entry</span>
+                    {error && (
+                        <div className="flex items-center justify-center py-20">
+                            <div className="text-center">
+                                <div className="w-16 h-16 mx-auto mb-4 bg-red-100 rounded-full flex items-center justify-center">
+                                    <AlertCircle className="h-8 w-8 text-red-500" />
+                                </div>
+                                <h3 className="text-lg font-semibold text-gray-900 mb-2">Error loading post</h3>
+                                <p className="text-gray-600">{error}</p>
                             </div>
-                            <h2 className="text-lg font-semibold">{cvHeading}</h2>
                         </div>
+                    )}
 
-                        {/* Post Header */}
-                        <div className="p-4 border-b border-teal-100/50 dark:border-slate-700/50 backdrop-blur-sm">
-                            <div className="flex items-start justify-between">
-                                <div className="flex items-start gap-3">
-                                    <div className="w-12 h-12 rounded-full overflow-hidden bg-gradient-to-br from-teal-200 to-indigo-200 dark:from-slate-700 dark:to-slate-600 flex-shrink-0 border border-white/40 dark:border-slate-600/40">
-                                        {post.userProfilePicture ? (
-                                            <img
-                                                src={`data:image/jpeg;base64,${post.userProfilePicture}`}
-                                                alt={post.userName}
-                                                className="w-full h-full object-cover"
-                                                onError={(e) => {
-                                                    console.error('Failed to load profile picture:', e);
-                                                    e.target.style.display = 'none';
-                                                    e.target.nextSibling.style.display = 'flex';
-                                                }}
-                                            />
-                                        ) : (
-                                            <div className="w-full h-full bg-gradient-to-br from-teal-400 to-indigo-500 flex items-center justify-center text-white font-semibold text-lg">
-                                                {post.userName?.charAt(0)?.toUpperCase() || 'U'}
-                                            </div>
-                                        )}
-                                    </div>
-                                    <div className="flex-1 min-w-0">
-                                        <div className="flex items-center gap-2">
-                                            <h3 className="font-semibold text-gray-900 dark:text-white truncate">
-                                                {post.userName || 'Unknown User'}
-                                            </h3>
-                                            {post.userPosition && (
-                                                <Badge className={`${getTypeColor(post.type)} text-xs border-0 backdrop-blur-sm`}>
-                                                    {getTypeIcon(post.type)}
-                                                    {post.type?.toLowerCase().replace(/_/g, ' ')}
-                                                </Badge>
+                    {post && !loading && (
+                        <div className="bg-gradient-to-br from-teal-50/65 via-white/55 to-indigo-50/60 dark:from-slate-800/70 dark:via-slate-800/60 dark:to-slate-800/70 backdrop-blur-md border border-teal-900/5 dark:border-slate-700/60">
+                            {/* CV Heading Banner */}
+                            <div className="bg-gradient-to-r from-teal-500 to-indigo-600 text-white p-4 backdrop-blur-sm">
+                                <div className="flex items-center gap-2 mb-2">
+                                    <Award className="h-5 w-5" />
+                                    <span className="text-sm font-medium">CV Entry</span>
+                                </div>
+                                <h2 className="text-lg font-semibold">{cvHeading}</h2>
+                            </div>
+
+                            {/* Post Header */}
+                            <div className="p-4 border-b border-teal-100/50 dark:border-slate-700/50 backdrop-blur-sm">
+                                <div className="flex items-start justify-between">
+                                    <div className="flex items-start gap-3">
+                                        <div className="w-12 h-12 rounded-full overflow-hidden bg-gradient-to-br from-teal-200 to-indigo-200 dark:from-slate-700 dark:to-slate-600 flex-shrink-0 border border-white/40 dark:border-slate-600/40">
+                                            {post.userProfilePicture ? (
+                                                <img
+                                                    src={`data:image/jpeg;base64,${post.userProfilePicture}`}
+                                                    alt={post.userName}
+                                                    className="w-full h-full object-cover"
+                                                    onError={(e) => {
+                                                        console.error('Failed to load profile picture:', e);
+                                                        e.target.style.display = 'none';
+                                                        e.target.nextSibling.style.display = 'flex';
+                                                    }}
+                                                />
+                                            ) : (
+                                                <div className="w-full h-full bg-gradient-to-br from-teal-400 to-indigo-500 flex items-center justify-center text-white font-semibold text-lg">
+                                                    {post.userName?.charAt(0)?.toUpperCase() || 'U'}
+                                                </div>
                                             )}
                                         </div>
-                                        {post.userPosition && (
-                                            <p className="text-sm text-gray-600 dark:text-gray-300">{post.userPosition}</p>
-                                        )}
-                                        <p className="text-sm text-gray-500 dark:text-gray-400">{formatDate(post.createdAt)}</p>
-                                    </div>
-                                </div>
-                                {/* More options dropdown */}
-                                {currentUser && currentUser.id === post.profileId && (
-                                    <div className="relative">
-                                        <button 
-                                            className="p-2 hover:bg-teal-100/50 dark:hover:bg-slate-700/50 rounded-full transition-colors backdrop-blur-sm"
-                                            onClick={() => setShowDropdown(!showDropdown)}
-                                        >
-                                            <MoreHorizontal className="h-5 w-5 text-gray-500 dark:text-gray-400" />
-                                        </button>
-                                        {showDropdown && (
-                                            <div className="absolute right-0 top-full mt-2 w-48 bg-white dark:bg-slate-800 rounded-lg shadow-lg border border-slate-200 dark:border-slate-700 z-20">
-                                                <button
-                                                    className="flex items-center gap-2 w-full px-4 py-2 text-left text-sm hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg"
-                                                    onClick={() => {
-                                                        setShowEditModal(true);
-                                                        setShowDropdown(false);
-                                                    }}
-                                                >
-                                                    <Edit className="h-4 w-4" />
-                                                    Edit Category
-                                                </button>
+                                        <div className="flex-1 min-w-0">
+                                            <div className="flex items-center gap-2">
+                                                <h3 className="font-semibold text-gray-900 dark:text-white truncate">
+                                                    {post.userName || 'Unknown User'}
+                                                </h3>
+                                                {post.userPosition && (
+                                                    <Badge className={`${getTypeColor(post.type)} text-xs border-0 backdrop-blur-sm`}>
+                                                        {getTypeIcon(post.type)}
+                                                        {post.type?.toLowerCase().replace(/_/g, ' ')}
+                                                    </Badge>
+                                                )}
                                             </div>
-                                        )}
+                                            {post.userPosition && (
+                                                <p className="text-sm text-gray-600 dark:text-gray-300">{post.userPosition}</p>
+                                            )}
+                                            <p className="text-sm text-gray-500 dark:text-gray-400">{formatDate(post.createdAt)}</p>
+                                        </div>
+                                    </div>
+                                    {/* More options dropdown */}
+                                    {currentUser && currentUser.id === post.profileId && (
+                                        <div className="relative">
+                                            <button
+                                                className="p-2 hover:bg-teal-100/50 dark:hover:bg-slate-700/50 rounded-full transition-colors backdrop-blur-sm"
+                                                onClick={() => setShowDropdown(!showDropdown)}
+                                            >
+                                                <MoreHorizontal className="h-5 w-5 text-gray-500 dark:text-gray-400" />
+                                            </button>
+                                            {showDropdown && (
+                                                <div className="absolute right-0 top-full mt-2 w-48 bg-white dark:bg-slate-800 rounded-lg shadow-lg border border-slate-200 dark:border-slate-700 z-20">
+                                                    <button
+                                                        className="flex items-center gap-2 w-full px-4 py-2 text-left text-sm hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg"
+                                                        onClick={() => {
+                                                            setShowEditModal(true);
+                                                            setShowDropdown(false);
+                                                        }}
+                                                    >
+                                                        <Edit className="h-4 w-4" />
+                                                        Edit Category
+                                                    </button>
+                                                </div>
+                                            )}
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+
+                            {/* Post Content */}
+                            <div className="p-4">
+                                <div className="text-gray-900 dark:text-gray-100 leading-relaxed whitespace-pre-wrap mb-4">
+                                    {post.content}
+                                </div>
+
+                                {/* Images */}
+                                {renderImages(post.images)}
+
+                                {/* Tags */}
+                                {post.tags && post.tags.length > 0 && (
+                                    <div className="mt-4 flex flex-wrap gap-2">
+                                        {post.tags.map((tag, index) => (
+                                            <Badge
+                                                key={index}
+                                                className="px-3 py-1 text-sm bg-teal-100/70 text-teal-800 hover:bg-teal-200/70 dark:bg-slate-700/70 dark:text-teal-300 dark:hover:bg-slate-600/70 transition-colors backdrop-blur-sm border-0"
+                                            >
+                                                #{tag}
+                                            </Badge>
+                                        ))}
                                     </div>
                                 )}
                             </div>
                         </div>
+                    )}
+                </DialogContent>
+            </Dialog>
 
-                        {/* Post Content */}
-                        <div className="p-4">
-                            <div className="text-gray-900 dark:text-gray-100 leading-relaxed whitespace-pre-wrap mb-4">
-                                {post.content}
-                            </div>
-
-                            {/* Images */}
-                            {renderImages(post.images)}
-
-                            {/* Tags */}
-                            {post.tags && post.tags.length > 0 && (
-                                <div className="mt-4 flex flex-wrap gap-2">
-                                    {post.tags.map((tag, index) => (
-                                        <Badge
-                                            key={index}
-                                            className="px-3 py-1 text-sm bg-teal-100/70 text-teal-800 hover:bg-teal-200/70 dark:bg-slate-700/70 dark:text-teal-300 dark:hover:bg-slate-600/70 transition-colors backdrop-blur-sm border-0"
-                                        >
-                                            #{tag}
-                                        </Badge>
-                                    ))}
-                                </div>
-                            )}
-                        </div>
-                    </div>
-                )}
-            </DialogContent>
-        </Dialog>
-
-        {/* Edit Post Modal */}
-        <EditPostModal
-            isOpen={showEditModal}
-            onClose={() => setShowEditModal(false)}
-            post={post}
-            onSave={handleEditSave}
-        />
+            {/* Edit Post Modal */}
+            <EditPostModal
+                isOpen={showEditModal}
+                onClose={() => setShowEditModal(false)}
+                post={post}
+                onSave={handleEditSave}
+            />
         </>
     );
 } 

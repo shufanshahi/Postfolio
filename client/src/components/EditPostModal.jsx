@@ -19,9 +19,9 @@ import {
 } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { 
-    X, 
-    Plus, 
+import {
+    X,
+    Plus,
     Loader2,
     AlertCircle,
     Award,
@@ -98,7 +98,7 @@ export default function EditPostModal({ isOpen, onClose, post, onSave }) {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        
+
         if (!category) {
             setError('Please select a category');
             return;
@@ -135,12 +135,12 @@ export default function EditPostModal({ isOpen, onClose, post, onSave }) {
             }
 
             const updatedPost = await response.json();
-            
+
             // Call onSave callback with updated post data
             if (onSave) {
                 onSave(updatedPost);
             }
-            
+
             onClose();
         } catch (err) {
             setError(err.message);
@@ -222,8 +222,8 @@ export default function EditPostModal({ isOpen, onClose, post, onSave }) {
                                         placeholder="Enter skill and press Enter"
                                         className="flex-1 bg-white dark:bg-slate-700 border-slate-300 dark:border-slate-600"
                                     />
-                                    <Button 
-                                        type="button" 
+                                    <Button
+                                        type="button"
                                         onClick={addSkill}
                                         variant="outline"
                                         size="sm"
@@ -235,7 +235,7 @@ export default function EditPostModal({ isOpen, onClose, post, onSave }) {
                                 {skills.length > 0 && (
                                     <div className="flex flex-wrap gap-2">
                                         {skills.map((skill, index) => (
-                                            <Badge 
+                                            <Badge
                                                 key={index}
                                                 className="bg-slate-100 dark:bg-slate-700 text-slate-800 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-600 cursor-pointer"
                                                 onClick={() => removeSkill(skill)}

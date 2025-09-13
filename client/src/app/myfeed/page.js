@@ -310,8 +310,8 @@ function MyFeedPage() {
     };
 
     const handlePostUpdated = (updatedPost) => {
-        setPosts(prevPosts => 
-            prevPosts.map(post => 
+        setPosts(prevPosts =>
+            prevPosts.map(post =>
                 post.id === updatedPost.id ? updatedPost : post
             )
         );
@@ -541,7 +541,7 @@ function MyFeedPage() {
                                                     {getAchievementIcon(post)}
                                                     {isOwnPost(post) && (
                                                         <div className="relative dropdown-container">
-                                                            <button 
+                                                            <button
                                                                 className="text-slate-400 hover:text-slate-600 p-1 rounded-full hover:bg-slate-100 transition-colors"
                                                                 onClick={() => toggleDropdown(post.id)}
                                                             >
