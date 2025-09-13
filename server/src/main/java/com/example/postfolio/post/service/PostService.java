@@ -272,10 +272,28 @@ public class PostService {
         Post post = getPostById(postId);
         validatePostOwnership(post, profileId);
 
-        postRepository.delete(post);
+        // First, delete all reactions associated with this post
+        List<Reaction> reactions = reactionRepository.findByPost(post);
+        reactionRepository.deleteAll(reactions);
 
-        // Remove CV entries linked to this post
+        // Next, remove CV entries linked to this post
         cvUpdateService.removeCvEntriesByPostId(postId);
+
+        // Check if post is linked to any work entry and delete it
+        if (post.getType() == PostType.GENERAL && post.getTags() != null && !post.getTags().isEmpty()) {
+            // This might be a professional experience post converted to GENERAL
+            // Check if there's a work entry to clean up
+            try {
+                Profile profile = post.getProfile();
+                deleteWorkEntryFromPost(post, profile);
+            } catch (Exception e) {
+                // Log but don't fail if no work entry exists
+                log.warn("No work entry found for post {}: {}", postId, e.getMessage());
+            }
+        }
+
+        // Finally, delete the post itself
+        postRepository.delete(post);
     }
 
     @Transactional
