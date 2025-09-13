@@ -12,6 +12,7 @@ import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
 
 import java.time.Duration;
+import java.util.ArrayList;
 
 @Component
 @RequiredArgsConstructor
@@ -95,6 +96,39 @@ public class AIServiceClient {
         }
     }
 
+    @CircuitBreaker(name = "ai-service", fallbackMethod = "fallbackGenerateCustomInterview")
+    public MockInterviewGenerationResponse generateCustomInterview(MockInterviewGenerationRequest request) {
+        try {
+            log.debug("Sending custom interview generation request to AI service for role: {}", request.getRole());
+
+            WebClient webClient = webClientBuilder.baseUrl(aiServiceBaseUrl).build();
+
+            ResponseEntity<MockInterviewGenerationResponse> response = webClient.post()
+                    .uri("/api/ai/generate-custom-interview")
+                    .bodyValue(request)
+                    .retrieve()
+                    .toEntity(MockInterviewGenerationResponse.class)
+                    .timeout(Duration.ofMillis(timeout))
+                    .block();
+
+            if (response != null && response.getStatusCode() == HttpStatus.OK) {
+                log.debug("Successfully generated custom interview for role: {}", request.getRole());
+                return response.getBody();
+            } else {
+                log.error("AI service returned non-OK status: {}",
+                        response != null ? response.getStatusCode() : "null");
+                throw new RuntimeException("AI service returned error status");
+            }
+        } catch (WebClientResponseException e) {
+            log.error("AI service request failed with status: {} for role: {}", e.getStatusCode(),
+                    request.getRole(), e);
+            throw new RuntimeException("AI service call failed: " + e.getMessage(), e);
+        } catch (Exception e) {
+            log.error("Error calling AI service for role: {}", request.getRole(), e);
+            throw new RuntimeException("AI service call failed: " + e.getMessage(), e);
+        }
+    }
+
     // Fallback methods for circuit breaker
     public PostProcessingResponse fallbackProcessPost(PostProcessingRequest request, Exception ex) {
         log.warn("AI service fallback triggered for post processing. Post ID: {}. Error: {}",
@@ -123,6 +157,21 @@ public class AIServiceClient {
                 .strengths("Manual review required")
                 .gaps("Cannot determine without AI analysis")
                 .recommendations("Please try again later")
+                .success(false)
+                .errorMessage("AI service temporarily unavailable")
+                .build();
+    }
+
+    public MockInterviewGenerationResponse fallbackGenerateCustomInterview(MockInterviewGenerationRequest request, Exception ex) {
+        log.warn("AI service fallback triggered for custom interview generation. Role: {}. Error: {}",
+                request.getRole(), ex.getMessage());
+
+        return MockInterviewGenerationResponse.builder()
+                .role(request.getRole())
+                .experience(request.getExperience())
+                .interviewType(request.getInterviewType())
+                .introduction("Unable to generate interview questions at this time.")
+                .questions(new ArrayList<>())
                 .success(false)
                 .errorMessage("AI service temporarily unavailable")
                 .build();

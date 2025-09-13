@@ -1,18 +1,17 @@
 package com.example.postfolio.interview.service;
 
+import com.example.postfolio.aiservice.dto.MockInterviewGenerationRequest;
+import com.example.postfolio.aiservice.dto.MockInterviewGenerationResponse;
+import com.example.postfolio.aiservice.service.AIServiceManager;
 import com.example.postfolio.interview.dto.MockInterviewRequest;
 import com.example.postfolio.interview.dto.MockInterviewResponse;
 import com.example.postfolio.interview.dto.MockInterviewStoreRequest;
 import com.example.postfolio.interview.entity.MockInterview;
 import com.example.postfolio.interview.repository.MockInterviewRepository;
 import com.example.postfolio.tts.service.TtsService;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestTemplate;
-import org.springframework.http.*;
 
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -21,29 +20,21 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
-import java.util.Map;
 import java.util.*;
 
 @Service
 @RequiredArgsConstructor
 public class MockInterviewService {
 
+    private final TtsService ttsService;
+    private final MockInterviewRepository mockInterviewRepository;
+    private final AIServiceManager aiServiceManager;
+    
+    private static final String AUDIO_DIR = "src/main/resources/static/interview-audio/";
+
     public MockInterview getMockInterviewById(Long id) {
         return mockInterviewRepository.findById(id).orElse(null);
     }
-
-    private final TtsService ttsService;
-    private final MockInterviewRepository mockInterviewRepository;
-    private final RestTemplate restTemplate = new RestTemplate();
-    private final ObjectMapper objectMapper = new ObjectMapper();
-    
-    @Value("${gemini.api.key:your-gemini-api-key}")
-    private String geminiApiKey;
-    
-    @Value("${gemini.api.url:https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent}")
-    private String geminiApiUrl;
-    
-    private static final String AUDIO_DIR = "src/main/resources/static/interview-audio/";
 
     public MockInterview storeMockInterview(MockInterviewStoreRequest request) {
         MockInterview mockInterview = new MockInterview();
@@ -68,8 +59,8 @@ public class MockInterviewService {
             String interviewType = extractInterviewTypeFromResponses(request.getResponses());
             String numQuestions = extractNumQuestionsFromResponses(request.getResponses());
             
-            // 2. Generate questions using Gemini
-            MockInterviewResponse geminiResponse = generateQuestionsWithGemini(role, experience, interviewType, numQuestions);
+            // 2. Generate questions using AI Service
+            MockInterviewResponse geminiResponse = generateQuestionsWithAIService(role, experience, interviewType, numQuestions);
             
             // 3. Convert questions to audio files
             List<String> audioUrls = generateAudioFiles(geminiResponse);
@@ -115,94 +106,47 @@ public class MockInterviewService {
                 .orElse("5");
     }
 
-    private MockInterviewResponse generateQuestionsWithGemini(String role, String experience, String interviewType, String numQuestions) {
+    private MockInterviewResponse generateQuestionsWithAIService(String role, String experience, String interviewType, String numQuestions) {
         try {
-            String prompt = buildGeminiPrompt(role, experience, interviewType, numQuestions);
+            // Create request for AI service
+            MockInterviewGenerationRequest request = MockInterviewGenerationRequest.builder()
+                    .role(role)
+                    .experience(experience)
+                    .interviewType(interviewType)
+                    .numQuestions(numQuestions)
+                    .build();
             
-            // Prepare request body for Gemini API
-            Map<String, Object> requestBody = new HashMap<>();
-            Map<String, Object> contents = new HashMap<>();
-            Map<String, Object> requestParts = new HashMap<>();
-            requestParts.put("text", prompt);
-            contents.put("parts", Arrays.asList(requestParts));
-            requestBody.put("contents", Arrays.asList(contents));
-
-            HttpHeaders headers = new HttpHeaders();
-            headers.setContentType(MediaType.APPLICATION_JSON);
+            // Call AI service
+            MockInterviewGenerationResponse aiResponse = aiServiceManager.generateCustomInterview(request);
             
-            HttpEntity<Map<String, Object>> entity = new HttpEntity<>(requestBody, headers);
-            String url = geminiApiUrl + "?key=" + geminiApiKey;
-            
-            @SuppressWarnings("rawtypes")
-            ResponseEntity<Map> response = restTemplate.postForEntity(url, entity, Map.class);
-            
-            if (response.getStatusCode() == HttpStatus.OK && response.getBody() != null) {
-                // Extract the generated text from Gemini response
-                @SuppressWarnings("unchecked")
-                Map<String, Object> responseBody = (Map<String, Object>) response.getBody();
-                if (responseBody != null) {
-                    @SuppressWarnings("unchecked")
-                    List<Map<String, Object>> candidates = (List<Map<String, Object>>) responseBody.get("candidates");
-                    if (candidates != null && !candidates.isEmpty()) {
-                        @SuppressWarnings("unchecked")
-                        Map<String, Object> content = (Map<String, Object>) candidates.get(0).get("content");
-                        @SuppressWarnings("unchecked")
-                        List<Map<String, Object>> parts = (List<Map<String, Object>>) content.get("parts");
-                        if (parts != null && !parts.isEmpty()) {
-                            String generatedText = (String) parts.get(0).get("text");
-                            
-                            // Parse JSON response from Gemini
-                            int jsonStart = generatedText.indexOf("{");
-                            int jsonEnd = generatedText.lastIndexOf("}") + 1;
-                            if (jsonStart >= 0 && jsonEnd > jsonStart) {
-                                String jsonResponse = generatedText.substring(jsonStart, jsonEnd);
-                                return objectMapper.readValue(jsonResponse, MockInterviewResponse.class);
-                            }
-                        }
-                    }
-                }
+            if (!aiResponse.isSuccess()) {
+                throw new RuntimeException("AI service failed: " + aiResponse.getErrorMessage());
             }
             
-            throw new RuntimeException("Failed to get valid response from Gemini API");
+            // Convert AI service response to MockInterviewResponse
+            MockInterviewResponse response = new MockInterviewResponse();
+            response.setIntroduction(aiResponse.getIntroduction());
+            response.setRole(aiResponse.getRole());
+            response.setExperience(aiResponse.getExperience());
+            response.setInterviewType(aiResponse.getInterviewType());
+            
+            // Convert questions
+            if (aiResponse.getQuestions() != null) {
+                List<MockInterviewResponse.Question> questions = new ArrayList<>();
+                for (MockInterviewGenerationResponse.Question aiQuestion : aiResponse.getQuestions()) {
+                    MockInterviewResponse.Question question = new MockInterviewResponse.Question();
+                    question.setId(aiQuestion.getId());
+                    question.setQuestion(aiQuestion.getQuestion());
+                    questions.add(question);
+                }
+                response.setQuestions(questions);
+            }
+            
+            return response;
             
         } catch (Exception e) {
-            throw new RuntimeException("Error calling Gemini API: " + e.getMessage(), e);
+            throw new RuntimeException("Error calling AI service: " + e.getMessage(), e);
         }
-    }
-
-    private String buildGeminiPrompt(String role, String experience, String interviewType, String numQuestions) {
-        return String.format("""
-            You are a professional mock interview assistant. 
-            Your goal is to simulate a realistic interview experience tailored to the candidate. 
-            You will receive the following information:
-
-            - Candidate role: %s
-            - Candidate job experience: %s years
-            - Interview type: %s 
-              (e.g., Technical, HR, Behavioral, Case Study, Mixed)
-            - Number of questions: %s
-
-            Instructions:
-            1. Based on the candidate's role, experience, and interview type, prepare interview questions based on the requested number (%s).
-            2. Parse the number of questions from the text (e.g., "5", "five", "5 questions", etc.) and generate that many questions.
-            3. If the number is unclear, generate 5 questions as default.
-            4. Questions should be relevant, realistic, and at the appropriate difficulty level for someone with %s years of experience.
-            5. Vary the style of questions to make it engaging (e.g., open-ended, situational, problem-solving).
-            6. Do not give answers — only questions.
-            7. At the start, include a short friendly introduction (as the interviewer).
-            8. Return the entire response strictly as a JSON object with the following structure:
-
-            {
-              "introduction": "string",
-              "role": "%s",
-              "experience": "%s",
-              "interviewType": "%s",
-              "questions": [
-                {"id": 1, "question": "string"},
-                {"id": 2, "question": "string"}
-              ]
-            }
-            """, role, experience, interviewType, numQuestions, numQuestions, experience, role, experience, interviewType);
     }
 
     private List<String> generateAudioFiles(MockInterviewResponse response) {

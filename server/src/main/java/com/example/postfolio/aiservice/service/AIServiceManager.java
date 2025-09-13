@@ -50,6 +50,13 @@ public class AIServiceManager {
     }
 
     /**
+     * Generate custom interview synchronously via HTTP
+     */
+    public MockInterviewGenerationResponse generateCustomInterview(MockInterviewGenerationRequest request) {
+        return aiServiceClient.generateCustomInterview(request);
+    }
+
+    /**
      * Generate MCQ asynchronously via RabbitMQ
      */
     @Async
