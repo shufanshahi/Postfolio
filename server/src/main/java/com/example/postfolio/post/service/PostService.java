@@ -454,34 +454,33 @@ public class PostService {
 
     @Transactional
     public Post manuallyEditPost(Long postId, Long profileId, String category, List<String> skills,
-            String companyName, String position) {
+            String companyName, String position, String cvHeading) {
         // Verify ownership
         Post post = postRepository.findByIdAndProfileId(postId, profileId)
                 .orElseThrow(() -> new ResponseStatusException(
                         HttpStatus.NOT_FOUND, "Post not found or access denied"));
 
         Profile profile = profileService.getProfileById(profileId);
+        PostType previousType = post.getType();
 
         // Convert category string to PostType
         PostType postType;
         List<String> tags = new ArrayList<>();
-        String cvHeading = post.getCvHeading(); // Keep existing heading by default
+        String newCvHeading = post.getCvHeading(); // Keep existing heading by default
 
         switch (category.toUpperCase()) {
             case "ACHIEVEMENT":
                 postType = PostType.ACHIEVEMENT;
                 tags = skills != null ? new ArrayList<>(skills) : new ArrayList<>();
-                if (cvHeading.equals("Processing...") || cvHeading.equals("General Post")) {
-                    cvHeading = "Achievement";
-                }
+                // Use custom CV heading if provided, otherwise use default
+                newCvHeading = (cvHeading != null && !cvHeading.trim().isEmpty()) ? cvHeading : "Achievement";
                 break;
 
             case "PROJECT":
                 postType = PostType.PROJECT;
                 tags = skills != null ? new ArrayList<>(skills) : new ArrayList<>();
-                if (cvHeading.equals("Processing...") || cvHeading.equals("General Post")) {
-                    cvHeading = "Project";
-                }
+                // Use custom CV heading if provided, otherwise use default
+                newCvHeading = (cvHeading != null && !cvHeading.trim().isEmpty()) ? cvHeading : "Project";
                 break;
 
             case "PROFESSIONAL_EXPERIENCE":
@@ -490,12 +489,25 @@ public class PostService {
                 if (companyName != null && position != null) {
                     // Create work entry from the provided data
                     createOrUpdateWorkEntry(profile, companyName, position);
-                    cvHeading = "Started " + position + " at " + companyName;
+                    newCvHeading = "Started " + position + " at " + companyName;
                 }
 
                 // Set post type to GENERAL to not show in CV (same as AI processing)
                 postType = PostType.GENERAL;
                 tags = new ArrayList<>(); // Clear tags since it's now GENERAL
+                break;
+
+            case "GENERAL":
+                postType = PostType.GENERAL;
+                tags = new ArrayList<>(); // Clear tags for general posts
+                newCvHeading = "General Post";
+
+                // Handle transitions from other categories to GENERAL
+                if (previousType == PostType.EXPERIENCE) {
+                    // If transitioning from work experience to general, delete the work entry
+                    deleteWorkEntryFromPost(post, profile);
+                    log.info("Deleted work entry for post {} transitioning from EXPERIENCE to GENERAL", postId);
+                }
                 break;
 
             default:
@@ -506,17 +518,17 @@ public class PostService {
         // Update the post
         post.setType(postType);
         post.setTags(tags);
-        post.setCvHeading(cvHeading);
+        post.setCvHeading(newCvHeading);
         post.setAutoTagged(false); // Mark as manually tagged
         post.setUpdatedAt(LocalDateTime.now());
 
         Post savedPost = postRepository.save(post);
 
         // Handle CV updates based on the categorization
-        if (category.toUpperCase().equals("PROFESSIONAL_EXPERIENCE")) {
-            // For professional experience, remove from CV since it's now GENERAL type
+        if (category.toUpperCase().equals("PROFESSIONAL_EXPERIENCE") || category.toUpperCase().equals("GENERAL")) {
+            // For professional experience or general, remove from CV
             cvUpdateService.removeCvEntriesByPostId(postId);
-            log.info("PROFESSIONAL_EXPERIENCE post {} converted to GENERAL and removed from CV", postId);
+            log.info("Post {} converted to {} and removed from CV", postId, category);
         } else {
             // Update CV entries for other categories (ACHIEVEMENT, PROJECT)
             cvUpdateService.updateCvFromPost(savedPost);
@@ -559,6 +571,31 @@ public class PostService {
             }
         } catch (Exception e) {
             log.error("Failed to create work entry for {} at {}: {}", position, companyName, e.getMessage(), e);
+        }
+    }
+
+    private void deleteWorkEntryFromPost(Post post, Profile profile) {
+        try {
+            // Extract company and position from post tags if available
+            if (post.getTags() != null && !post.getTags().isEmpty()) {
+                for (String tag : post.getTags()) {
+                    // Tags format for experience: "Company,Position,Date"
+                    String[] parts = tag.split(",");
+                    if (parts.length >= 2) {
+                        String companyName = parts[0].trim();
+                        String position = parts[1].trim();
+
+                        // Find and delete the work entry
+                        profile.getWorks().removeIf(work -> work.getCompanyName().equalsIgnoreCase(companyName) &&
+                                work.getPosition().equalsIgnoreCase(position));
+
+                        log.info("Deleted work entry: {} at {}", position, companyName);
+                        break; // Only delete the first matching entry
+                    }
+                }
+            }
+        } catch (Exception e) {
+            log.error("Failed to delete work entry for post {}: {}", post.getId(), e.getMessage(), e);
         }
     }
 

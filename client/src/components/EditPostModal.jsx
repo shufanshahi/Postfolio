@@ -26,7 +26,8 @@ import {
     AlertCircle,
     Award,
     Code,
-    Briefcase
+    Briefcase,
+    FileText
 } from 'lucide-react';
 
 export default function EditPostModal({ isOpen, onClose, post, onSave }) {
@@ -35,6 +36,7 @@ export default function EditPostModal({ isOpen, onClose, post, onSave }) {
     const [skillInput, setSkillInput] = useState('');
     const [companyName, setCompanyName] = useState('');
     const [position, setPosition] = useState('');
+    const [cvHeading, setCvHeading] = useState('');
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
 
@@ -74,6 +76,7 @@ export default function EditPostModal({ isOpen, onClose, post, onSave }) {
         setSkillInput('');
         setCompanyName('');
         setPosition('');
+        setCvHeading('');
         setError('');
     };
 
@@ -118,7 +121,8 @@ export default function EditPostModal({ isOpen, onClose, post, onSave }) {
                 category: category,
                 skills: (category === 'ACHIEVEMENT' || category === 'PROJECT') ? skills : null,
                 companyName: category === 'PROFESSIONAL_EXPERIENCE' ? companyName.trim() : null,
-                position: category === 'PROFESSIONAL_EXPERIENCE' ? position.trim() : null
+                position: category === 'PROFESSIONAL_EXPERIENCE' ? position.trim() : null,
+                cvHeading: (category === 'ACHIEVEMENT' || category === 'PROJECT') ? cvHeading.trim() || null : null
             };
 
             const response = await apiFetch(`/api/posts/${post.id}/manual-edit`, {
@@ -204,6 +208,12 @@ export default function EditPostModal({ isOpen, onClose, post, onSave }) {
                                         Professional Experience
                                     </div>
                                 </SelectItem>
+                                <SelectItem value="GENERAL">
+                                    <div className="flex items-center gap-2">
+                                        <FileText className="h-4 w-4 text-gray-500" />
+                                        General
+                                    </div>
+                                </SelectItem>
                             </SelectContent>
                         </Select>
                     </div>
@@ -247,6 +257,23 @@ export default function EditPostModal({ isOpen, onClose, post, onSave }) {
                                     </div>
                                 )}
                             </div>
+                        </div>
+                    )}
+
+                    {/* CV Heading Input - Show for Achievement and Project */}
+                    {(category === 'ACHIEVEMENT' || category === 'PROJECT') && (
+                        <div className="space-y-2">
+                            <Label htmlFor="cvHeading">CV Heading (optional)</Label>
+                            <Input
+                                id="cvHeading"
+                                value={cvHeading}
+                                onChange={(e) => setCvHeading(e.target.value)}
+                                placeholder="Enter custom CV heading"
+                                className="bg-white dark:bg-slate-700 border-slate-300 dark:border-slate-600"
+                            />
+                            <p className="text-sm text-gray-500">
+                                This will be used as the heading in your CV for this entry. Leave blank to use default.
+                            </p>
                         </div>
                     )}
 

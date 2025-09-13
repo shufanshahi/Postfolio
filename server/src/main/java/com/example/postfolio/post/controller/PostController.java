@@ -140,7 +140,8 @@ public class PostController {
                 editDTO.getCategory(),
                 editDTO.getSkills(),
                 editDTO.getCompanyName(),
-                editDTO.getPosition());
+                editDTO.getPosition(),
+                editDTO.getCvHeading());
         return ResponseEntity.ok(convertToDto(post));
     }
 
