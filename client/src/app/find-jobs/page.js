@@ -26,6 +26,119 @@ function FindJobs() {
   const [maxSalaryFilter, setMaxSalaryFilter] = useState("");
   const [showAppliedOnly, setShowAppliedOnly] = useState(false);
   const [refreshingCache, setRefreshingCache] = useState(false);
+  const [fetchingLocation, setFetchingLocation] = useState({});
+  const [mapPopup, setMapPopup] = useState({
+    isOpen: false,
+    coordinates: null,
+    jobTitle: "",
+    jobId: null
+  });
+
+  // Fetch individual job details to get location
+  const fetchJobDetails = async (jobId) => {
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        throw new Error("Authentication token not found");
+      }
+
+      const response = await fetch(`http://localhost:8080/api/jobs/employer/ajob/${jobId}`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to fetch job details: ${response.status}`);
+      }
+
+      const jobDetails = await response.json();
+      return jobDetails;
+    } catch (error) {
+      console.error('Error fetching job details:', error);
+      throw error;
+    }
+  };
+
+  // Parse location string and open in popup map
+  const openJobLocation = async (jobId, jobTitle) => {
+    // Set loading state for this specific job
+    setFetchingLocation(prev => ({ ...prev, [jobId]: true }));
+
+    try {
+      console.log("Fetching job details for jobId:", jobId);
+      
+      // Fetch the complete job details including location
+      const jobDetails = await fetchJobDetails(jobId);
+      
+      console.log("Job details received:", jobDetails);
+      console.log("Location from job details:", jobDetails.location);
+      
+      const locationString = jobDetails.location;
+      
+      if (!locationString || locationString.trim() === '') {
+        alert("Location information not available for this job.");
+        return;
+      }
+
+      let lat, lng;
+      
+      // Try different location formats
+      
+      // Format 1: "Lat: 23.8148, Lng: 90.3963"
+      let latMatch = locationString.match(/Lat:\s*(-?\d+\.?\d*)/i);
+      let lngMatch = locationString.match(/Lng:\s*(-?\d+\.?\d*)/i);
+      
+      if (latMatch && lngMatch) {
+        lat = parseFloat(latMatch[1]);
+        lng = parseFloat(lngMatch[1]);
+      } else {
+        // Format 2: "23.8148, 90.3963" (simple comma-separated)
+        const coords = locationString.split(',').map(coord => coord.trim());
+        if (coords.length === 2) {
+          lat = parseFloat(coords[0]);
+          lng = parseFloat(coords[1]);
+        } else {
+          // Format 3: JSON-like format {"lat": 23.8148, "lng": 90.3963}
+          try {
+            const parsed = JSON.parse(locationString);
+            if (parsed.lat && parsed.lng) {
+              lat = parseFloat(parsed.lat);
+              lng = parseFloat(parsed.lng);
+            } else if (parsed.latitude && parsed.longitude) {
+              lat = parseFloat(parsed.latitude);
+              lng = parseFloat(parsed.longitude);
+            }
+          } catch (jsonError) {
+            console.log("Not JSON format");
+          }
+        }
+      }
+      
+      console.log("Parsed coordinates:", { lat, lng });
+      
+      if (!isNaN(lat) && !isNaN(lng) && lat !== 0 && lng !== 0) {
+        // Show popup with map instead of opening new page
+        setMapPopup({
+          isOpen: true,
+          coordinates: { lat, lng },
+          jobTitle: jobTitle || "Job Location",
+          jobId: jobId
+        });
+        return;
+      }
+      
+      alert(`Unable to parse location coordinates. Received format: "${locationString}"`);
+    } catch (error) {
+      console.error('Error fetching job location:', error);
+      alert("Failed to fetch job location. Please try again.");
+    } finally {
+      // Clear loading state
+      setFetchingLocation(prev => ({ ...prev, [jobId]: false }));
+    }
+  };
 
   const handleRefreshCache = async () => {
     setRefreshingCache(true);
@@ -571,6 +684,26 @@ function FindJobs() {
                     <Button
                       variant="outline"
                       size="sm"
+                      onClick={() => openJobLocation(job.jobId, job.title)}
+                      disabled={fetchingLocation[job.jobId]}
+                      className="bg-white/60 dark:bg-slate-700/60 backdrop-blur border-slate-300/60 dark:border-slate-600/60 text-slate-700 dark:text-slate-300 hover:bg-blue-50 dark:hover:bg-blue-900/20 hover:border-blue-300 dark:hover:border-blue-600 rounded-xl disabled:opacity-50"
+                    >
+                      {fetchingLocation[job.jobId] ? (
+                        <>
+                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                          Loading...
+                        </>
+                      ) : (
+                        <>
+                          <MapPin className="h-4 w-4 mr-2" />
+                          Location
+                        </>
+                      )}
+                    </Button>
+
+                    <Button
+                      variant="outline"
+                      size="sm"
                       onClick={() => window.location.href = `/job-mock-interview/${job.jobId}`}
                       className="bg-white/60 dark:bg-slate-700/60 backdrop-blur border-slate-300/60 dark:border-slate-600/60 text-slate-700 dark:text-slate-300 hover:bg-purple-50 dark:hover:bg-purple-900/20 hover:border-purple-300 dark:hover:border-purple-600 rounded-xl"
                     >
@@ -606,6 +739,82 @@ function FindJobs() {
           ))}
         </div>
       </div>
+
+      {/* Map Popup Modal */}
+      {mapPopup.isOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl max-w-4xl w-full mx-4 max-h-[90vh] overflow-hidden">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between p-6 border-b border-slate-200 dark:border-slate-700">
+              <div className="flex items-center gap-3">
+                <MapPin className="h-5 w-5 text-teal-600 dark:text-teal-400" />
+                <h3 className="text-lg font-semibold text-slate-800 dark:text-slate-100">
+                  Job Location
+                </h3>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setMapPopup({ isOpen: false, coordinates: null, jobTitle: "", jobId: null })}
+                className="rounded-full w-8 h-8 p-0 border-slate-300 dark:border-slate-600 hover:bg-slate-100 dark:hover:bg-slate-700"
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+
+            {/* Modal Body */}
+            <div className="p-6">
+              <div className="mb-4">
+                <h4 className="font-medium text-slate-700 dark:text-slate-300 mb-2">
+                  {mapPopup.jobTitle}
+                </h4>
+                <p className="text-sm text-slate-500 dark:text-slate-400">
+                  Coordinates: {mapPopup.coordinates?.lat}, {mapPopup.coordinates?.lng}
+                </p>
+              </div>
+
+              {/* Embedded Map */}
+              <div className="aspect-video w-full border border-slate-200 dark:border-slate-700 rounded-xl overflow-hidden">
+                <iframe
+                  src={`https://www.openstreetmap.org/export/embed.html?bbox=${mapPopup.coordinates?.lng - 0.01},${mapPopup.coordinates?.lat - 0.01},${mapPopup.coordinates?.lng + 0.01},${mapPopup.coordinates?.lat + 0.01}&layer=mapnik&marker=${mapPopup.coordinates?.lat},${mapPopup.coordinates?.lng}`}
+                  width="100%"
+                  height="100%"
+                  style={{ border: 0 }}
+                  title="Job Location Map"
+                  loading="lazy"
+                ></iframe>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex items-center justify-between mt-4 pt-4 border-t border-slate-200 dark:border-slate-700">
+                <div className="text-xs text-slate-500 dark:text-slate-400">
+                  Powered by OpenStreetMap
+                </div>
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      const mapUrl = `https://www.openstreetmap.org/?mlat=${mapPopup.coordinates?.lat}&mlon=${mapPopup.coordinates?.lng}&zoom=15`;
+                      window.open(mapUrl, '_blank');
+                    }}
+                    className="text-teal-600 border-teal-200 hover:bg-teal-50 dark:text-teal-400 dark:border-teal-700 dark:hover:bg-teal-900/20"
+                  >
+                    <MapPin className="h-4 w-4 mr-2" />
+                    Open in New Tab
+                  </Button>
+                  <Button
+                    onClick={() => setMapPopup({ isOpen: false, coordinates: null, jobTitle: "", jobId: null })}
+                    className="bg-teal-600 hover:bg-teal-700 text-white"
+                  >
+                    Close
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
