@@ -343,9 +343,16 @@ function FunctionalDashboard() {
               <CardContent className="p-6">
                 <div className="text-center space-y-4">
                   <div className="relative">
-                    <div className="w-20 h-20 mx-auto bg-gradient-to-br from-teal-500 via-indigo-500 to-amber-500 rounded-2xl flex items-center justify-center text-white font-bold text-xl shadow-lg ring-4 ring-white/60 dark:ring-slate-800/60">
-                      {userData?.name?.split(' ').map(n => n[0]).join('') || 'U'}
-                    </div>
+                    <Avatar className="h-20 w-20 ring-4 ring-white/60 dark:ring-slate-800/60 shadow-lg mx-auto">
+                      <AvatarImage
+                        src={userData?.pictureBase64 ? `data:image/jpeg;base64,${userData.pictureBase64}` : undefined}
+                        alt="Profile Picture"
+                        className="object-cover"
+                      />
+                      <AvatarFallback className="bg-gradient-to-br from-teal-500 via-indigo-500 to-amber-500 text-xl text-white font-bold">
+                        {userData?.name ? userData.name.split(' ').map(n => n[0]).join('') : 'U'}
+                      </AvatarFallback>
+                    </Avatar>
                     <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-emerald-500 rounded-full border-2 border-white dark:border-slate-800"></div>
                   </div>
                   <div>
@@ -357,18 +364,8 @@ function FunctionalDashboard() {
                     </p>
                   </div>
                   <Separator className="bg-gradient-to-r from-transparent via-slate-200/80 to-transparent dark:via-slate-700/60" />
-                  <div className="space-y-3">
-                    <div className="flex justify-between text-sm">
-                      <span className="text-slate-600 dark:text-slate-400">Profile views</span>
-                      <span className="font-medium text-slate-800 dark:text-slate-100">25</span>
-                    </div>
-                    <div className="flex justify-between text-sm">
-                      <span className="text-slate-600 dark:text-slate-400">Connections</span>
-                      <span className="font-medium text-slate-800 dark:text-slate-100">{userData?.connectionCount || '0'}</span>
-                    </div>
-                  </div>
                   <Button
-                    onClick={() => handleNavigation('/profile')}
+                    onClick={() => handleNavigation('/profile-management')}
                     className="w-full bg-teal-600 hover:bg-teal-700 text-white text-sm"
                   >
                     View Profile
@@ -376,40 +373,10 @@ function FunctionalDashboard() {
                 </div>
               </CardContent>
             </Card>
-
-            {/* Quick Actions */}
-            <Card className={`rounded-2xl ${subtleCard} shadow-sm`}>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-slate-800 dark:text-slate-100 text-base font-semibold">Quick Actions</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-2">
-                {quickActions.slice(0, 4).map((action, i) => (
-                  <button
-                    key={i}
-                    onClick={action.action}
-                    className="w-full flex items-center gap-3 p-3 rounded-xl text-left hover:bg-white/60 dark:hover:bg-slate-900/40 transition-colors group"
-                  >
-                    <div className={`p-2 rounded-lg ${action.color} shadow-sm group-hover:shadow transition-shadow`}>
-                      {action.icon}
-                    </div>
-                    <span className="text-sm font-medium text-slate-700 dark:text-slate-200">{action.label}</span>
-                  </button>
-                ))}
-              </CardContent>
-            </Card>
           </div>
 
           {/* Center - Feed */}
           <div className="lg:col-span-6 space-y-6">
-            <div className="space-y-2">
-              <h1 className="text-3xl font-semibold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-teal-700 via-indigo-700 to-amber-600 dark:from-teal-200 dark:via-indigo-200 dark:to-amber-200">
-                Welcome back, {userData?.name?.split(' ')[0] || 'there'}
-              </h1>
-              <p className="text-slate-600 dark:text-slate-300 text-sm flex items-center gap-2">
-                <span className="inline-flex h-2 w-2 rounded-full bg-teal-500 animate-pulse" />
-                Stay connected with your professional network
-              </p>
-            </div>
             <MyFeed showNavbar={false} />
           </div>
 
@@ -443,39 +410,7 @@ function FunctionalDashboard() {
               </CardContent>
             </Card>
 
-            {/* Trending Now */}
-            <Card className={`rounded-2xl ${subtleCard} shadow-sm`}>
-              <CardHeader className="pb-3">
-                <CardTitle className="flex items-center gap-2 text-slate-800 dark:text-slate-100 text-base font-semibold">
-                  <TrendingUp className="h-4 w-4 text-amber-500" /> Trending Now
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <div className="space-y-3">
-                  <div className="flex items-start gap-2">
-                    <div className="w-2 h-2 rounded-full bg-amber-500 mt-2"></div>
-                    <div>
-                      <p className="text-sm font-medium text-slate-700 dark:text-slate-200">AI in Recruitment</p>
-                      <p className="text-xs text-slate-500 dark:text-slate-400">2.5k discussions</p>
-                    </div>
-                  </div>
-                  <div className="flex items-start gap-2">
-                    <div className="w-2 h-2 rounded-full bg-emerald-500 mt-2"></div>
-                    <div>
-                      <p className="text-sm font-medium text-slate-700 dark:text-slate-200">Remote Work Culture</p>
-                      <p className="text-xs text-slate-500 dark:text-slate-400">1.8k discussions</p>
-                    </div>
-                  </div>
-                  <div className="flex items-start gap-2">
-                    <div className="w-2 h-2 rounded-full bg-indigo-500 mt-2"></div>
-                    <div>
-                      <p className="text-sm font-medium text-slate-700 dark:text-slate-200">Tech Skills 2024</p>
-                      <p className="text-xs text-slate-500 dark:text-slate-400">1.2k discussions</p>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+
 
             {/* Weekly Summary */}
             <Card className={`rounded-2xl relative overflow-hidden ${gradientPanel}`}>

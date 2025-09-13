@@ -19,7 +19,8 @@ const PreparationPage = () => {
   const [questionCount, setQuestionCount] = useState(10);
   const [mcqSets, setMcqSets] = useState([]);
   const [currentMCQSet, setCurrentMCQSet] = useState(null);
-  const [loading, setLoading] = useState(false);
+  const [mcqLoading, setMcqLoading] = useState(false);
+  const [summaryLoading, setSummaryLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const fileInputRef = useRef(null);
@@ -71,7 +72,7 @@ const PreparationPage = () => {
   const generateMCQs = async () => {
     if (!validateInputs()) return;
 
-    setLoading(true);
+    setMcqLoading(true);
     setError('');
     setSuccess('');
 
@@ -129,14 +130,14 @@ const PreparationPage = () => {
     } catch (err) {
       setError(err.message || 'An error occurred. Please try again.');
     } finally {
-      setLoading(false);
+      setMcqLoading(false);
     }
   };
 
   const generateSummary = async () => {
     if (!validateInputs()) return;
 
-    setLoading(true);
+    setSummaryLoading(true);
     setError('');
     setSuccess('');
 
@@ -193,7 +194,7 @@ const PreparationPage = () => {
     } catch (err) {
       setError(err.message || 'An error occurred while generating summary. Please try again.');
     } finally {
-      setLoading(false);
+      setSummaryLoading(false);
     }
   };
 
@@ -269,9 +270,9 @@ const PreparationPage = () => {
           </div>
         )}
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
-          {/* Left: Form */}
-          <div className="lg:col-span-2 space-y-8">
+        <div className="flex justify-center">
+          {/* Centered Form */}
+          <div className="w-full max-w-4xl space-y-8">
             <div className={`rounded-2xl overflow-hidden ${subtleCard} shadow-sm`}>
               <div className="flex border-b border-teal-900/10 dark:border-slate-700/60">
                 <button
@@ -363,83 +364,37 @@ const PreparationPage = () => {
                 <div className="space-y-3">
                   <button
                     onClick={generateMCQs}
-                    disabled={loading || (activeTab === 'upload' ? !selectedFile : !textContent.trim() || !documentName.trim())}
+                    disabled={mcqLoading || summaryLoading || (activeTab === 'upload' ? !selectedFile : !textContent.trim() || !documentName.trim())}
                     className="w-full h-11 rounded-full bg-teal-600 hover:bg-teal-700 text-white text-sm font-medium shadow-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 transition-colors"
                   >
-                    {loading && (
+                    {mcqLoading && (
                       <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                         <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                         <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
                       </svg>
                     )}
-                    {loading ? 'Generating MCQs (up to 30s)...' : `Generate ${questionCount} MCQs`}
+                    {mcqLoading ? 'Generating MCQs (up to 30s)...' : `Generate ${questionCount} MCQs`}
                   </button>
 
                   <button
                     onClick={generateSummary}
-                    disabled={loading || (activeTab === 'upload' ? !selectedFile : !textContent.trim() || !documentName.trim())}
+                    disabled={mcqLoading || summaryLoading || (activeTab === 'upload' ? !selectedFile : !textContent.trim() || !documentName.trim())}
                     className="w-full h-11 rounded-full bg-purple-600 hover:bg-purple-700 text-white text-sm font-medium shadow-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 transition-colors"
                   >
-                    {loading && (
+                    {summaryLoading && (
                       <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                         <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                         <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
                       </svg>
                     )}
-                    {loading ? 'Generating Summary...' : 'Generate Summary PDF'}
+                    {summaryLoading ? 'Generating Summary...' : 'Generate Summary PDF'}
                   </button>
                 </div>
               </div>
             </div>
           </div>
 
-          {/* Sidebar */}
-          <div className="space-y-8">
-            <div className={`rounded-2xl p-6 ${subtleCard} shadow-sm`}>
-              <div className="flex items-center mb-6">
-                <div className="h-10 w-10 rounded-xl bg-teal-600 flex items-center justify-center text-white shadow-sm mr-3">
-                  <BookOpen className="h-5 w-5" />
-                </div>
-                <h3 className="text-base font-semibold text-slate-800 dark:text-slate-100">Your MCQ Sets</h3>
-              </div>
-              {mcqSets.length === 0 ? (
-                <p className="text-slate-500 dark:text-slate-400 text-center py-10 text-sm">No MCQ sets yet. Generate your first set!</p>
-              ) : (
-                <div className="space-y-3 max-h-[28rem] overflow-y-auto pr-1 custom-scrollbar">
-                  {mcqSets.map(mcqSet => (
-                    <div
-                      key={mcqSet.id}
-                      className="group p-4 rounded-xl bg-white/60 dark:bg-slate-900/40 border border-teal-900/10 dark:border-slate-700/60 hover:border-teal-500/40 cursor-pointer transition-colors flex items-start gap-4"
-                      onClick={() => loadMCQSet(mcqSet.id)}
-                    >
-                      <div className="flex-1 min-w-0 space-y-1">
-                        <h4 className="font-medium text-slate-800 dark:text-slate-100 truncate text-sm group-hover:text-slate-900 dark:group-hover:text-slate-50">{mcqSet.documentName}</h4>
-                        <div className="flex items-center text-[11px] text-slate-500 dark:text-slate-400 gap-1">
-                          <Clock className="h-3 w-3" /> {new Date(mcqSet.createdAt).toLocaleDateString()}
-                        </div>
-                        <p className="text-[11px] font-medium text-slate-800 dark:text-slate-200">{mcqSet.questions.length} questions</p>
-                      </div>
-                      <ChevronRight className="h-5 w-5 text-slate-300 group-hover:text-slate-600 dark:group-hover:text-slate-300 transition-colors flex-shrink-0" />
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-            <div className={`rounded-2xl p-6 ${gradientPanel} relative overflow-hidden`}>
-              <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_30%,theme(colors.indigo.300)/35,transparent_70%)] dark:bg-[radial-gradient(circle_at_20%_30%,oklch(0.35_0.1_265)/25,transparent_70%)]" />
-              <div className="relative space-y-4">
-                <h4 className="font-semibold text-indigo-800 dark:text-indigo-300 text-sm uppercase tracking-wide">How it works</h4>
-                <ul className="space-y-3 text-xs text-indigo-700 dark:text-indigo-300">
-                  {['Upload a text or PDF document or paste content', 'AI generates 25 relevant MCQs', 'Practice and get instant feedback'].map((step, i) => (
-                    <li key={i} className="flex items-start gap-2">
-                      <span className="h-5 w-5 rounded-full bg-teal-600 text-white flex items-center justify-center text-[11px] font-semibold shadow-sm">{i + 1}</span>
-                      <span className="leading-snug flex-1">{step}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            </div>
-          </div>
+
         </div>
       </div>
     </div>

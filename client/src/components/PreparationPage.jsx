@@ -11,7 +11,8 @@ const PreparationPage = () => {
   const [questionCount, setQuestionCount] = useState(10);
   const [mcqSets, setMcqSets] = useState([]);
   const [currentMCQSet, setCurrentMCQSet] = useState(null);
-  const [loading, setLoading] = useState(false);
+  const [mcqLoading, setMcqLoading] = useState(false);
+  const [summaryLoading, setSummaryLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const fileInputRef = useRef(null);
@@ -63,7 +64,7 @@ const PreparationPage = () => {
   const generateMCQs = async () => {
     if (!validateInputs()) return;
 
-    setLoading(true);
+    setMcqLoading(true);
     setError('');
     setSuccess('');
 
@@ -114,14 +115,14 @@ const PreparationPage = () => {
     } catch (err) {
       setError(err.message || 'An error occurred. Please try again.');
     } finally {
-      setLoading(false);
+      setMcqLoading(false);
     }
   };
 
   const generateSummary = async () => {
     if (!validateInputs()) return;
 
-    setLoading(true);
+    setSummaryLoading(true);
     setError('');
     setSuccess('');
 
@@ -178,7 +179,7 @@ const PreparationPage = () => {
     } catch (err) {
       setError(err.message || 'An error occurred while generating summary. Please try again.');
     } finally {
-      setLoading(false);
+      setSummaryLoading(false);
     }
   };
 
@@ -379,10 +380,10 @@ const PreparationPage = () => {
                 <div className="space-y-3 mt-4 md:mt-6">
                   <button
                     onClick={generateMCQs}
-                    disabled={loading || (activeTab === 'upload' ? !selectedFile : !textContent.trim() || !documentName.trim())}
+                    disabled={mcqLoading || summaryLoading || (activeTab === 'upload' ? !selectedFile : !textContent.trim() || !documentName.trim())}
                     className="w-full bg-indigo-600 text-white py-2 md:py-3 px-4 md:px-6 rounded-lg hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    {loading ? (
+                    {mcqLoading ? (
                       <span className="flex items-center justify-center">
                         <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                           <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
@@ -397,10 +398,10 @@ const PreparationPage = () => {
 
                   <button
                     onClick={generateSummary}
-                    disabled={loading || (activeTab === 'upload' ? !selectedFile : !textContent.trim() || !documentName.trim())}
+                    disabled={mcqLoading || summaryLoading || (activeTab === 'upload' ? !selectedFile : !textContent.trim() || !documentName.trim())}
                     className="w-full bg-purple-600 text-white py-2 md:py-3 px-4 md:px-6 rounded-lg hover:bg-purple-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    {loading ? (
+                    {summaryLoading ? (
                       <span className="flex items-center justify-center">
                         <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                           <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>

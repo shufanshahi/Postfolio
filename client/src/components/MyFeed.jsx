@@ -4,6 +4,7 @@ import Navbar from '@/components/Navbar';
 import CelebrateButton from '@/components/CelebrateButton';
 import GriefButton from '@/components/GriefButton';
 import EditPostModal from '@/components/EditPostModal';
+import ReactionsModal from '@/components/ReactionsModal';
 import React, { useState, useEffect, useRef } from 'react';
 
 // Reuse design tokens from dashboard for consistent theming
@@ -20,7 +21,7 @@ function MyFeed({ showNavbar = true }) {
     const [newPostContent, setNewPostContent] = useState('');
     const [posting, setPosting] = useState(false);
     const [profileId, setProfileId] = useState(null);
-    const [showReactions, setShowReactions] = useState({});
+    const [reactionsModal, setReactionsModal] = useState({ isOpen: false, reactions: [], postId: null });
     const [selectedImages, setSelectedImages] = useState([]);
     const [imagePreviewModal, setImagePreviewModal] = useState({ show: false, image: null });
     const [activeNav, setActiveNav] = useState('feed');
@@ -260,10 +261,21 @@ function MyFeed({ showNavbar = true }) {
     };
 
     const toggleReactions = (postId) => {
-        setShowReactions(prev => ({
-            ...prev,
-            [postId]: !prev[postId]
-        }));
+        const post = posts.find(p => p.id === postId);
+
+        // Combine both celebration reactions and grief reactions
+        const celebrationReactions = (post?.reactions || []).map(r => ({ ...r, reactionType: 'celebrate' }));
+        const griefReactions = (post?.griefs || []).map(r => ({ ...r, reactionType: 'grief' }));
+        const allReactions = [...celebrationReactions, ...griefReactions];
+
+        console.log('Post data:', post);
+        console.log('All reactions:', allReactions);
+
+        setReactionsModal({
+            isOpen: true,
+            reactions: allReactions,
+            postId: postId
+        });
     };
 
     const formatDate = (dateString) => {
@@ -672,7 +684,7 @@ function MyFeed({ showNavbar = true }) {
                                             </div>
 
                                             {/* Reaction Count */}
-                                            {(post.reactions?.length > 0) && (
+                                            {((post.reactions?.length > 0) || (post.griefs?.length > 0)) && (
                                                 <div className="flex items-center justify-between mt-4 pt-4 border-t border-teal-900/10 dark:border-slate-700/60">
                                                     <button
                                                         onClick={() => toggleReactions(post.id)}
@@ -680,28 +692,10 @@ function MyFeed({ showNavbar = true }) {
                                                     >
                                                         <div className="flex items-center space-x-0.5">
                                                             <PartyPopper className="h-3 w-3 text-amber-500" />
-                                                            <Sparkles className="h-3 w-3 text-purple-500" />
+                                                            <span className="text-sm">😢</span>
                                                         </div>
-                                                        {post.reactions.length} celebrations
+                                                        {(post.reactions?.length || 0) + (post.griefs?.length || 0)} reactions
                                                     </button>
-                                                </div>
-                                            )}
-
-                                            {/* Reactions List */}
-                                            {showReactions[post.id] && post.reactions && post.reactions.length > 0 && (
-                                                <div className="mt-4 pt-4 border-t border-teal-900/10 dark:border-slate-700/60">
-                                                    <h4 className="text-[11px] font-semibold tracking-wide text-slate-600 dark:text-slate-400 mb-3 uppercase">Celebrated by</h4>
-                                                    <div className="space-y-2">
-                                                        {post.reactions.map((reaction, index) => (
-                                                            <div key={index} className="flex items-center gap-2 p-2 rounded-xl bg-white/60 dark:bg-slate-900/40 border border-teal-900/10 dark:border-slate-700/60 text-slate-700 dark:text-slate-300">
-                                                                <div className="w-7 h-7 bg-gradient-to-br from-teal-500 via-indigo-500 to-amber-500 rounded-lg flex items-center justify-center text-white font-bold text-[10px] ring-1 ring-white/40 dark:ring-slate-800/50">
-                                                                    {getInitials(reaction.userName)}
-                                                                </div>
-                                                                <span className="text-[11px] font-medium">{reaction.userName}</span>
-                                                                <PartyPopper className="h-3 w-3 text-amber-500 ml-auto" />
-                                                            </div>
-                                                        ))}
-                                                    </div>
                                                 </div>
                                             )}
                                         </div>
@@ -865,6 +859,14 @@ function MyFeed({ showNavbar = true }) {
                     </div>
                 </div>
             )}
+
+            {/* Reactions Modal */}
+            <ReactionsModal
+                isOpen={reactionsModal.isOpen}
+                onClose={() => setReactionsModal({ isOpen: false, reactions: [], postId: null })}
+                reactions={reactionsModal.reactions}
+                postId={reactionsModal.postId}
+            />
         </div>
     );
 }
