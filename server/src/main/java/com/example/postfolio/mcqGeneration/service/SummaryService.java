@@ -6,6 +6,7 @@ import com.itextpdf.text.Font;
 import com.itextpdf.text.FontFactory;
 import com.itextpdf.text.PageSize;
 import com.itextpdf.text.Paragraph;
+import com.itextpdf.text.Chunk;
 import com.itextpdf.text.pdf.PdfWriter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -115,9 +116,9 @@ public class SummaryService {
     }
 
     /**
-     * Create PDF document from summary text
+     * Create PDF document from summary text with proper markdown formatting
      * 
-     * @param summary      The summary text
+     * @param summary      The summary text with markdown formatting
      * @param documentName The original document name
      * @return PDF bytes
      * @throws DocumentException If PDF creation fails
@@ -147,18 +148,8 @@ public class SummaryService {
             info.setSpacingAfter(20);
             document.add(info);
 
-            // Summary content
-            Font contentFont = FontFactory.getFont(FontFactory.HELVETICA, 11);
-
-            // Split summary by lines and format bullet points
-            String[] lines = summary.split("\n");
-            for (String line : lines) {
-                if (!line.trim().isEmpty()) {
-                    Paragraph p = new Paragraph(line.trim(), contentFont);
-                    p.setSpacingAfter(5);
-                    document.add(p);
-                }
-            }
+            // Process summary content with markdown formatting
+            parseAndAddFormattedContent(document, summary);
 
             document.close();
 
@@ -168,6 +159,124 @@ public class SummaryService {
         }
 
         return baos.toByteArray();
+    }
+
+    /**
+     * Parse markdown-style formatting and add properly formatted content to PDF
+     * 
+     * @param document The PDF document
+     * @param content  The markdown-formatted content
+     * @throws DocumentException If PDF formatting fails
+     */
+    private void parseAndAddFormattedContent(Document document, String content) throws DocumentException {
+        // Define fonts
+        Font normalFont = FontFactory.getFont(FontFactory.HELVETICA, 11);
+        Font boldFont = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 11);
+        Font headerFont = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 14);
+        Font subHeaderFont = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 12);
+
+        String[] lines = content.split("\n");
+
+        for (String line : lines) {
+            line = line.trim();
+
+            if (line.isEmpty()) {
+                // Add spacing for empty lines
+                document.add(new Paragraph(" "));
+                continue;
+            }
+
+            // Check for headers (lines that end with : or are all caps and short)
+            if (isHeader(line)) {
+                Paragraph header = new Paragraph(line, line.length() < 30 ? headerFont : subHeaderFont);
+                header.setSpacingBefore(10);
+                header.setSpacingAfter(8);
+                document.add(header);
+            }
+            // Check for bullet points
+            else if (line.startsWith("•") || line.startsWith("-") || line.startsWith("*")) {
+                // Create bullet point
+                String bulletText = line.substring(1).trim();
+                Paragraph bulletParagraph = parseFormattedText(bulletText, normalFont, boldFont);
+                bulletParagraph.setIndentationLeft(20);
+                bulletParagraph.setSpacingAfter(5);
+                document.add(bulletParagraph);
+            }
+            // Check for sub-bullet points (indented)
+            else if (line.startsWith("  •") || line.startsWith("  -") || line.startsWith("  *")) {
+                String subBulletText = line.substring(3).trim();
+                Paragraph subBulletParagraph = parseFormattedText(subBulletText, normalFont, boldFont);
+                subBulletParagraph.setIndentationLeft(40);
+                subBulletParagraph.setSpacingAfter(3);
+                document.add(subBulletParagraph);
+            }
+            // Regular paragraph
+            else {
+                Paragraph paragraph = parseFormattedText(line, normalFont, boldFont);
+                paragraph.setSpacingAfter(8);
+                document.add(paragraph);
+            }
+        }
+    }
+
+    /**
+     * Parse text with bold markdown formatting (**text**)
+     * 
+     * @param text       The text to parse
+     * @param normalFont Normal font
+     * @param boldFont   Bold font
+     * @return Formatted paragraph
+     */
+    private Paragraph parseFormattedText(String text, Font normalFont, Font boldFont) {
+        Paragraph paragraph = new Paragraph();
+
+        // Parse bold text marked with **text**
+        String[] parts = text.split("\\*\\*");
+        boolean isBold = false;
+
+        for (String part : parts) {
+            if (!part.isEmpty()) {
+                if (isBold) {
+                    paragraph.add(new Chunk(part, boldFont));
+                } else {
+                    paragraph.add(new Chunk(part, normalFont));
+                }
+            }
+            isBold = !isBold;
+        }
+
+        // If no bold formatting was found, treat as normal text
+        if (paragraph.isEmpty()) {
+            paragraph.add(new Chunk(text, normalFont));
+        }
+
+        return paragraph;
+    }
+
+    /**
+     * Check if a line should be treated as a header
+     * 
+     * @param line The line to check
+     * @return true if it's a header
+     */
+    private boolean isHeader(String line) {
+        // Lines ending with : are likely headers
+        if (line.endsWith(":")) {
+            return true;
+        }
+
+        // Short lines that are mostly uppercase (like section titles)
+        if (line.length() < 50 && line.toUpperCase().equals(line) && line.length() > 3) {
+            return true;
+        }
+
+        // Lines that look like headers (common header patterns)
+        String upperLine = line.toUpperCase();
+        return upperLine.startsWith("SUMMARY") ||
+                upperLine.startsWith("KEY POINTS") ||
+                upperLine.startsWith("MAIN CONCEPTS") ||
+                upperLine.startsWith("IMPORTANT") ||
+                upperLine.matches("^[A-Z\\s]+$") && line.length() < 40 && line.length() > 5;
     }
 
     /**
