@@ -24,6 +24,7 @@ function FindJobs() {
   const [statusFilter, setStatusFilter] = useState("ALL");
   const [minSalaryFilter, setMinSalaryFilter] = useState("");
   const [maxSalaryFilter, setMaxSalaryFilter] = useState("");
+  const [showAppliedOnly, setShowAppliedOnly] = useState(false);
   const [refreshingCache, setRefreshingCache] = useState(false);
 
   const handleRefreshCache = async () => {
@@ -159,8 +160,13 @@ function FindJobs() {
       );
     }
 
+    // Filter by applied jobs only
+    if (showAppliedOnly) {
+      filtered = filtered.filter(job => job.isApplied);
+    }
+
     setFilteredJobs(filtered);
-  }, [jobs, searchTitle, statusFilter, minSalaryFilter, maxSalaryFilter]);
+  }, [jobs, searchTitle, statusFilter, minSalaryFilter, maxSalaryFilter, showAppliedOnly]);
 
   const handleApply = async (jobId) => {
     setLoading(true);
@@ -353,6 +359,28 @@ function FindJobs() {
                 </div>
               </div>
 
+              {/* Applied Jobs Filter Checkbox */}
+              <div className="flex items-center space-x-3 pt-4 border-t border-slate-200/60 dark:border-slate-700/60">
+                <div className="flex items-center space-x-2">
+                  <input
+                    type="checkbox"
+                    id="appliedJobsFilter"
+                    checked={showAppliedOnly}
+                    onChange={(e) => setShowAppliedOnly(e.target.checked)}
+                    className="w-4 h-4 text-teal-600 bg-white/70 border-slate-300 rounded focus:ring-teal-500 dark:focus:ring-teal-400 dark:ring-offset-gray-800 focus:ring-2 dark:bg-slate-700/70 dark:border-slate-600"
+                  />
+                  <label htmlFor="appliedJobsFilter" className="text-sm font-medium text-slate-700 dark:text-slate-300 flex items-center gap-2">
+                    <CheckCircle className="h-4 w-4 text-teal-500" />
+                    Show only jobs I&apos;ve applied to
+                  </label>
+                </div>
+                {showAppliedOnly && (
+                  <Badge variant="outline" className="bg-teal-50 dark:bg-teal-900/30 text-teal-700 dark:text-teal-300 border-teal-200 dark:border-teal-700">
+                    Applied filter active
+                  </Badge>
+                )}
+              </div>
+
               {/* Results Count and Clear Filters */}
               <div className="flex items-center justify-between pt-4 border-t border-slate-200/60 dark:border-slate-700/60">
                 <div className="text-slate-600 dark:text-slate-400 text-sm flex items-center gap-2">
@@ -381,7 +409,7 @@ function FindJobs() {
                     )}
                   </Button>
                   {/* Clear Filters Button */}
-                  {(searchTitle || statusFilter !== "ALL" || minSalaryFilter || maxSalaryFilter) && (
+                  {(searchTitle || statusFilter !== "ALL" || minSalaryFilter || maxSalaryFilter || showAppliedOnly) && (
                     <Button
                       variant="outline"
                       size="sm"
@@ -390,6 +418,7 @@ function FindJobs() {
                         setStatusFilter("ALL");
                         setMinSalaryFilter("");
                         setMaxSalaryFilter("");
+                        setShowAppliedOnly(false);
                       }}
                       className="bg-white/60 dark:bg-slate-700/60 backdrop-blur border-slate-300/60 dark:border-slate-600/60 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-600/80 rounded-xl"
                     >
