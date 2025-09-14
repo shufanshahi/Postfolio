@@ -37,6 +37,7 @@ public class TodoService {
         Todo todo = Todo.builder()
                 .name(todoRequestDto.name())
                 .profileId(todoRequestDto.profileId())
+                .time(todoRequestDto.time())
                 .build();
         
         Todo savedTodo = todoRepository.save(todo);
@@ -48,7 +49,8 @@ public class TodoService {
         return new TodoDto(
                 todo.getId(),
                 todo.getName(),
-                todo.getProfileId()
+                todo.getProfileId(),
+                todo.getTime()
         );
     }
 }
