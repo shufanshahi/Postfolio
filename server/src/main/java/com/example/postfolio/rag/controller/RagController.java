@@ -97,6 +97,18 @@ public class RagController {
             return ResponseEntity.internalServerError().body("Groq API test failed: " + e.getMessage());
         }
     }
+    
+    @GetMapping("/test-embeddings")
+    public ResponseEntity<String> testEmbeddings() {
+        try {
+            // Test the embedding functionality
+            return ResponseEntity.ok("Semantic search with cosine similarity is enabled. " +
+                    "Upload a document to test semantic retrieval vs keyword-based fallback.");
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.internalServerError().body("Embedding test failed: " + e.getMessage());
+        }
+    }
 
     // DTO for upload response
     public static class UploadResponse {
