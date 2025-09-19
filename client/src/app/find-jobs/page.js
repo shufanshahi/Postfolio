@@ -13,6 +13,18 @@ import {
   Briefcase, Clock, Award, TrendingUp, Eye, X,
   CheckCircle, AlertCircle, Loader2, Star
 } from "lucide-react";
+import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
+import 'leaflet/dist/leaflet.css';
+import L from 'leaflet';
+
+// Fix for default marker icon in Next.js
+delete L.Icon.Default.prototype._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
+  iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
+  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+});
+
 import Navbar from '@/components/Navbar';
 
 function FindJobs() {
@@ -784,15 +796,16 @@ function FindJobs() {
               </div>
 
               {/* Embedded Map */}
-              <div className="aspect-video w-full border border-slate-200 dark:border-slate-700 rounded-xl overflow-hidden">
-                <iframe
-                  src={`https://www.openstreetmap.org/export/embed.html?bbox=${mapPopup.coordinates?.lng - 0.005},${mapPopup.coordinates?.lat - 0.005},${mapPopup.coordinates?.lng + 0.005},${mapPopup.coordinates?.lat + 0.005}&layer=mapnik&marker=${mapPopup.coordinates?.lat},${mapPopup.coordinates?.lng}`}
-                  width="100%"
-                  height="100%"
-                  style={{ border: 0 }}
-                  title="Job Location Map"
-                  loading="lazy"
-                ></iframe>
+              <div className="w-full border border-slate-200 dark:border-slate-700 rounded-xl overflow-hidden" style={{ height: '400px' }}>
+                <MapContainer center={[mapPopup.coordinates.lat, mapPopup.coordinates.lng]} zoom={15} style={{ height: '100%', width: '100%' }}>
+                  <TileLayer
+                    url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                    attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                  />
+                  <Marker position={[mapPopup.coordinates.lat, mapPopup.coordinates.lng]}>
+                    <Popup>{mapPopup.jobTitle}</Popup>
+                  </Marker>
+                </MapContainer>
               </div>
 
               {/* Action Buttons */}
