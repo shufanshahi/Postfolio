@@ -13,6 +13,7 @@ import {
   ArrowLeft, Share2, BookmarkPlus, Loader2, ExternalLink
 } from "lucide-react";
 import Navbar from '@/components/Navbar';
+import { useNotifications } from '@/hooks/useNotifications';
 import dynamic from 'next/dynamic';
 
 // Dynamically import the map component to avoid SSR issues
@@ -28,10 +29,13 @@ const JobLocationMap = dynamic(() => import('@/components/JobLocationMap'), {
 function JobDetails() {
   const { jobid } = useParams();
   const { user } = useAuth();
+  const { showSuccess, showError } = useNotifications();
   const [job, setJob] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [coordinates, setCoordinates] = useState(null);
+  const [isApplied, setIsApplied] = useState(false);
+  const [applying, setApplying] = useState(false);
 
   // Parse location string to get coordinates
   const parseLocation = (locationString) => {
@@ -59,6 +63,7 @@ function JobDetails() {
           throw new Error("Authentication token not found");
         }
 
+        // Fetch job details
         const response = await fetch(`http://localhost:8080/api/jobs/employer/ajob/${jobid}`, {
           method: 'GET',
           headers: {
@@ -77,6 +82,20 @@ function JobDetails() {
         // Parse location coordinates
         const coords = parseLocation(jobData.location);
         setCoordinates(coords);
+
+        // Check if user has applied to this job
+        const profileRes = await fetch('http://localhost:8080/api/profile/me', {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          },
+        });
+
+        if (profileRes.ok) {
+          const profile = await profileRes.json();
+          // Check if user's profile ID is in the applicant IDs
+          setIsApplied(jobData.applicantIds?.includes(profile.id) || false);
+        }
         
       } catch (err) {
         console.error("Error fetching job details:", err);
@@ -97,6 +116,94 @@ function JobDetails() {
     setCoordinates(null);
     // Re-trigger the useEffect
     window.location.reload();
+  };
+
+  const handleApply = async () => {
+    setApplying(true);
+    try {
+      const token = localStorage.getItem("token");
+      const profileRes = await fetch('http://localhost:8080/api/profile/me', {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+      
+      if (!profileRes.ok) {
+        showError("Profile Error", "Failed to get user profile. Please try again.");
+        return;
+      }
+      
+      const profile = await profileRes.json();
+
+      const applyRes = await fetch(`http://localhost:8080/api/jobs/${jobid}/apply/${profile.id}`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+      
+      if (applyRes.ok) {
+        showSuccess("Application Successful!", `You have successfully applied for the ${job.title} position.`);
+        setIsApplied(true);
+        // Update job data to include the new applicant
+        setJob(prev => ({
+          ...prev,
+          applicantIds: [...(prev.applicantIds || []), profile.id]
+        }));
+      } else {
+        showError("Application Failed", "Failed to apply for the job. Please try again.");
+      }
+    } catch (err) {
+      console.error("Error applying for job:", err);
+      showError("Application Error", "An unexpected error occurred. Please try again.");
+    } finally {
+      setApplying(false);
+    }
+  };
+
+  const handleWithdraw = async () => {
+    setApplying(true);
+    try {
+      const token = localStorage.getItem("token");
+      const profileRes = await fetch('http://localhost:8080/api/profile/me', {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+      
+      if (!profileRes.ok) {
+        showError("Profile Error", "Failed to get user profile. Please try again.");
+        return;
+      }
+      
+      const profile = await profileRes.json();
+
+      const withdrawRes = await fetch(`http://localhost:8080/api/jobs/${jobid}/withdraw/${profile.id}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+      
+      if (withdrawRes.ok) {
+        showSuccess("Withdrawal Successful!", `You have successfully withdrawn your application for the ${job.title} position.`);
+        setIsApplied(false);
+        // Update job data to remove the applicant
+        setJob(prev => ({
+          ...prev,
+          applicantIds: (prev.applicantIds || []).filter(id => id !== profile.id)
+        }));
+      } else {
+        showError("Withdrawal Failed", "Failed to withdraw from the job. Please try again.");
+      }
+    } catch (err) {
+      console.error("Error withdrawing from job:", err);
+      showError("Withdrawal Error", "An unexpected error occurred. Please try again.");
+    } finally {
+      setApplying(false);
+    }
   };
 
   const formatDate = (dateString) => {
@@ -336,18 +443,70 @@ function JobDetails() {
             {/* Apply Button */}
             <Card className="shadow-lg border-0 bg-white dark:bg-gray-900">
               <CardContent className="pt-6">
-                <Button 
-                  className="w-full mb-4 bg-blue-600 hover:bg-blue-700 text-white"
-                  size="lg"
-                  disabled={job.status !== 'OPEN'}
-                >
-                  {job.status === 'OPEN' ? 'Apply Now' : 'Application Closed'}
-                  <ExternalLink className="h-4 w-4 ml-2" />
-                </Button>
+                {job.status === 'OPEN' ? (
+                  <>
+                    {isApplied ? (
+                      <Button 
+                        onClick={handleWithdraw}
+                        className="w-full mb-4 bg-red-600 hover:bg-red-700 text-white"
+                        size="lg"
+                        disabled={applying}
+                      >
+                        {applying ? (
+                          <>
+                            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                            Withdrawing...
+                          </>
+                        ) : (
+                          <>
+                            Withdraw Application
+                            <XCircle className="h-4 w-4 ml-2" />
+                          </>
+                        )}
+                      </Button>
+                    ) : (
+                      <Button 
+                        onClick={handleApply}
+                        className="w-full mb-4 bg-blue-600 hover:bg-blue-700 text-white"
+                        size="lg"
+                        disabled={applying}
+                      >
+                        {applying ? (
+                          <>
+                            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                            Applying...
+                          </>
+                        ) : (
+                          <>
+                            Apply Now
+                            <ExternalLink className="h-4 w-4 ml-2" />
+                          </>
+                        )}
+                      </Button>
+                    )}
+                  </>
+                ) : (
+                  <Button 
+                    className="w-full mb-4 bg-gray-500 text-white cursor-not-allowed"
+                    size="lg"
+                    disabled={true}
+                  >
+                    Application Closed
+                    <XCircle className="h-4 w-4 ml-2" />
+                  </Button>
+                )}
                 {job.endDate && (
                   <p className="text-sm text-gray-600 dark:text-gray-400 text-center">
                     Application deadline: {formatDate(job.endDate)}
                   </p>
+                )}
+                {isApplied && job.status === 'OPEN' && (
+                  <div className="mt-3 p-2 bg-green-100 dark:bg-green-900 rounded-lg">
+                    <p className="text-sm text-green-700 dark:text-green-300 text-center flex items-center justify-center">
+                      <CheckCircle className="h-4 w-4 mr-1" />
+                      You have applied for this job
+                    </p>
+                  </div>
                 )}
               </CardContent>
             </Card>
