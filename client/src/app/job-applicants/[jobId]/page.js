@@ -865,15 +865,17 @@ export default function JobApplicants() {
                                 <Eye className="h-4 w-4 mr-1" />
                                 Profile
                               </Button>
-                              <Button 
-                                variant="outline" 
-                                size="sm"
-                                className="bg-blue-50 dark:bg-blue-500/10 border-blue-200 dark:border-blue-400/30 text-blue-700 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-blue-500/20"
-                                onClick={() => handleScheduleClick(applicantId)}
-                              >
-                                <Calendar className="h-4 w-4 mr-1" />
-                                {interview ? "Reschedule" : "Schedule"}
-                              </Button>
+                              {!interview && (
+                                <Button 
+                                  variant="outline" 
+                                  size="sm"
+                                  className="bg-blue-50 dark:bg-blue-500/10 border-blue-200 dark:border-blue-400/30 text-blue-700 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-blue-500/20"
+                                  onClick={() => handleScheduleClick(applicantId)}
+                                >
+                                  <Calendar className="h-4 w-4 mr-1" />
+                                  Schedule
+                                </Button>
+                              )}
                               <Button 
                                 variant="outline" 
                                 size="sm"
