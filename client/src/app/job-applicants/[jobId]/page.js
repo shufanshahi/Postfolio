@@ -224,37 +224,79 @@ export default function JobApplicants() {
           ? scheduleInput + ":00" 
           : scheduleInput;
         
+        // Get interviewer profile
+        const profileRes = await fetch('http://localhost:8080/api/profile/me', {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        
+        let interviewerProfile = null;
+        if (profileRes.ok) {
+          interviewerProfile = await profileRes.json();
+        }
+        
         // Create or update todo for the applicant
-        const todoData = {
+        const applicantTodoData = {
           name: `Job interview scheduled for ${job?.title || 'position'}`,
           profileId: selectedApplicant,
           time: interviewDateTime
         };
         
+        // Create or update todo for the interviewer
+        const interviewerTodoData = {
+          name: `Interview with applicant for ${job?.title || 'position'}`,
+          profileId: interviewerProfile?.id,
+          time: interviewDateTime
+        };
+        
         try {
           if (0) {
-            // Update existing todo
+            // Update existing todos
             await fetch(`http://localhost:8080/api/todos/profile/${selectedApplicant}`, {
               method: 'PUT',
               headers: {
                 "Content-Type": "application/json",
                 Authorization: `Bearer ${token}`,
               },
-              body: JSON.stringify(todoData)
+              body: JSON.stringify(applicantTodoData)
             });
+            
+            if (interviewerProfile?.id) {
+              await fetch(`http://localhost:8080/api/todos/profile/${interviewerProfile.id}`, {
+                method: 'PUT',
+                headers: {
+                  "Content-Type": "application/json",
+                  Authorization: `Bearer ${token}`,
+                },
+                body: JSON.stringify(interviewerTodoData)
+              });
+            }
           } else {
-            // Create new todo
+            // Create new todos
             await fetch('http://localhost:8080/api/todos', {
               method: 'POST',
               headers: {
                 "Content-Type": "application/json",
                 Authorization: `Bearer ${token}`,
               },
-              body: JSON.stringify(todoData)
+              body: JSON.stringify(applicantTodoData)
             });
+            
+            if (interviewerProfile?.id) {
+              await fetch('http://localhost:8080/api/todos', {
+                method: 'POST',
+                headers: {
+                  "Content-Type": "application/json",
+                  Authorization: `Bearer ${token}`,
+                },
+                body: JSON.stringify(interviewerTodoData)
+              });
+            }
           }
         } catch (error) {
-          console.error("Error creating/updating todo:", error);
+          console.error("Error creating/updating todos:", error);
         }
         
         // If this was a reschedule (existing interview), update status to PENDING
