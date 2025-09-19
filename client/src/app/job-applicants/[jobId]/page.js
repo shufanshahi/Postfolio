@@ -879,7 +879,7 @@ export default function JobApplicants() {
                                   </div>
                                 )}
                                 {interview && (
-                                  <div className="flex items-center gap-1">
+                                  <div className="space-y-1">
                                     <Badge 
                                       variant="outline" 
                                       className={`text-xs ${
@@ -892,6 +892,17 @@ export default function JobApplicants() {
                                       <Clock className="h-3 w-3 mr-1" />
                                       Interview: {interview.status}
                                     </Badge>
+                                    {interview.schedule && (
+                                      <div className="flex items-center gap-1 text-xs text-slate-500 dark:text-slate-400">
+                                        <Calendar className="h-3 w-3" />
+                                        Scheduled: {new Date(interview.schedule).toLocaleString()}
+                                      </div>
+                                    )}
+                                    {interview.notes && (
+                                      <div className="text-xs text-slate-500 dark:text-slate-400 max-w-xs truncate">
+                                        Notes: {interview.notes}
+                                      </div>
+                                    )}
                                   </div>
                                 )}
                               </div>
