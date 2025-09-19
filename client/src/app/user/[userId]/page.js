@@ -48,6 +48,13 @@ export default function UserProfilePage() {
         }
     }, [userId]);
 
+    // Switch to profile tab if user is Employer and CV tab is active
+    useEffect(() => {
+        if (profile && profile.role === 'Employer' && activeTab === 'cv') {
+            setActiveTab('profile');
+        }
+    }, [profile, activeTab]);
+
     const fetchUserProfile = async () => {
         try {
             setLoading(true);
@@ -308,15 +315,18 @@ export default function UserProfilePage() {
                             <MessageSquare className="h-4 w-4 inline mr-2" />
                             Posts
                         </button>
-                        <button
-                            onClick={() => setActiveTab('cv')}
-                            className={`flex-1 min-w-[120px] py-2.5 px-5 rounded-xl text-sm font-medium tracking-wide transition-all ring-1 ring-transparent ${activeTab === 'cv'
-                                ? 'bg-white/70 dark:bg-slate-900/50 text-teal-700 dark:text-teal-300 shadow-sm ring-teal-500/30'
-                                : 'text-slate-600 dark:text-slate-400 hover:bg-white/50 dark:hover:bg-slate-900/30'} `}
-                        >
-                            <FileText className="h-4 w-4 inline mr-2" />
-                            CV
-                        </button>
+                        {/* Only show CV tab for User role, not for Employer */}
+                        {profile.role !== 'Employer' && (
+                            <button
+                                onClick={() => setActiveTab('cv')}
+                                className={`flex-1 min-w-[120px] py-2.5 px-5 rounded-xl text-sm font-medium tracking-wide transition-all ring-1 ring-transparent ${activeTab === 'cv'
+                                    ? 'bg-white/70 dark:bg-slate-900/50 text-teal-700 dark:text-teal-300 shadow-sm ring-teal-500/30'
+                                    : 'text-slate-600 dark:text-slate-400 hover:bg-white/50 dark:hover:bg-slate-900/30'} `}
+                            >
+                                <FileText className="h-4 w-4 inline mr-2" />
+                                CV
+                            </button>
+                        )}
                     </div>
                 </div>
 
@@ -341,7 +351,8 @@ export default function UserProfilePage() {
                         <UserPosts profileId={userId} />
                     )}
 
-                    {activeTab === 'cv' && (
+                    {/* Only show CV content for User role, not for Employer */}
+                    {activeTab === 'cv' && profile.role !== 'Employer' && (
                         <div className="space-y-6">
                             <Card className={`${subtleCard} rounded-2xl`}>
                                 <CardHeader>
