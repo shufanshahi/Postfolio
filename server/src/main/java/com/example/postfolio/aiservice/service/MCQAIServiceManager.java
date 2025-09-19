@@ -2,9 +2,11 @@ package com.example.postfolio.aiservice.service;
 
 import com.example.postfolio.aiservice.dto.MCQGenerationRequest;
 import com.example.postfolio.aiservice.dto.MCQGenerationResponse;
+import com.example.postfolio.util.JwtTokenHelper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
@@ -17,9 +19,12 @@ import java.time.Duration;
 public class MCQAIServiceManager {
 
     private final RabbitTemplate rabbitTemplate;
-    private final WebClient webClient;
+    private final WebClient.Builder webClientBuilder;
+    private final JwtTokenHelper jwtTokenHelper;
 
-    private static final String AI_SERVICE_URL = "http://localhost:8081";
+    @Value("${ai-service.base-url}")
+    private String aiServiceBaseUrl;
+
     private static final String MCQ_QUEUE = "ai.mcq.generation";
 
     /**
@@ -44,8 +49,17 @@ public class MCQAIServiceManager {
         try {
             log.info("Sending synchronous MCQ generation request to AI service for user: {}", request.getUserId());
 
+            String authHeader = jwtTokenHelper.getAuthorizationHeader();
+            WebClient.Builder builder = webClientBuilder.baseUrl(aiServiceBaseUrl);
+
+            if (authHeader != null) {
+                builder = builder.defaultHeader("Authorization", authHeader);
+            }
+
+            WebClient webClient = builder.build();
+
             return webClient.post()
-                    .uri(AI_SERVICE_URL + "/api/ai/generate-mcq")
+                    .uri("/api/ai/generate-mcq")
                     .bodyValue(request)
                     .retrieve()
                     .bodyToMono(MCQGenerationResponse.class)

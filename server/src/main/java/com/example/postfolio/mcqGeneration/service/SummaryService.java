@@ -1,5 +1,6 @@
 package com.example.postfolio.mcqGeneration.service;
 
+import com.example.postfolio.util.JwtTokenHelper;
 import com.itextpdf.text.Document;
 import com.itextpdf.text.DocumentException;
 import com.itextpdf.text.Font;
@@ -10,6 +11,7 @@ import com.itextpdf.text.Chunk;
 import com.itextpdf.text.pdf.PdfWriter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
@@ -24,7 +26,11 @@ import java.time.format.DateTimeFormatter;
 @Slf4j
 public class SummaryService {
 
-    private final WebClient webClient;
+    private final WebClient.Builder webClientBuilder;
+    private final JwtTokenHelper jwtTokenHelper;
+
+    @Value("${ai-service.base-url}")
+    private String aiServiceBaseUrl;
 
     /**
      * Generate summary from text content using AI service and create PDF
@@ -56,16 +62,26 @@ public class SummaryService {
      */
     private String generateSummaryWithAI(String documentContent) {
         try {
-            log.info("Sending summarization request to AI service via API Gateway");
+            log.info("Sending summarization request to AI service via load balancer");
 
             // Create request payload for AI service
             SummaryAIRequest request = SummaryAIRequest.builder()
                     .documentContent(documentContent)
                     .build();
 
-            // Call AI microservice through API Gateway
+            // Create WebClient with JWT auth and load balancing
+            String authHeader = jwtTokenHelper.getAuthorizationHeader();
+            WebClient.Builder builder = webClientBuilder.baseUrl(aiServiceBaseUrl);
+
+            if (authHeader != null) {
+                builder = builder.defaultHeader("Authorization", authHeader);
+            }
+
+            WebClient webClient = builder.build();
+
+            // Call AI microservice through load balancer
             Mono<String> summaryMono = webClient.post()
-                    .uri("http://localhost:8080/api/ai/summarize")
+                    .uri("/api/ai/summarize")
                     .header("X-Service-Name", "summary-service")
                     .bodyValue(request)
                     .retrieve()

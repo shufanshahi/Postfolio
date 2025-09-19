@@ -12,5 +12,6 @@ public class ReactionResponseDTO {
     private Long id;
     private ReactionType type;
     private String userName;
+    private String pictureBase64;
     private LocalDateTime createdAt;
-} 
+}

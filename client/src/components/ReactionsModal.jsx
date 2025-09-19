@@ -2,6 +2,9 @@
 import { useState, useEffect } from 'react';
 import { PartyPopper, X } from 'lucide-react';
 import { apiFetch } from '@/lib/api';
+import {
+    Avatar, AvatarImage, AvatarFallback
+} from '@/components/ui/avatar';
 
 export default function ReactionsModal({ isOpen, onClose, reactions, postId }) {
     const [fetchedReactions, setFetchedReactions] = useState([]);
@@ -116,9 +119,16 @@ export default function ReactionsModal({ isOpen, onClose, reactions, postId }) {
                                 key={index}
                                 className="flex items-center gap-3 p-3 rounded-xl bg-slate-50 dark:bg-slate-700/50 border border-slate-200 dark:border-slate-600/50 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
                             >
-                                <div className="w-10 h-10 bg-gradient-to-br from-teal-500 via-indigo-500 to-amber-500 rounded-full flex items-center justify-center text-white font-bold text-sm ring-2 ring-white/20 dark:ring-slate-800/50">
-                                    {getInitials(reaction.userName)}
-                                </div>
+                                <Avatar className="h-10 w-10 ring-2 ring-white/60 dark:ring-slate-800/60 shadow-sm">
+                                    <AvatarImage
+                                        src={reaction.pictureBase64 ? `data:image/jpeg;base64,${reaction.pictureBase64}` : undefined}
+                                        alt="Profile Picture"
+                                        className="object-cover"
+                                    />
+                                    <AvatarFallback className="bg-gradient-to-br from-teal-500 via-indigo-500 to-amber-500 text-white font-bold text-sm">
+                                        {getInitials(reaction.userName)}
+                                    </AvatarFallback>
+                                </Avatar>
                                 <div className="flex-1">
                                     <span className="font-medium text-slate-800 dark:text-slate-200">
                                         {reaction.userName}

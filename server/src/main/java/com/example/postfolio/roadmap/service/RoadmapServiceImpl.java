@@ -10,6 +10,7 @@ import com.example.postfolio.roadmap.entity.RoadmapItem;
 import com.example.postfolio.roadmap.model.RoadmapItemType;
 import com.example.postfolio.roadmap.repository.RoadmapItemRepository;
 import com.example.postfolio.roadmap.repository.RoadmapRepository;
+import com.example.postfolio.util.JwtTokenHelper;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -20,7 +21,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.client.RestTemplate;
+import org.springframework.web.reactive.function.client.WebClient;
 
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
@@ -37,9 +38,10 @@ public class RoadmapServiceImpl implements RoadmapService {
     private final RoadmapItemRepository roadmapItemRepository;
     private final JobService jobService;
     private final ObjectMapper objectMapper;
-    private final RestTemplate restTemplate = new RestTemplate();
+    private final WebClient.Builder webClientBuilder;
+    private final JwtTokenHelper jwtTokenHelper;
 
-    @Value("${ai.service.url:http://localhost:8081}")
+    @Value("${ai-service.base-url}")
     private String aiServiceUrl;
 
     @Override
@@ -174,22 +176,31 @@ public class RoadmapServiceImpl implements RoadmapService {
             aiRequest.put("interviewDate", roadmap.getInterviewDate().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME));
             aiRequest.put("daysUntilInterview", (int) totalDays);
 
-            // Set up HTTP headers
-            HttpHeaders headers = new HttpHeaders();
-            headers.setContentType(MediaType.APPLICATION_JSON);
-            HttpEntity<Map<String, Object>> entity = new HttpEntity<>(aiRequest, headers);
-
             // Call AI service
-            String aiServiceEndpoint = aiServiceUrl + "/api/ai/generate-roadmap";
-            log.info("Calling AI service at: {}", aiServiceEndpoint);
+            String aiServiceEndpoint = "/api/ai/generate-roadmap";
+            log.info("Calling AI service at: {}{}", aiServiceUrl, aiServiceEndpoint);
 
-            ResponseEntity<JsonNode> response = restTemplate.postForEntity(
-                    aiServiceEndpoint, entity, JsonNode.class);
+            String authHeader = jwtTokenHelper.getAuthorizationHeader();
+            WebClient.Builder builder = webClientBuilder.baseUrl(aiServiceUrl);
 
-            if (response.getStatusCode() == HttpStatus.OK && response.getBody() != null) {
-                return parseAIRoadmapResponse(response.getBody(), roadmap);
+            if (authHeader != null) {
+                builder = builder.defaultHeader("Authorization", authHeader);
+            }
+
+            WebClient webClient = builder.build();
+
+            JsonNode response = webClient.post()
+                    .uri(aiServiceEndpoint)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .bodyValue(aiRequest)
+                    .retrieve()
+                    .bodyToMono(JsonNode.class)
+                    .block();
+
+            if (response != null) {
+                return parseAIRoadmapResponse(response, roadmap);
             } else {
-                throw new RuntimeException("AI service returned unsuccessful response");
+                throw new RuntimeException("AI service returned null response");
             }
 
         } catch (Exception e) {

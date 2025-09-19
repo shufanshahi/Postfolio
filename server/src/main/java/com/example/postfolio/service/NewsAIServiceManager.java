@@ -1,5 +1,6 @@
 package com.example.postfolio.service;
 
+import com.example.postfolio.util.JwtTokenHelper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -15,79 +16,91 @@ import java.util.Map;
 @Slf4j
 public class NewsAIServiceManager {
 
-    private final WebClient webClient;
+        private final WebClient.Builder webClientBuilder;
+        private final JwtTokenHelper jwtTokenHelper;
 
-    @Value("${ai-service.base-url:http://localhost:8081}")
-    private String aiServiceBaseUrl;
+        @Value("${ai-service.base-url}")
+        private String aiServiceBaseUrl;
 
-    public Map<String, Object> summarizeNews(String newsContent, String targetAudience,
-            int maxLength, String tone,
-            boolean includeEmojis, boolean includeCallToAction) {
-        try {
-            log.info("🤖 AI SERVICE CALL: Requesting news summarization");
-            log.info("📊 Request parameters - audience: '{}', maxLength: {}, tone: '{}', emojis: {}, CTA: {}",
-                    targetAudience, maxLength, tone, includeEmojis, includeCallToAction);
-            log.info("📰 Input content length: {} characters", newsContent.length());
-            log.info("📰 Input preview: {}", newsContent.substring(0, Math.min(100, newsContent.length())) + "...");
+        public Map<String, Object> summarizeNews(String newsContent, String targetAudience,
+                        int maxLength, String tone,
+                        boolean includeEmojis, boolean includeCallToAction) {
+                try {
+                        log.info("🤖 AI SERVICE CALL: Requesting news summarization");
+                        log.info("📊 Request parameters - audience: '{}', maxLength: {}, tone: '{}', emojis: {}, CTA: {}",
+                                        targetAudience, maxLength, tone, includeEmojis, includeCallToAction);
+                        log.info("📰 Input content length: {} characters", newsContent.length());
+                        log.info("📰 Input preview: {}",
+                                        newsContent.substring(0, Math.min(100, newsContent.length())) + "...");
 
-            Map<String, Object> request = Map.of(
-                    "newsContent", newsContent,
-                    "targetAudience", targetAudience,
-                    "maxLength", maxLength,
-                    "tone", tone,
-                    "includeEmojis", includeEmojis,
-                    "includeCallToAction", includeCallToAction);
+                        Map<String, Object> request = Map.of(
+                                        "newsContent", newsContent,
+                                        "targetAudience", targetAudience,
+                                        "maxLength", maxLength,
+                                        "tone", tone,
+                                        "includeEmojis", includeEmojis,
+                                        "includeCallToAction", includeCallToAction);
 
-            log.info("🚀 Sending request to AI service: {}/api/ai/summarize-news", aiServiceBaseUrl);
+                        log.info("🚀 Sending request to AI service: {}/api/ai/summarize-news", aiServiceBaseUrl);
 
-            Mono<Map<String, Object>> response = webClient.post()
-                    .uri(aiServiceBaseUrl + "/api/ai/summarize-news")
-                    .bodyValue(request)
-                    .retrieve()
-                    .bodyToMono(new ParameterizedTypeReference<Map<String, Object>>() {
-                    });
+                        String authHeader = jwtTokenHelper.getAuthorizationHeader();
+                        WebClient.Builder builder = webClientBuilder.baseUrl(aiServiceBaseUrl);
 
-            Map<String, Object> result = response.block();
+                        if (authHeader != null) {
+                                builder = builder.defaultHeader("Authorization", authHeader);
+                        }
 
-            if (result != null && result.containsKey("summarizedContent")) {
-                String summary = (String) result.get("summarizedContent");
-                log.info("✅ AI SERVICE SUCCESS: Received summary from AI service");
-                log.info("🤖 AI GENERATED SUMMARY ({} chars): {}", summary.length(), summary);
-                log.info("📋 Full AI service response: {}", result);
+                        WebClient webClient = builder.build();
 
-                // Return in the expected format with 'summary' key for backward compatibility
-                return Map.of(
-                        "summary", summary,
-                        "originalContent", result.getOrDefault("originalContent", ""),
-                        "originalLength", result.getOrDefault("originalLength", 0),
-                        "summarizedLength", result.getOrDefault("summarizedLength", 0),
-                        "success", result.getOrDefault("success", true));
-            } else {
-                log.warn("❌ AI SERVICE FAILED: Invalid response from AI service for news summarization");
-                log.warn("📋 Invalid AI response received: {}", result);
-                return Map.of(
-                        "summary", "News summary unavailable",
-                        "success", false,
-                        "error", "Invalid AI service response");
-            }
+                        Mono<Map<String, Object>> response = webClient.post()
+                                        .uri("/api/ai/summarize-news")
+                                        .bodyValue(request)
+                                        .retrieve()
+                                        .bodyToMono(new ParameterizedTypeReference<Map<String, Object>>() {
+                                        });
 
-        } catch (Exception e) {
-            log.error("❌ AI SERVICE ERROR: Failed to call AI service for news summarization: {}", e.getMessage(), e);
-            log.error("🔧 AI service URL: {}/api/ai/summarize-news", aiServiceBaseUrl);
-            return Map.of(
-                    "summary", "Error generating news summary",
-                    "success", false,
-                    "error", e.getMessage());
+                        Map<String, Object> result = response.block();
+
+                        if (result != null && result.containsKey("summarizedContent")) {
+                                String summary = (String) result.get("summarizedContent");
+                                log.info("✅ AI SERVICE SUCCESS: Received summary from AI service");
+                                log.info("🤖 AI GENERATED SUMMARY ({} chars): {}", summary.length(), summary);
+                                log.info("📋 Full AI service response: {}", result);
+
+                                // Return in the expected format with 'summary' key for backward compatibility
+                                return Map.of(
+                                                "summary", summary,
+                                                "originalContent", result.getOrDefault("originalContent", ""),
+                                                "originalLength", result.getOrDefault("originalLength", 0),
+                                                "summarizedLength", result.getOrDefault("summarizedLength", 0),
+                                                "success", result.getOrDefault("success", true));
+                        } else {
+                                log.warn("❌ AI SERVICE FAILED: Invalid response from AI service for news summarization");
+                                log.warn("📋 Invalid AI response received: {}", result);
+                                return Map.of(
+                                                "summary", "News summary unavailable",
+                                                "success", false,
+                                                "error", "Invalid AI service response");
+                        }
+
+                } catch (Exception e) {
+                        log.error("❌ AI SERVICE ERROR: Failed to call AI service for news summarization: {}",
+                                        e.getMessage(), e);
+                        log.error("🔧 AI service URL: {}/api/ai/summarize-news", aiServiceBaseUrl);
+                        return Map.of(
+                                        "summary", "Error generating news summary",
+                                        "success", false,
+                                        "error", e.getMessage());
+                }
         }
-    }
 
-    public Map<String, Object> summarizeNewsWithDefaults(String newsContent) {
-        return summarizeNews(
-                newsContent,
-                "job seekers",
-                500,
-                "engaging",
-                true,
-                true);
-    }
+        public Map<String, Object> summarizeNewsWithDefaults(String newsContent) {
+                return summarizeNews(
+                                newsContent,
+                                "job seekers",
+                                500,
+                                "engaging",
+                                true,
+                                true);
+        }
 }
