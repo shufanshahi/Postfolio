@@ -684,6 +684,16 @@ function FindJobs() {
                     <Button
                       variant="outline"
                       size="sm"
+                      onClick={() => window.location.href = `/jobpost/${job.jobId}`}
+                      className="bg-white/60 dark:bg-slate-700/60 backdrop-blur border-slate-300/60 dark:border-slate-600/60 text-slate-700 dark:text-slate-300 hover:bg-blue-50 dark:hover:bg-blue-900/20 hover:border-blue-300 dark:hover:border-blue-600 rounded-xl"
+                    >
+                      <Eye className="h-4 w-4 mr-2" />
+                      View Details
+                    </Button>
+
+                    <Button
+                      variant="outline"
+                      size="sm"
                       onClick={() => openJobLocation(job.jobId, job.title)}
                       disabled={fetchingLocation[job.jobId]}
                       className="bg-white/60 dark:bg-slate-700/60 backdrop-blur border-slate-300/60 dark:border-slate-600/60 text-slate-700 dark:text-slate-300 hover:bg-blue-50 dark:hover:bg-blue-900/20 hover:border-blue-300 dark:hover:border-blue-600 rounded-xl disabled:opacity-50"
@@ -776,7 +786,7 @@ function FindJobs() {
               {/* Embedded Map */}
               <div className="aspect-video w-full border border-slate-200 dark:border-slate-700 rounded-xl overflow-hidden">
                 <iframe
-                  src={`https://www.openstreetmap.org/export/embed.html?bbox=${mapPopup.coordinates?.lng - 0.01},${mapPopup.coordinates?.lat - 0.01},${mapPopup.coordinates?.lng + 0.01},${mapPopup.coordinates?.lat + 0.01}&layer=mapnik&marker=${mapPopup.coordinates?.lat},${mapPopup.coordinates?.lng}`}
+                  src={`https://www.openstreetmap.org/export/embed.html?bbox=${mapPopup.coordinates?.lng - 0.005},${mapPopup.coordinates?.lat - 0.005},${mapPopup.coordinates?.lng + 0.005},${mapPopup.coordinates?.lat + 0.005}&layer=mapnik&marker=${mapPopup.coordinates?.lat},${mapPopup.coordinates?.lng}`}
                   width="100%"
                   height="100%"
                   style={{ border: 0 }}
@@ -795,7 +805,7 @@ function FindJobs() {
                     variant="outline"
                     size="sm"
                     onClick={() => {
-                      const mapUrl = `https://www.openstreetmap.org/?mlat=${mapPopup.coordinates?.lat}&mlon=${mapPopup.coordinates?.lng}&zoom=15`;
+                      const mapUrl = `https://www.openstreetmap.org/?mlat=${mapPopup.coordinates?.lat}&mlon=${mapPopup.coordinates?.lng}&zoom=16`;
                       window.open(mapUrl, '_blank');
                     }}
                     className="text-teal-600 border-teal-200 hover:bg-teal-50 dark:text-teal-400 dark:border-teal-700 dark:hover:bg-teal-900/20"
