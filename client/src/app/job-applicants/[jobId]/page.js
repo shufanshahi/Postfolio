@@ -219,6 +219,44 @@ export default function JobApplicants() {
       });
       
       if (res.ok) {
+        // Convert time to ISO format (scheduleInput is like "2025-12-12T19:09", need "2025-12-12T19:09:00")
+        const interviewDateTime = scheduleInput.includes(':') 
+          ? scheduleInput + ":00" 
+          : scheduleInput;
+        
+        // Create or update todo for the applicant
+        const todoData = {
+          name: `Job interview scheduled for ${job?.title || 'position'}`,
+          profileId: selectedApplicant,
+          time: interviewDateTime
+        };
+        
+        try {
+          if (existingInterview) {
+            // Update existing todo
+            await fetch(`http://localhost:8080/api/todos/profile/${selectedApplicant}`, {
+              method: 'PUT',
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${token}`,
+              },
+              body: JSON.stringify(todoData)
+            });
+          } else {
+            // Create new todo
+            await fetch('http://localhost:8080/api/todos', {
+              method: 'POST',
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${token}`,
+              },
+              body: JSON.stringify(todoData)
+            });
+          }
+        } catch (error) {
+          console.error("Error creating/updating todo:", error);
+        }
+        
         // If this was a reschedule (existing interview), update status to PENDING
         if (existingInterview) {
           try {

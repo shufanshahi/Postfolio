@@ -44,6 +44,30 @@ public class TodoService {
         return convertToDto(savedTodo);
     }
     
+    // Update todo by profile ID
+    public TodoDto updateTodoByProfileId(Long profileId, TodoRequestDto todoRequestDto) {
+        // Find existing todo for the profile
+        List<Todo> existingTodos = todoRepository.findByProfileIdOrderByName(profileId);
+        
+        Todo todoToUpdate;
+        if (!existingTodos.isEmpty()) {
+            // Update the first todo found for this profile
+            todoToUpdate = existingTodos.get(0);
+            todoToUpdate.setName(todoRequestDto.name());
+            todoToUpdate.setTime(todoRequestDto.time());
+        } else {
+            // Create new todo if none exists
+            todoToUpdate = Todo.builder()
+                    .name(todoRequestDto.name())
+                    .profileId(profileId)
+                    .time(todoRequestDto.time())
+                    .build();
+        }
+        
+        Todo savedTodo = todoRepository.save(todoToUpdate);
+        return convertToDto(savedTodo);
+    }
+    
     // Helper method to convert entity to DTO
     private TodoDto convertToDto(Todo todo) {
         return new TodoDto(

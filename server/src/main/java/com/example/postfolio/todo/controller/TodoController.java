@@ -53,4 +53,17 @@ public class TodoController {
             return ResponseEntity.badRequest().build();
         }
     }
+    
+    // PUT /api/todos/profile/{profileId} - Update todo for a profile ID
+    @PutMapping("/profile/{profileId}")
+    public ResponseEntity<TodoDto> updateTodoByProfileId(
+            @PathVariable Long profileId, 
+            @Valid @RequestBody TodoRequestDto todoRequestDto) {
+        try {
+            TodoDto updatedTodo = todoService.updateTodoByProfileId(profileId, todoRequestDto);
+            return ResponseEntity.ok(updatedTodo);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().build();
+        }
+    }
 }
