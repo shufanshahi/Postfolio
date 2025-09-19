@@ -3,8 +3,12 @@ package com.example.postfolio.rag.controller;
 import com.example.postfolio.rag.dto.QuestionRequest;
 import com.example.postfolio.rag.dto.QuestionResponse;
 import com.example.postfolio.rag.service.RagService;
+import com.example.postfolio.user.entity.User;
+import com.example.postfolio.user.repository.UserRepository;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -12,11 +16,22 @@ import java.io.IOException;
 
 @RestController
 @RequestMapping("/api/rag")
-@CrossOrigin(origins = "http://localhost:3000")
+//@CrossOrigin(origins = "http://localhost:3000")
+@Slf4j
 public class RagController {
 
     @Autowired
     private RagService ragService;
+    
+    @Autowired
+    private UserRepository userRepository;
+    
+    private String getCurrentUserId() {
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        return user.getId().toString();
+    }
 
     @PostMapping("/upload")
     public ResponseEntity<?> uploadDocument(@RequestParam("file") MultipartFile file) {
@@ -29,7 +44,8 @@ public class RagController {
                 return ResponseEntity.badRequest().body("Only PDF files are supported");
             }
 
-            String documentId = ragService.processDocument(file);
+            String userId = getCurrentUserId();
+            String documentId = ragService.processDocument(userId, file);
             
             return ResponseEntity.ok().body(new UploadResponse(
                 "Document uploaded and processed successfully", 
@@ -54,7 +70,8 @@ public class RagController {
                 );
             }
 
-            QuestionResponse response = ragService.answerQuestion(request);
+            String userId = getCurrentUserId();
+            QuestionResponse response = ragService.answerQuestion(userId, request);
             return ResponseEntity.ok(response);
             
         } catch (Exception e) {
@@ -68,10 +85,11 @@ public class RagController {
     @GetMapping("/status")
     public ResponseEntity<?> getDocumentStatus() {
         try {
+            String userId = getCurrentUserId();
             return ResponseEntity.ok().body(new DocumentStatusResponse(
-                ragService.hasDocuments(),
-                ragService.getDocumentCount(),
-                ragService.hasDocuments() ? "Document ready for questions" : "No document uploaded"
+                ragService.hasDocuments(userId),
+                ragService.getDocumentCount(userId),
+                ragService.hasDocuments(userId) ? "Document ready for questions" : "No document uploaded"
             ));
         } catch (Exception e) {
             e.printStackTrace();
@@ -84,7 +102,8 @@ public class RagController {
         try {
             // Test with a simple question to verify API connection
             QuestionRequest testRequest = new QuestionRequest("What is artificial intelligence?");
-            QuestionResponse response = ragService.answerQuestion(testRequest);
+            String userId = getCurrentUserId();
+            QuestionResponse response = ragService.answerQuestion(userId, testRequest);
             
             if (response.getAnswer().contains("error") || response.getAnswer().contains("apologize")) {
                 return ResponseEntity.internalServerError().body("Groq API connection failed");

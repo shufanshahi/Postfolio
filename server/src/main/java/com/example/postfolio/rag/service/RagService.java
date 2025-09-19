@@ -23,11 +23,12 @@ public class RagService {
     private final WebClient webClient;
     private final Gson gson;
     
-    // Store document chunks in memory (in production, use vector database)
-    private final Map<String, List<String>> documentChunks = new ConcurrentHashMap<>();
-    private final Map<String, String> documentTexts = new ConcurrentHashMap<>();
-    // Store embeddings for semantic search
-    private final Map<String, List<double[]>> chunkEmbeddings = new ConcurrentHashMap<>();
+    // Store document chunks in memory per user (in production, use vector database)
+    // Use nested maps: userId -> documentId -> chunks/data
+    private final Map<String, Map<String, List<String>>> userDocumentChunks = new ConcurrentHashMap<>();
+    private final Map<String, Map<String, String>> userDocumentTexts = new ConcurrentHashMap<>();
+    // Store embeddings for semantic search per user
+    private final Map<String, Map<String, List<double[]>>> userChunkEmbeddings = new ConcurrentHashMap<>();
     
     private static final String GROQ_API_KEY = "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";
     private static final String GROQ_API_URL = "https://api.groq.com/openai/v1/chat/completions";
@@ -39,25 +40,30 @@ public class RagService {
         this.gson = new Gson();
     }
 
-    public String processDocument(MultipartFile file) throws IOException {
-        // Clear previous documents when a new one is uploaded
-        clearAllDocuments();
+    public String processDocument(String userId, MultipartFile file) throws IOException {
+        // Clear previous documents for this user when a new one is uploaded
+        clearUserDocuments(userId);
         
         String documentId = UUID.randomUUID().toString();
         
         // Extract text from PDF
         String extractedText = extractTextFromPdf(file);
         
+        // Initialize user maps if they don't exist
+        userDocumentTexts.computeIfAbsent(userId, k -> new ConcurrentHashMap<>());
+        userDocumentChunks.computeIfAbsent(userId, k -> new ConcurrentHashMap<>());
+        userChunkEmbeddings.computeIfAbsent(userId, k -> new ConcurrentHashMap<>());
+        
         // Store full document text
-        documentTexts.put(documentId, extractedText);
+        userDocumentTexts.get(userId).put(documentId, extractedText);
         
         // Split into chunks for better retrieval
         List<String> chunks = splitIntoChunks(extractedText, 1000);
-        documentChunks.put(documentId, chunks);
+        userDocumentChunks.get(userId).put(documentId, chunks);
         
         // Generate embeddings for each chunk
         List<double[]> embeddings = generateEmbeddingsForChunks(chunks);
-        chunkEmbeddings.put(documentId, embeddings);
+        userChunkEmbeddings.get(userId).put(documentId, embeddings);
         
         System.out.println("Document processed successfully. ID: " + documentId);
         System.out.println("Extracted text length: " + extractedText.length() + " characters");
@@ -67,34 +73,41 @@ public class RagService {
         return documentId;
     }
     
-    private void clearAllDocuments() {
-        documentTexts.clear();
-        documentChunks.clear();
-        chunkEmbeddings.clear();
-        System.out.println("Cleared all previous documents from memory");
+    private void clearUserDocuments(String userId) {
+        Map<String, String> userTexts = userDocumentTexts.get(userId);
+        Map<String, List<String>> userChunks = userDocumentChunks.get(userId);
+        Map<String, List<double[]>> userEmbeddings = userChunkEmbeddings.get(userId);
+        
+        if (userTexts != null) userTexts.clear();
+        if (userChunks != null) userChunks.clear();
+        if (userEmbeddings != null) userEmbeddings.clear();
+        
+        System.out.println("Cleared all previous documents for user: " + userId);
     }
     
-    public boolean hasDocuments() {
-        return !documentTexts.isEmpty();
+    public boolean hasDocuments(String userId) {
+        Map<String, String> userTexts = userDocumentTexts.get(userId);
+        return userTexts != null && !userTexts.isEmpty();
     }
     
-    public int getDocumentCount() {
-        return documentTexts.size();
+    public int getDocumentCount(String userId) {
+        Map<String, String> userTexts = userDocumentTexts.get(userId);
+        return userTexts != null ? userTexts.size() : 0;
     }
 
-    public QuestionResponse answerQuestion(QuestionRequest request) {
+    public QuestionResponse answerQuestion(String userId, QuestionRequest request) {
         try {
-            // For simplicity, using the latest uploaded document
-            String documentId = getLatestDocumentId();
+            // For simplicity, using the latest uploaded document for this user
+            String documentId = getLatestDocumentId(userId);
             if (documentId == null) {
                 // If no document, try to answer the question directly with AI (for testing)
-                System.out.println("No document found, answering question directly with AI");
+                System.out.println("No document found for user " + userId + ", answering question directly with AI");
                 String directAnswer = generateAnswerWithGroq(request.getQuestion(), "No specific context provided. Please answer based on your general knowledge.");
                 return new QuestionResponse(directAnswer, "No document context - general AI response");
             }
 
             // Retrieve relevant context
-            String context = retrieveRelevantContext(documentId, request.getQuestion());
+            String context = retrieveRelevantContext(userId, documentId, request.getQuestion());
             
             // Generate answer using Groq API
             String answer = generateAnswerWithGroq(request.getQuestion(), context);
@@ -136,16 +149,28 @@ public class RagService {
         return chunks;
     }
 
-    private String getLatestDocumentId() {
-        return documentTexts.keySet().stream().findFirst().orElse(null);
+    private String getLatestDocumentId(String userId) {
+        Map<String, String> userTexts = userDocumentTexts.get(userId);
+        if (userTexts == null || userTexts.isEmpty()) {
+            return null;
+        }
+        return userTexts.keySet().stream().findFirst().orElse(null);
     }
 
-    private String retrieveRelevantContext(String documentId, String question) {
-        List<String> chunks = documentChunks.get(documentId);
-        List<double[]> embeddings = chunkEmbeddings.get(documentId);
+    private String retrieveRelevantContext(String userId, String documentId, String question) {
+        Map<String, List<String>> userChunks = userDocumentChunks.get(userId);
+        Map<String, List<double[]>> userEmbeddings = userChunkEmbeddings.get(userId);
+        Map<String, String> userTexts = userDocumentTexts.get(userId);
+        
+        if (userChunks == null || userEmbeddings == null || userTexts == null) {
+            return "No documents found for user";
+        }
+        
+        List<String> chunks = userChunks.get(documentId);
+        List<double[]> embeddings = userEmbeddings.get(documentId);
         
         if (chunks == null || chunks.isEmpty()) {
-            return documentTexts.get(documentId);
+            return userTexts.get(documentId);
         }
 
         // Try semantic similarity if embeddings are available

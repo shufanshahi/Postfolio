@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Button } from "../../components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../../components/ui/card";
 import { Input } from "../../components/ui/input";
@@ -16,13 +16,34 @@ export default function RagTestPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [documentProcessed, setDocumentProcessed] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const fileInputRef = useRef(null);
+
+  // Check authentication on component mount
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      setMessages([{
+        type: 'error',
+        content: 'You must be logged in to use the AI Document Assistant. Please log in and try again.',
+        timestamp: new Date().toLocaleTimeString()
+      }]);
+      setIsAuthenticated(false);
+    } else {
+      setIsAuthenticated(true);
+    }
+  }, []);
 
   // Design tokens matching dashboard
   const gradientPanel = 'bg-gradient-to-br from-teal-50/70 via-white/50 to-indigo-50/70 dark:from-slate-800/60 dark:via-slate-800/50 dark:to-slate-800/60 backdrop-blur-xl border border-white/40 dark:border-slate-700/50 shadow-sm';
   const subtleCard = 'bg-gradient-to-br from-teal-50/65 via-white/55 to-indigo-50/60 dark:from-slate-800/70 dark:via-slate-800/60 dark:to-slate-800/70 backdrop-blur-md border border-teal-900/5 dark:border-slate-700/60 hover:border-teal-500/30 dark:hover:border-teal-400/30 transition-colors';
 
   const handleFileUpload = async (event) => {
+    if (!isAuthenticated) {
+      alert('Please log in to upload documents');
+      return;
+    }
+    
     const uploadedFile = event.target.files[0];
     if (uploadedFile && uploadedFile.type === 'application/pdf') {
       setFile(uploadedFile);
@@ -56,14 +77,17 @@ export default function RagTestPage() {
             content: `Document "${uploadedFile.name}" has been processed successfully with semantic embeddings. Previous document has been replaced. You can now ask questions about the new content.`,
             timestamp: new Date().toLocaleTimeString()
           }]);
+        } else if (response.status === 401 || response.status === 403) {
+          throw new Error('Authentication failed. Please log in again.');
         } else {
-          throw new Error('Failed to process document');
+          const errorData = await response.text();
+          throw new Error(errorData || 'Failed to process document');
         }
       } catch (error) {
         console.error('Error uploading file:', error);
         setMessages([{
           type: 'error',
-          content: 'Failed to process the document. Please try again.',
+          content: error.message || 'Failed to process the document. Please try again.',
           timestamp: new Date().toLocaleTimeString()
         }]);
       } finally {
@@ -75,6 +99,15 @@ export default function RagTestPage() {
   };
 
   const handleAskQuestion = async () => {
+    if (!isAuthenticated) {
+      setMessages(prev => [...prev, {
+        type: 'error',
+        content: 'Please log in to ask questions',
+        timestamp: new Date().toLocaleTimeString()
+      }]);
+      return;
+    }
+    
     if (!currentQuestion.trim() || !documentProcessed) return;
 
     const userMessage = {
@@ -110,14 +143,17 @@ export default function RagTestPage() {
           context: data.context,
           timestamp: new Date().toLocaleTimeString()
         }]);
+      } else if (response.status === 401 || response.status === 403) {
+        throw new Error('Authentication failed. Please log in again.');
       } else {
-        throw new Error('Failed to get answer');
+        const errorData = await response.text();
+        throw new Error(errorData || 'Failed to get answer');
       }
     } catch (error) {
       console.error('Error asking question:', error);
       setMessages(prev => [...prev, {
         type: 'error',
-        content: 'Failed to get an answer. Please try again.',
+        content: error.message || 'Failed to get an answer. Please try again.',
         timestamp: new Date().toLocaleTimeString()
       }]);
     } finally {
