@@ -505,6 +505,40 @@ export default function MentorshipPage() {
         throw new Error('Failed to create enrollment record');
       }
 
+      // Step 4: Create todos for both parties
+      // Convert time to ISO format (selectedTimeSlot is like "2025-12-12 19:09:00", need "2025-12-12T19:09:00")
+      const mentorshipDateTime = selectedTimeSlot 
+        ? selectedTimeSlot.replace(' ', 'T')
+        : selectedTimeSlot;
+      
+      // Mentor todo
+      await fetch('http://localhost:8080/api/todos', {
+        method: 'POST',
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          name: `Mentorship session with ${userProfile?.name || 'mentee'}`,
+          profileId: selectedMentorship.profileId,
+          time: mentorshipDateTime,
+        })
+      });
+      // Mentee todo
+      await fetch('http://localhost:8080/api/todos', {
+        method: 'POST',
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          name: `Mentorship session with ${selectedMentorship.name || 'mentor'}`,
+          profileId: userProfile?.id,
+          time: mentorshipDateTime,
+        })
+      });
+      console.log("todo time", mentorshipDateTime);
+
       // Success! Close modal and refresh data
       setShowDetailsModal(false);
       setSelectedMentorship(null);
@@ -514,7 +548,7 @@ export default function MentorshipPage() {
       
       // Show success message
       setError(''); // Clear any previous errors
-      alert('Successfully transferred payment and enrolled in mentorship!');
+      alert('Successfully transferred payment, enrolled in mentorship, and created todos!');
 
     } catch (err) {
       setError(err.message || 'Failed to complete transfer and enrollment');
