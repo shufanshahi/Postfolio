@@ -30,7 +30,7 @@ public class MockInterviewService {
     private final MockInterviewRepository mockInterviewRepository;
     private final AIServiceManager aiServiceManager;
     
-    private static final String AUDIO_DIR = "src/main/resources/static/interview-audio/";
+    private static final String AUDIO_DIR = "server/src/main/resources/static/interview-audio/";
 
     public MockInterview getMockInterviewById(Long id) {
         return mockInterviewRepository.findById(id).orElse(null);

@@ -431,7 +431,10 @@ export default function JobMockInterviewPage() {
       setError('');
       
       if (questionAudioRef.current) {
-        const audioUrl = `http://localhost:8080${customInterviewData.audioUrls[questionIndex]}`;
+        // Extract filename from the audio URL path
+        const audioPath = customInterviewData.audioUrls[questionIndex];
+        const filename = audioPath.split('/').pop(); // Get the filename from the path
+        const audioUrl = `http://localhost:8080/api/audio/interview-audio/${filename}`;
         const token = localStorage.getItem("token");
         
         // Reset the audio element first

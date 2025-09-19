@@ -34,6 +34,8 @@ public class SecurityConfig {
                         .requestMatchers(
                                 "/api/auth/**",
                                 "/api/tts/**",
+                                "/api/audio/**",
+                                "/interview-audio/**",
                                 "/swagger-ui/**",
                                 "/v3/api-docs/**",
                                 "/actuator/**")

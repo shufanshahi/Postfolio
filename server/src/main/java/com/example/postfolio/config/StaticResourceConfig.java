@@ -10,14 +10,9 @@ public class StaticResourceConfig implements WebMvcConfigurer {
 
     @Override
     public void addResourceHandlers(@NonNull ResourceHandlerRegistry registry) {
-        // Serve interview audio files
+        // Serve interview audio files from classpath
         registry.addResourceHandler("/interview-audio/**")
                 .addResourceLocations("classpath:/static/interview-audio/")
-                .setCachePeriod(3600);
-        
-        // Also serve from file system as fallback
-        registry.addResourceHandler("/interview-audio/**")
-                .addResourceLocations("file:src/main/resources/static/interview-audio/")
                 .setCachePeriod(3600);
     }
 }
