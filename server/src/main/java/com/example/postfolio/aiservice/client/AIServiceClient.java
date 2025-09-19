@@ -1,6 +1,7 @@
 package com.example.postfolio.aiservice.client;
 
 import com.example.postfolio.aiservice.dto.*;
+import com.example.postfolio.util.JwtTokenHelper;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -20,6 +21,7 @@ import java.util.ArrayList;
 public class AIServiceClient {
 
     private final WebClient.Builder webClientBuilder;
+    private final JwtTokenHelper jwtTokenHelper;
 
     @Value("${ai-service.base-url}")
     private String aiServiceBaseUrl;
@@ -27,12 +29,28 @@ public class AIServiceClient {
     @Value("${ai-service.timeout:30000}")
     private int timeout;
 
+    /**
+     * Create WebClient with JWT authorization header
+     */
+    private WebClient createWebClientWithAuth() {
+        String authHeader = jwtTokenHelper.getAuthorizationHeader();
+        if (authHeader != null) {
+            return webClientBuilder
+                    .baseUrl(aiServiceBaseUrl)
+                    .defaultHeader("Authorization", authHeader)
+                    .build();
+        } else {
+            log.warn("No JWT token found for AI service request");
+            return webClientBuilder.baseUrl(aiServiceBaseUrl).build();
+        }
+    }
+
     @CircuitBreaker(name = "ai-service", fallbackMethod = "fallbackProcessPost")
     public PostProcessingResponse processPost(PostProcessingRequest request) {
         try {
             log.debug("Sending post processing request to AI service for post ID: {}", request.getPostId());
 
-            WebClient webClient = webClientBuilder.baseUrl(aiServiceBaseUrl).build();
+            WebClient webClient = createWebClientWithAuth();
 
             ResponseEntity<PostProcessingResponse> response = webClient.post()
                     .uri("/api/ai/process-post")
@@ -66,7 +84,7 @@ public class AIServiceClient {
             log.debug("Sending job matching request to AI service for job ID: {} and profile ID: {}",
                     request.getJobId(), request.getProfileId());
 
-            WebClient webClient = webClientBuilder.baseUrl(aiServiceBaseUrl).build();
+            WebClient webClient = createWebClientWithAuth();
 
             ResponseEntity<JobMatchingResponse> response = webClient.post()
                     .uri("/api/ai/match-job")
@@ -101,7 +119,7 @@ public class AIServiceClient {
         try {
             log.debug("Sending custom interview generation request to AI service for role: {}", request.getRole());
 
-            WebClient webClient = webClientBuilder.baseUrl(aiServiceBaseUrl).build();
+            WebClient webClient = createWebClientWithAuth();
 
             ResponseEntity<MockInterviewGenerationResponse> response = webClient.post()
                     .uri("/api/ai/generate-custom-interview")
@@ -132,10 +150,10 @@ public class AIServiceClient {
     @CircuitBreaker(name = "ai-service", fallbackMethod = "fallbackEvaluateInterview")
     public InterviewEvaluationResponse evaluateInterview(InterviewEvaluationRequest request) {
         try {
-            log.debug("Sending interview evaluation request to AI service with {} Q&A pairs", 
+            log.debug("Sending interview evaluation request to AI service with {} Q&A pairs",
                     request.getQuestionAnswers().size());
 
-            WebClient webClient = webClientBuilder.baseUrl(aiServiceBaseUrl).build();
+            WebClient webClient = createWebClientWithAuth();
 
             ResponseEntity<InterviewEvaluationResponse> response = webClient.post()
                     .uri("/api/ai/evaluate-interview")
@@ -146,7 +164,7 @@ public class AIServiceClient {
                     .block();
 
             if (response != null && response.getStatusCode() == HttpStatus.OK) {
-                log.debug("Successfully evaluated interview with {} Q&A pairs", 
+                log.debug("Successfully evaluated interview with {} Q&A pairs",
                         request.getQuestionAnswers().size());
                 return response.getBody();
             } else {
@@ -196,7 +214,8 @@ public class AIServiceClient {
                 .build();
     }
 
-    public MockInterviewGenerationResponse fallbackGenerateCustomInterview(MockInterviewGenerationRequest request, Exception ex) {
+    public MockInterviewGenerationResponse fallbackGenerateCustomInterview(MockInterviewGenerationRequest request,
+            Exception ex) {
         log.warn("AI service fallback triggered for custom interview generation. Role: {}. Error: {}",
                 request.getRole(), ex.getMessage());
 

@@ -4,14 +4,24 @@ import com.example.aiservice.dto.*;
 import com.example.aiservice.service.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.net.InetAddress;
+import java.net.UnknownHostException;
+import java.time.LocalDateTime;
+import java.util.HashMap;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/ai")
 @RequiredArgsConstructor
 @Slf4j
 public class AIProcessingController {
+
+    @Value("${server.port:8081}")
+    private String serverPort;
 
     private final PostAIService postAIService;
     private final JobMatchingAIService jobMatchingAIService;
@@ -80,7 +90,7 @@ public class AIProcessingController {
     @PostMapping("/generate-custom-interview")
     public ResponseEntity<MockInterviewGenerationResponse> generateCustomInterview(
             @RequestBody MockInterviewGenerationRequest request) {
-        log.info("Generating custom interview for role: {}, experience: {}, type: {}, questions: {}", 
+        log.info("Generating custom interview for role: {}, experience: {}, type: {}, questions: {}",
                 request.getRole(), request.getExperience(), request.getInterviewType(), request.getNumQuestions());
         MockInterviewGenerationResponse response = mockInterviewGenerationAIService.generateCustomInterview(request);
         return ResponseEntity.ok(response);
@@ -119,5 +129,68 @@ public class AIProcessingController {
     @GetMapping("/health")
     public ResponseEntity<String> health() {
         return ResponseEntity.ok("AI Service is running");
+    }
+
+    @GetMapping("/instance")
+    public ResponseEntity<Map<String, Object>> getInstanceInfo() {
+        Map<String, Object> response = new HashMap<>();
+
+        try {
+            InetAddress inetAddress = InetAddress.getLocalHost();
+
+            response.put("service", "ai-service");
+            response.put("port", serverPort);
+            response.put("hostname", inetAddress.getHostName());
+            response.put("ipAddress", inetAddress.getHostAddress());
+            response.put("timestamp", LocalDateTime.now().toString());
+            response.put("status", "UP");
+
+            // Add JVM info for more detail
+            Runtime runtime = Runtime.getRuntime();
+            Map<String, Object> jvmInfo = new HashMap<>();
+            jvmInfo.put("totalMemory", runtime.totalMemory());
+            jvmInfo.put("freeMemory", runtime.freeMemory());
+            jvmInfo.put("maxMemory", runtime.maxMemory());
+            response.put("jvmInfo", jvmInfo);
+
+            log.info("AI Service health check called on instance - Port: {}, Hostname: {}",
+                    serverPort, inetAddress.getHostName());
+
+        } catch (UnknownHostException e) {
+            log.error("Error getting host information", e);
+            response.put("service", "ai-service");
+            response.put("port", serverPort);
+            response.put("hostname", "unknown");
+            response.put("error", e.getMessage());
+            response.put("timestamp", LocalDateTime.now().toString());
+            response.put("status", "ERROR");
+        }
+
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/load-test")
+    public ResponseEntity<Map<String, Object>> loadTest() {
+        Map<String, Object> response = new HashMap<>();
+
+        try {
+            // Simulate some processing time
+            Thread.sleep(50);
+
+            response.put("service", "ai-service");
+            response.put("port", serverPort);
+            response.put("hostname", InetAddress.getLocalHost().getHostName());
+            response.put("requestId", System.nanoTime());
+            response.put("timestamp", LocalDateTime.now().toString());
+            response.put("message", "AI Service load balancing test successful");
+
+            log.info("AI Service load test endpoint called on port: {}", serverPort);
+
+        } catch (Exception e) {
+            log.error("Error in AI load test", e);
+            response.put("error", e.getMessage());
+        }
+
+        return ResponseEntity.ok(response);
     }
 }

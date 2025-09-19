@@ -2,8 +2,10 @@ package com.example.postfolio.aiservice.service;
 
 import com.example.postfolio.aiservice.dto.JobMatchingRequest;
 import com.example.postfolio.aiservice.dto.JobMatchingResponse;
+import com.example.postfolio.util.JwtTokenHelper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 
@@ -14,9 +16,11 @@ import java.time.Duration;
 @Slf4j
 public class JobMatchingAIServiceManager {
 
-    private final WebClient webClient;
+    private final WebClient.Builder webClientBuilder;
+    private final JwtTokenHelper jwtTokenHelper;
 
-    private static final String AI_SERVICE_URL = "http://localhost:8081";
+    @Value("${ai-service.base-url}")
+    private String aiServiceBaseUrl;
 
     /**
      * Match job synchronously via direct HTTP call
@@ -26,8 +30,17 @@ public class JobMatchingAIServiceManager {
             log.info("Sending synchronous job matching request to AI service for job: {} and profile: {}",
                     request.getJobId(), request.getProfileId());
 
+            String authHeader = jwtTokenHelper.getAuthorizationHeader();
+            WebClient.Builder builder = webClientBuilder.baseUrl(aiServiceBaseUrl);
+
+            if (authHeader != null) {
+                builder = builder.defaultHeader("Authorization", authHeader);
+            }
+
+            WebClient webClient = builder.build();
+
             return webClient.post()
-                    .uri(AI_SERVICE_URL + "/api/ai/match-job")
+                    .uri("/api/ai/match-job")
                     .bodyValue(request)
                     .retrieve()
                     .bodyToMono(JobMatchingResponse.class)

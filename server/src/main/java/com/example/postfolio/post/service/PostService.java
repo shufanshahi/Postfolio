@@ -466,6 +466,9 @@ public class PostService {
                 .id(reaction.getId())
                 .type(reaction.getType())
                 .userName(reaction.getUser().getName())
+                .pictureBase64(
+                        reaction.getUser().getProfile() != null ? reaction.getUser().getProfile().getPictureBase64()
+                                : null)
                 .createdAt(reaction.getCreatedAt())
                 .build();
     }
