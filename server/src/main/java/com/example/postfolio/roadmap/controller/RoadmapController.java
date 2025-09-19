@@ -18,7 +18,6 @@ import java.util.Optional;
 @RequestMapping("/api/roadmaps")
 @RequiredArgsConstructor
 @Slf4j
-@CrossOrigin(origins = "http://localhost:3000")
 public class RoadmapController {
 
     private final RoadmapService roadmapService;

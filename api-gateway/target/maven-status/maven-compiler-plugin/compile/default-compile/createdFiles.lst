@@ -1,0 +1,3 @@
+com/example/postfolio/gateway/filter/LoggingGlobalFilter.class
+com/example/postfolio/gateway/ApiGatewayApplication.class
+com/example/postfolio/gateway/config/GatewayConfig.class

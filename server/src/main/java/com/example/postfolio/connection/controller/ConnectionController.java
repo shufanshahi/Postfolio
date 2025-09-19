@@ -15,7 +15,6 @@ import java.util.stream.Collectors;
 @RestController
 @RequestMapping("/api/connections")
 @RequiredArgsConstructor
-@CrossOrigin(origins = "*")
 public class ConnectionController {
 
     private final ConnectionService connectionService;

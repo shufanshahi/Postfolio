@@ -12,7 +12,6 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/follow")
 @RequiredArgsConstructor
-@CrossOrigin(origins = "*")
 public class FollowController {
 
     private final FollowService followService;

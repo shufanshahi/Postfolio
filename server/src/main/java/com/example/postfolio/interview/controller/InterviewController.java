@@ -19,7 +19,6 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/interviews")
-@CrossOrigin(origins = "*")
 @RequiredArgsConstructor
 public class InterviewController {
     private final InterviewService interviewService;

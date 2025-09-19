@@ -13,7 +13,6 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/interview-progress")
-@CrossOrigin(origins = "*")
 @RequiredArgsConstructor
 public class InterviewProgressController {
 

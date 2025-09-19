@@ -60,14 +60,14 @@ public interface ConnectionRepository extends JpaRepository<Connection, Long> {
 
        // Count new connections made by a user after a specific date
        @Query("SELECT COUNT(c) FROM Connection c WHERE " +
-                     "c.requester.id = :userId AND c.status = 'ACCEPTED' AND c.createdAt >= :since")
+                     "c.requester.id = :userId AND c.status = :status AND c.createdAt >= :since")
        long countByRequesterIdAndCreatedAtAfterAndStatus(@Param("userId") Long userId,
                      @Param("since") java.time.LocalDateTime since,
                      @Param("status") String status);
 
        // Count new connections received by a user after a specific date
        @Query("SELECT COUNT(c) FROM Connection c WHERE " +
-                     "c.receiver.id = :userId AND c.status = 'ACCEPTED' AND c.createdAt >= :since")
+                     "c.receiver.id = :userId AND c.status = :status AND c.createdAt >= :since")
        long countByReceiverIdAndCreatedAtAfterAndStatus(@Param("userId") Long userId,
                      @Param("since") java.time.LocalDateTime since,
                      @Param("status") String status);

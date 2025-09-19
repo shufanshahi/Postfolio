@@ -18,7 +18,6 @@ import java.util.concurrent.CompletableFuture;
 @RestController
 @RequestMapping("/api/news")
 @RequiredArgsConstructor
-@CrossOrigin(origins = "*")
 public class NewsController {
 
     private final AutomatedNewsService automatedNewsService;

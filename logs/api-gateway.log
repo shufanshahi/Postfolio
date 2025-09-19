@@ -1,0 +1,63 @@
+[INFO] Scanning for projects...
+[INFO] 
+[INFO] -----------------< com.example.postfolio:api-gateway >------------------
+[INFO] Building api-gateway 1.0.0
+[INFO]   from pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] >>> spring-boot:3.1.5:run (default-cli) > test-compile @ api-gateway >>>
+Downloading from central: https://repo.maven.apache.org/maven2/org/springframework/cloud/spring-cloud-starter-gateway/4.0.7/spring-cloud-starter-gateway-4.0.7.pom
+Progress (1): 1.4/2.6 kBProgress (1): 2.6 kB                        Downloaded from central: https://repo.maven.apache.org/maven2/org/springframework/cloud/spring-cloud-starter-gateway/4.0.7/spring-cloud-starter-gateway-4.0.7.pom (2.6 kB at 6.0 kB/s)
+Downloading from central: https://repo.maven.apache.org/maven2/org/springframework/cloud/spring-cloud-gateway/4.0.7/spring-cloud-gateway-4.0.7.pom
+Progress (1): 1.4/2.7 kBProgress (1): 2.7 kB                        Downloaded from central: https://repo.maven.apache.org/maven2/org/springframework/cloud/spring-cloud-gateway/4.0.7/spring-cloud-gateway-4.0.7.pom (2.7 kB at 44 kB/s)
+Downloading from central: https://repo.maven.apache.org/maven2/org/springframework/cloud/spring-cloud-gateway-server/4.0.7/spring-cloud-gateway-server-4.0.7.pom
+Progress (1): 1.4/7.0 kBProgress (1): 2.8/7.0 kBProgress (1): 4.1/7.0 kBProgress (1): 5.5/7.0 kBProgress (1): 6.9/7.0 kBProgress (1): 7.0 kB                        Downloaded from central: https://repo.maven.apache.org/maven2/org/springframework/cloud/spring-cloud-gateway-server/4.0.7/spring-cloud-gateway-server-4.0.7.pom (7.0 kB at 99 kB/s)
+Downloading from central: https://repo.maven.apache.org/maven2/org/springframework/cloud/spring-cloud-starter-gateway/4.0.7/spring-cloud-starter-gateway-4.0.7.jar
+Progress (1): 1.4/2.1 kBProgress (1): 2.1 kB                        Downloaded from central: https://repo.maven.apache.org/maven2/org/springframework/cloud/spring-cloud-starter-gateway/4.0.7/spring-cloud-starter-gateway-4.0.7.jar (2.1 kB at 38 kB/s)
+Downloading from central: https://repo.maven.apache.org/maven2/org/springframework/cloud/spring-cloud-gateway-server/4.0.7/spring-cloud-gateway-server-4.0.7.jar
+Progress (1): 16/644 kBProgress (1): 33/644 kBProgress (1): 49/644 kBProgress (1): 66/644 kBProgress (1): 82/644 kBProgress (1): 98/644 kBProgress (1): 115/644 kBProgress (1): 130/644 kBProgress (1): 146/644 kBProgress (1): 163/644 kBProgress (1): 179/644 kBProgress (1): 196/644 kBProgress (1): 212/644 kBProgress (1): 228/644 kBProgress (1): 245/644 kBProgress (1): 261/644 kBProgress (1): 278/644 kBProgress (1): 294/644 kBProgress (1): 310/644 kBProgress (1): 327/644 kBProgress (1): 343/644 kBProgress (1): 359/644 kBProgress (1): 376/644 kBProgress (1): 392/644 kBProgress (1): 409/644 kBProgress (1): 425/644 kBProgress (1): 441/644 kBProgress (1): 458/644 kBProgress (1): 474/644 kBProgress (1): 491/644 kBProgress (1): 507/644 kBProgress (1): 523/644 kBProgress (1): 540/644 kBProgress (1): 556/644 kBProgress (1): 572/644 kBProgress (1): 589/644 kBProgress (1): 605/644 kBProgress (1): 622/644 kBProgress (1): 638/644 kBProgress (1): 644 kB                        Downloaded from central: https://repo.maven.apache.org/maven2/org/springframework/cloud/spring-cloud-gateway-server/4.0.7/spring-cloud-gateway-server-4.0.7.jar (644 kB at 2.5 MB/s)
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ api-gateway ---
+[INFO] Copying 1 resource from src/main/resources to target/classes
+[INFO] Copying 0 resource from src/main/resources to target/classes
+[INFO] 
+[INFO] --- compiler:3.11.0:compile (default-compile) @ api-gateway ---
+[INFO] Changes detected - recompiling the module! :source
+[INFO] Compiling 3 source files with javac [debug release 17] to target/classes
+[INFO] -------------------------------------------------------------
+[ERROR] COMPILATION ERROR : 
+[INFO] -------------------------------------------------------------
+[ERROR] /home/alif/Projects/javafest/Postfolio/api-gateway/src/main/java/com/example/postfolio/gateway/config/GatewayConfig.java:[25,17] cannot find symbol
+  symbol:   method id(java.lang.String)
+  location: interface org.springframework.cloud.gateway.route.builder.Buildable<org.springframework.cloud.gateway.route.Route>
+[ERROR] /home/alif/Projects/javafest/Postfolio/api-gateway/src/main/java/com/example/postfolio/gateway/config/GatewayConfig.java:[31,17] cannot find symbol
+  symbol:   method id(java.lang.String)
+  location: interface org.springframework.cloud.gateway.route.builder.Buildable<org.springframework.cloud.gateway.route.Route>
+[ERROR] /home/alif/Projects/javafest/Postfolio/api-gateway/src/main/java/com/example/postfolio/gateway/config/GatewayConfig.java:[37,17] cannot find symbol
+  symbol:   method filters((f)->f.set[...]lth"))
+  location: interface org.springframework.cloud.gateway.route.builder.Buildable<org.springframework.cloud.gateway.route.Route>
+[INFO] 3 errors 
+[INFO] -------------------------------------------------------------
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD FAILURE
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  2.285 s
+[INFO] Finished at: 2025-09-13T12:53:02+06:00
+[INFO] ------------------------------------------------------------------------
+[ERROR] Failed to execute goal org.apache.maven.plugins:maven-compiler-plugin:3.11.0:compile (default-compile) on project api-gateway: Compilation failure: Compilation failure: 
+[ERROR] /home/alif/Projects/javafest/Postfolio/api-gateway/src/main/java/com/example/postfolio/gateway/config/GatewayConfig.java:[25,17] cannot find symbol
+[ERROR]   symbol:   method id(java.lang.String)
+[ERROR]   location: interface org.springframework.cloud.gateway.route.builder.Buildable<org.springframework.cloud.gateway.route.Route>
+[ERROR] /home/alif/Projects/javafest/Postfolio/api-gateway/src/main/java/com/example/postfolio/gateway/config/GatewayConfig.java:[31,17] cannot find symbol
+[ERROR]   symbol:   method id(java.lang.String)
+[ERROR]   location: interface org.springframework.cloud.gateway.route.builder.Buildable<org.springframework.cloud.gateway.route.Route>
+[ERROR] /home/alif/Projects/javafest/Postfolio/api-gateway/src/main/java/com/example/postfolio/gateway/config/GatewayConfig.java:[37,17] cannot find symbol
+[ERROR]   symbol:   method filters((f)->f.set[...]lth"))
+[ERROR]   location: interface org.springframework.cloud.gateway.route.builder.Buildable<org.springframework.cloud.gateway.route.Route>
+[ERROR] -> [Help 1]
+[ERROR] 
+[ERROR] To see the full stack trace of the errors, re-run Maven with the -e switch.
+[ERROR] Re-run Maven using the -X switch to enable full debug logging.
+[ERROR] 
+[ERROR] For more information about the errors and possible solutions, please read the following articles:
+[ERROR] [Help 1] http://cwiki.apache.org/confluence/display/MAVEN/MojoFailureException
