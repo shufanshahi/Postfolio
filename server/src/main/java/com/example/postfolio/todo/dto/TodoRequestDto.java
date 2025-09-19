@@ -1,5 +1,6 @@
 package com.example.postfolio.todo.dto;
 
+import com.example.postfolio.todo.enums.TodoStatus;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import java.time.LocalDateTime;
@@ -11,6 +12,8 @@ public record TodoRequestDto(
         @NotNull(message = "Profile ID cannot be null")
         Long profileId,
         
-        LocalDateTime time
+        LocalDateTime time,
+        
+        TodoStatus status  // Optional field, defaults to UNCHECKED if not provided
 ) {
 }

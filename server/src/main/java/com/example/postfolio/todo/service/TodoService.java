@@ -3,6 +3,7 @@ package com.example.postfolio.todo.service;
 import com.example.postfolio.todo.dto.TodoDto;
 import com.example.postfolio.todo.dto.TodoRequestDto;
 import com.example.postfolio.todo.entity.Todo;
+import com.example.postfolio.todo.enums.TodoStatus;
 import com.example.postfolio.todo.repository.TodoRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -38,6 +39,7 @@ public class TodoService {
                 .name(todoRequestDto.name())
                 .profileId(todoRequestDto.profileId())
                 .time(todoRequestDto.time())
+                .status(todoRequestDto.status() != null ? todoRequestDto.status() : TodoStatus.UNCHECKED)
                 .build();
         
         Todo savedTodo = todoRepository.save(todo);
@@ -55,16 +57,33 @@ public class TodoService {
             todoToUpdate = existingTodos.get(0);
             todoToUpdate.setName(todoRequestDto.name());
             todoToUpdate.setTime(todoRequestDto.time());
+            // Only update status if provided, otherwise keep existing status
+            if (todoRequestDto.status() != null) {
+                todoToUpdate.setStatus(todoRequestDto.status());
+            }
         } else {
             // Create new todo if none exists
             todoToUpdate = Todo.builder()
                     .name(todoRequestDto.name())
                     .profileId(profileId)
                     .time(todoRequestDto.time())
+                    .status(todoRequestDto.status() != null ? todoRequestDto.status() : TodoStatus.UNCHECKED)
                     .build();
         }
         
         Todo savedTodo = todoRepository.save(todoToUpdate);
+        return convertToDto(savedTodo);
+    }
+    
+    // Update todo status by ID
+    public TodoDto updateTodoStatus(Long todoId, String statusString) {
+        Todo todo = todoRepository.findById(todoId)
+                .orElseThrow(() -> new RuntimeException("Todo not found with id: " + todoId));
+        
+        TodoStatus status = TodoStatus.valueOf(statusString.toUpperCase());
+        todo.setStatus(status);
+        
+        Todo savedTodo = todoRepository.save(todo);
         return convertToDto(savedTodo);
     }
     
@@ -74,7 +93,8 @@ public class TodoService {
                 todo.getId(),
                 todo.getName(),
                 todo.getProfileId(),
-                todo.getTime()
+                todo.getTime(),
+                todo.getStatus()
         );
     }
 }

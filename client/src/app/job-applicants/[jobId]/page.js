@@ -232,7 +232,7 @@ export default function JobApplicants() {
         };
         
         try {
-          if (existingInterview) {
+          if (0) {
             // Update existing todo
             await fetch(`http://localhost:8080/api/todos/profile/${selectedApplicant}`, {
               method: 'PUT',

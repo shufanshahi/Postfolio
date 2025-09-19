@@ -1,5 +1,6 @@
 package com.example.postfolio.todo.entity;
 
+import com.example.postfolio.todo.enums.TodoStatus;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -27,4 +28,9 @@ public class Todo {
     
     @Column
     private LocalDateTime time;
+    
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    @Builder.Default
+    private TodoStatus status = TodoStatus.UNCHECKED;
 }

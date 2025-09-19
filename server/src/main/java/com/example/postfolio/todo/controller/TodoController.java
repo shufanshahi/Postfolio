@@ -66,4 +66,17 @@ public class TodoController {
             return ResponseEntity.badRequest().build();
         }
     }
+    
+    // PATCH /api/todos/{todoId}/status - Update todo status by ID
+    @PatchMapping("/{todoId}/status")
+    public ResponseEntity<TodoDto> updateTodoStatus(
+            @PathVariable Long todoId,
+            @RequestParam String status) {
+        try {
+            TodoDto updatedTodo = todoService.updateTodoStatus(todoId, status);
+            return ResponseEntity.ok(updatedTodo);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().build();
+        }
+    }
 }
