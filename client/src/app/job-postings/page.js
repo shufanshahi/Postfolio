@@ -15,14 +15,16 @@ import {
   Plus, Search, Filter, MapPin, DollarSign, Calendar, Users, 
   Briefcase, Clock, Award, TrendingUp, Eye, X, MoreVertical,
   CheckCircle, AlertCircle, Loader2, Star, Edit, Trash2,
-  UserCheck, Target, Building
+  UserCheck, Target, Building, Copy, ExternalLink
 } from "lucide-react";
 import LocationMap from "@/components/LocationMap";
+import { useNotifications } from '@/hooks/useNotifications';
 import Navbar from '@/components/Navbar';
 
 function JobPostings() {
   const { user } = useAuth();
   const router = useRouter();
+  const { showSuccess, showError } = useNotifications();
   const [jobs, setJobs] = useState([]);
   const [filteredJobs, setFilteredJobs] = useState([]);
   const [showNewJob, setShowNewJob] = useState(false);
@@ -128,6 +130,35 @@ function JobPostings() {
   const handleViewApplicants = (jobId) => {
     // Navigate to applicants page or show applicants modal
     router.push(`/job-applicants/${jobId}`);
+  };
+
+  const handleViewDetails = (jobId) => {
+    // Navigate to job details page
+    router.push(`/jobpost/${jobId}`);
+  };
+
+  const handleCopyLink = async (jobId) => {
+    const jobUrl = `http://localhost:3000/jobpost/${jobId}`;
+    try {
+      await navigator.clipboard.writeText(jobUrl);
+      showSuccess("Link Copied!", "Job posting link has been copied to clipboard");
+    } catch (err) {
+      console.error("Failed to copy: ", err);
+      // Fallback for older browsers
+      const textArea = document.createElement("textarea");
+      textArea.value = jobUrl;
+      document.body.appendChild(textArea);
+      textArea.focus();
+      textArea.select();
+      try {
+        document.execCommand('copy');
+        showSuccess("Link Copied!", "Job posting link has been copied to clipboard");
+      } catch (fallbackErr) {
+        console.error("Fallback copy failed: ", fallbackErr);
+        showError("Copy Failed", "Unable to copy link. Please copy manually: " + jobUrl);
+      }
+      document.body.removeChild(textArea);
+    }
   };
 
   const handleNewJob = async (e) => {
@@ -609,6 +640,20 @@ function JobPostings() {
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end" className="bg-white/90 dark:bg-slate-800/90 backdrop-blur border-slate-200/60 dark:border-slate-700/60 rounded-xl">
                       <DropdownMenuItem 
+                        onClick={() => handleViewDetails(job.jobId)}
+                        className="text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-700/60 rounded-lg"
+                      >
+                        <ExternalLink className="h-4 w-4 mr-2" />
+                        View Details
+                      </DropdownMenuItem>
+                      <DropdownMenuItem 
+                        onClick={() => handleCopyLink(job.jobId)}
+                        className="text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-700/60 rounded-lg"
+                      >
+                        <Copy className="h-4 w-4 mr-2" />
+                        Copy Link
+                      </DropdownMenuItem>
+                      <DropdownMenuItem 
                         onClick={() => handleViewApplicants(job.jobId)}
                         className="text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-700/60 rounded-lg"
                       >
@@ -680,15 +725,37 @@ function JobPostings() {
                     )}
                   </div>
                   
-                  <Button
-                    onClick={() => handleViewApplicants(job.jobId)}
-                    variant="outline"
-                    size="sm"
-                    className="bg-white/60 dark:bg-slate-700/60 backdrop-blur border-slate-300/60 dark:border-slate-600/60 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-600/80 rounded-xl"
-                  >
-                    <UserCheck className="h-4 w-4 mr-2" />
-                    View Applicants
-                  </Button>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      onClick={() => handleViewDetails(job.jobId)}
+                      variant="outline"
+                      size="sm"
+                      className="bg-white/60 dark:bg-slate-700/60 backdrop-blur border-slate-300/60 dark:border-slate-600/60 text-slate-700 dark:text-slate-300 hover:bg-blue-50 dark:hover:bg-blue-900/20 hover:border-blue-300 dark:hover:border-blue-600 rounded-xl"
+                    >
+                      <ExternalLink className="h-4 w-4 mr-2" />
+                      View Details
+                    </Button>
+                    
+                    <Button
+                      onClick={() => handleCopyLink(job.jobId)}
+                      variant="outline"
+                      size="sm"
+                      className="bg-white/60 dark:bg-slate-700/60 backdrop-blur border-slate-300/60 dark:border-slate-600/60 text-slate-700 dark:text-slate-300 hover:bg-green-50 dark:hover:bg-green-900/20 hover:border-green-300 dark:hover:border-green-600 rounded-xl"
+                    >
+                      <Copy className="h-4 w-4 mr-2" />
+                      Copy Link
+                    </Button>
+                    
+                    <Button
+                      onClick={() => handleViewApplicants(job.jobId)}
+                      variant="outline"
+                      size="sm"
+                      className="bg-white/60 dark:bg-slate-700/60 backdrop-blur border-slate-300/60 dark:border-slate-600/60 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-600/80 rounded-xl"
+                    >
+                      <UserCheck className="h-4 w-4 mr-2" />
+                      View Applicants
+                    </Button>
+                  </div>
                 </div>
               </CardContent>
             </Card>
