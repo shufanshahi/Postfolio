@@ -17,14 +17,22 @@ import { NotificationProvider } from "@/contexts/NotificationContext";
 import NotificationBell from "@/components/NotificationBell";
 
 // Navigation Item Component
-const NavItem = ({ icon, label, path }) => {
+const NavItem = ({ icon, label, path, onClick }) => {
   const router = useRouter();
   const pathname = usePathname();
   const isActive = pathname === path;
 
+  const handleClick = async () => {
+    if (onClick) {
+      await onClick();
+    } else {
+      router.push(path);
+    }
+  };
+
   return (
     <button
-      onClick={() => router.push(path)}
+      onClick={handleClick}
       className={`flex flex-col items-center gap-1 px-3 py-2 rounded-lg text-xs font-medium transition-colors min-w-[64px] ${
         isActive 
           ? 'text-teal-600 dark:text-teal-400 bg-teal-50/80 dark:bg-teal-500/10' 
@@ -40,6 +48,41 @@ const NavItem = ({ icon, label, path }) => {
 export default function Navbar() {
   const router = useRouter();
   const { user, logout } = useAuth();
+
+  const isEmployer = user?.role === 'Employer';
+
+  const handleJobsNavigation = async () => {
+    try {
+      const token = localStorage.getItem('token');
+
+      if (!token) {
+        router.push('/login');
+        return;
+      }
+
+      // Fetch user profile for authentication check
+      const profileRes = await fetch('http://localhost:8080/api/profile/me', {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (profileRes.ok) {
+        const profile = await profileRes.json();
+        if (profile.role === 'User') {
+          router.push('/find-jobs');
+        } else {
+          router.push('/job-postings');
+        }
+      } else {
+        router.push('/login');
+      }
+    } catch (error) {
+      console.error('Error fetching profile:', error);
+      router.push('/login');
+    }
+  };
 
   const handleLogout = () => {
     logout();
@@ -70,10 +113,11 @@ export default function Navbar() {
             <div className="hidden md:flex items-center gap-1">
               <NavItem icon="🏠" label="Home" path="/dashboard" />
               <NavItem icon="👥" label="Network" path="/connections" />
-              <NavItem icon="💼" label="Jobs" path="/find-jobs" />
-              <NavItem icon="📝" label="My CV" path="/mycv" />
-              <NavItem icon="🎯" label="Prep" path="/myprep" />
-              <NavItem icon="🤝" label="Mentorship" path="/mentorship" />
+              <NavItem icon="💼" label="Jobs" onClick={handleJobsNavigation} />
+              {!isEmployer && <NavItem icon="📝" label="My CV" path="/mycv" />}
+              {!isEmployer && <NavItem icon="🎯" label="Prep" path="/myprep" />}
+              {!isEmployer && <NavItem icon="🤝" label="Mentorship" path="/mentorship" />}
+              {!isEmployer && <NavItem icon="🤖" label="My Interviews" path="/mockInterview" />}
               
               {/* More dropdown */}
               <DropdownMenu>
@@ -84,21 +128,21 @@ export default function Navbar() {
                   </button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="center" className="w-56 backdrop-blur-xl bg-white/80 dark:bg-slate-800/80 border-teal-900/10 dark:border-slate-700/60 shadow-lg">
-                  <DropdownMenuItem onClick={() => router.push('/my-interviews')} className="focus:bg-teal-50 dark:focus:bg-teal-500/20">
-                    🎤 My Interviews
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => router.push('/job-postings')} className="focus:bg-teal-50 dark:focus:bg-teal-500/20">
-                    📋 Job Postings
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => router.push('/joboffers')} className="focus:bg-teal-50 dark:focus:bg-teal-500/20">
-                    🎯 Job Offers
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => router.push('/news-system')} className="focus:bg-teal-50 dark:focus:bg-teal-500/20">
-                    📰 News System
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => router.push('/nearbyjobs')} className="focus:bg-teal-50 dark:focus:bg-teal-500/20">
-                    📍 Nearby Jobs
-                  </DropdownMenuItem>
+                  {!isEmployer && (
+                    <DropdownMenuItem onClick={() => router.push('/my-interviews')} className="focus:bg-teal-50 dark:focus:bg-teal-500/20">
+                      🎤 My Interviews
+                    </DropdownMenuItem>
+                  )}
+                  {!isEmployer && (
+                    <DropdownMenuItem onClick={() => router.push('/joboffers')} className="focus:bg-teal-50 dark:focus:bg-teal-500/20">
+                      🎯 Job Offers
+                    </DropdownMenuItem>
+                  )}
+                  {!isEmployer && (
+                    <DropdownMenuItem onClick={() => router.push('/nearbyjobs')} className="focus:bg-teal-50 dark:focus:bg-teal-500/20">
+                      📍 Nearby Jobs
+                    </DropdownMenuItem>
+                  )}
                 </DropdownMenuContent>
               </DropdownMenu>
             </div>
@@ -119,21 +163,29 @@ export default function Navbar() {
                   <DropdownMenuItem onClick={() => router.push('/connections')} className="focus:bg-teal-50 dark:focus:bg-teal-500/20">
                     👥 Network
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => router.push('/find-jobs')} className="focus:bg-teal-50 dark:focus:bg-teal-500/20">
+                  <DropdownMenuItem onClick={handleJobsNavigation} className="focus:bg-teal-50 dark:focus:bg-teal-500/20">
                     💼 Jobs
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => router.push('/mycv')} className="focus:bg-teal-50 dark:focus:bg-teal-500/20">
-                    📝 My CV
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => router.push('/myprep')} className="focus:bg-teal-50 dark:focus:bg-teal-500/20">
-                    🎯 Prep
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => router.push('/mentorship')} className="focus:bg-teal-50 dark:focus:bg-teal-500/20">
-                    🤝 Mentorship
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => router.push('/my-interviews')} className="focus:bg-teal-50 dark:focus:bg-teal-500/20">
-                    🎤 My Interviews
-                  </DropdownMenuItem>
+                  {!isEmployer && (
+                    <DropdownMenuItem onClick={() => router.push('/mycv')} className="focus:bg-teal-50 dark:focus:bg-teal-500/20">
+                      📝 My CV
+                    </DropdownMenuItem>
+                  )}
+                  {!isEmployer && (
+                    <DropdownMenuItem onClick={() => router.push('/myprep')} className="focus:bg-teal-50 dark:focus:bg-teal-500/20">
+                      🎯 Prep
+                    </DropdownMenuItem>
+                  )}
+                  {!isEmployer && (
+                    <DropdownMenuItem onClick={() => router.push('/mentorship')} className="focus:bg-teal-50 dark:focus:bg-teal-500/20">
+                      🤝 Mentorship
+                    </DropdownMenuItem>
+                  )}
+                  {!isEmployer && (
+                    <DropdownMenuItem onClick={() => router.push('/my-interviews')} className="focus:bg-teal-50 dark:focus:bg-teal-500/20">
+                      🎤 My Interviews
+                    </DropdownMenuItem>
+                  )}
                   <DropdownMenuItem onClick={() => router.push('/job-postings')} className="focus:bg-teal-50 dark:focus:bg-teal-500/20">
                     📋 Job Postings
                   </DropdownMenuItem>
