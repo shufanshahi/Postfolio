@@ -27,7 +27,6 @@ import {
   Video,
   User,
   Building,
-  ArrowLeft,
   Loader2,
   Filter,
   ChevronDown,
@@ -45,6 +44,7 @@ import {
   Download,
   Mail
 } from "lucide-react";
+import Navbar from '@/components/Navbar';
 
 function JobOffers() {
   const { user } = useAuth();
@@ -610,15 +610,15 @@ function JobOffers() {
           <div className="absolute top-10 left-1/4 h-64 w-64 bg-teal-300/30 rounded-full blur-3xl" />
           <div className="absolute bottom-10 right-1/4 h-72 w-72 bg-indigo-300/30 rounded-full blur-3xl" />
         </div>
+        <Navbar />
         <div className="max-w-4xl mx-auto p-6 flex items-center justify-center min-h-screen">
           <Card className={`${subtleCard} p-8 text-center max-w-md`}>
             <div className="text-red-500 dark:text-red-400 mb-4 text-sm">{error}</div>
             <Button 
-              onClick={() => router.back()}
+              onClick={() => router.push('/dashboard')}
               className="bg-teal-600 hover:bg-teal-700 text-white rounded-full px-6"
             >
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Go Back
+              Go to Dashboard
             </Button>
           </Card>
         </div>
@@ -633,18 +633,12 @@ function JobOffers() {
         <div className="absolute top-1/3 -right-32 h-[34rem] w-[34rem] bg-gradient-to-tr from-indigo-200 via-white to-amber-100 dark:from-indigo-700/30 dark:via-transparent dark:to-teal-700/20 blur-3xl opacity-60" />
       </div>
       
+      <Navbar />
+      
       <div className="max-w-7xl mx-auto py-10 px-6 space-y-10">
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-6">
           <div className="space-y-3">
-            <Button
-              variant="outline"
-              onClick={() => router.push('/my-interviews')}
-              className="rounded-full border-slate-300/60 bg-white/60 backdrop-blur hover:bg-white shadow-sm text-slate-700 text-sm mb-4"
-            >
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Back to Interviews
-            </Button>
             <h1 className="text-4xl font-semibold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-teal-700 via-indigo-700 to-amber-600 dark:from-teal-200 dark:via-indigo-200 dark:to-amber-200">
               Job Offers & Opportunities
             </h1>
