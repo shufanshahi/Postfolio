@@ -50,6 +50,52 @@ export default function Register() {
             const result = await register(name, email, password, role);
             if (result.success) {
                 alert(`Registration successful as ${role}`);
+                
+                // Add initial credit after successful registration
+                try {
+                    const token = localStorage.getItem('token');
+
+                    if (!token) {
+                        router.push('/login');
+                        return;
+                    }
+
+                    // Fetch user profile for authentication check
+                    const profileRes = await fetch('http://localhost:8080/api/profile/me', {
+                        headers: {
+                            "Content-Type": "application/json",
+                            Authorization: `Bearer ${token}`,
+                        },
+                    });
+
+                    if (profileRes.ok) {
+                        const profile = await profileRes.json();
+                        const profileId = profile.id;
+
+                        // Add initial credit
+                        const creditRes = await fetch('http://localhost:8080/api/credits/add', {
+                            method: 'POST',
+                            headers: {
+                                "Content-Type": "application/json",
+                                Authorization: `Bearer ${token}`,
+                            },
+                            body: JSON.stringify({
+                                "profileId": profileId,
+                                "amount": 0.1,
+                                "description": "account creation"
+                            })
+                        });
+
+                        if (!creditRes.ok) {
+                            console.error('Failed to add initial credit');
+                        }
+                    } else {
+                        console.error('Failed to fetch user profile');
+                    }
+                } catch (creditError) {
+                    console.error('Error adding initial credit:', creditError);
+                }
+                
                 router.push('/dashboard');
             } else {
                 setError(result.error || 'Registration failed');
