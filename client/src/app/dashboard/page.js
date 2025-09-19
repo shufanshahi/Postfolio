@@ -56,8 +56,10 @@ function FunctionalDashboard() {
   const [dashboardData, setDashboardData] = useState({
     stats: [],
     recentActivity: [],
-    notifications: 0
+    notifications: 0,
+    todos: []
   });
+  const [userProfileId, setUserProfileId] = useState(null);
 
   // Fetch user profile and dashboard data
   useEffect(() => {
@@ -94,6 +96,40 @@ function FunctionalDashboard() {
         if (notificationRes.ok) {
           const notifications = await notificationRes.json();
           setDashboardData(prev => ({ ...prev, notifications: notifications.count || 0 }));
+        }
+
+        // Fetch user profile to get profileId
+        const token = localStorage.getItem('token');
+        const profileRes = await fetch('http://localhost:8080/api/profile/me', {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        
+        if (profileRes.ok) {
+          const profileData = await profileRes.json();
+          setUserProfileId(profileData.id);
+          
+          // Fetch todos for this profile
+          const todosRes = await fetch(`http://localhost:8080/api/todos/profile/${profileData.id}`, {
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+          });
+          
+          if (todosRes.ok) {
+            const todos = await todosRes.json();
+            // Filter todos for today
+            const today = new Date().toISOString().split('T')[0];
+            const todayTodos = todos.filter(todo => {
+              if (!todo.time) return false;
+              const todoDate = new Date(todo.time).toISOString().split('T')[0];
+              return todoDate === today;
+            });
+            setDashboardData(prev => ({ ...prev, todos: todayTodos }));
+          }
         }
 
       } catch (err) {
@@ -133,6 +169,33 @@ function FunctionalDashboard() {
         break;
       default:
         console.log('Unknown action:', actionType);
+    }
+  };
+
+  const handleTodoStatusChange = async (todoId, currentStatus) => {
+    try {
+      const token = localStorage.getItem('token');
+      const newStatus = currentStatus === 'CHECKED' ? 'UNCHECKED' : 'CHECKED';
+      
+      const response = await fetch(`http://localhost:8080/api/todos/${todoId}/status?status=${newStatus}`, {
+        method: 'PATCH',
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      
+      if (response.ok) {
+        // Update the local state
+        setDashboardData(prev => ({
+          ...prev,
+          todos: prev.todos.map(todo => 
+            todo.id === todoId ? { ...todo, status: newStatus } : todo
+          )
+        }));
+      }
+    } catch (error) {
+      console.error('Error updating todo status:', error);
     }
   };
 
@@ -382,30 +445,52 @@ function FunctionalDashboard() {
 
           {/* Right Sidebar */}
           <div className="lg:col-span-3 space-y-4">
-            {/* Recent Activity */}
+            {/* Today's Todos */}
             <Card className={`rounded-2xl ${subtleCard} shadow-sm`}>
               <CardHeader className="pb-3">
                 <CardTitle className="flex items-center gap-2 text-slate-800 dark:text-slate-100 text-base font-semibold">
-                  <Activity className="h-4 w-4 text-teal-600 dark:text-teal-400" /> Recent Activity
+                  <Activity className="h-4 w-4 text-teal-600 dark:text-teal-400" /> Today&apos;s Todos
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                {dashboardData.recentActivity.length > 0 ? (
-                  <div className="space-y-4">
-                    {dashboardData.recentActivity.map((activity, i) => (
-                      <div key={i} className="flex items-start gap-3 group">
-                        <div className={`mt-1.5 h-2 w-2 rounded-full ring-2 ring-white/60 shadow ${activity.type === 'view' ? 'bg-teal-500' : activity.type === 'connection' ? 'bg-emerald-500' : activity.type === 'interview' ? 'bg-indigo-500' : 'bg-amber-500'}`} />
+                {dashboardData.todos.length > 0 ? (
+                  <div className="space-y-3">
+                    {dashboardData.todos.map((todo) => (
+                      <div key={todo.id} className="flex items-start gap-3 group p-2 rounded-lg hover:bg-slate-50/60 dark:hover:bg-slate-800/60 transition-colors">
+                        <button
+                          onClick={() => handleTodoStatusChange(todo.id, todo.status)}
+                          className={`mt-1 h-4 w-4 rounded border-2 flex items-center justify-center transition-all duration-200 ${
+                            todo.status === 'CHECKED' 
+                              ? 'bg-teal-500 border-teal-500 text-white' 
+                              : 'border-slate-300 dark:border-slate-600 hover:border-teal-400'
+                          }`}
+                        >
+                          {todo.status === 'CHECKED' && (
+                            <svg className="h-3 w-3" fill="currentColor" viewBox="0 0 20 20">
+                              <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                            </svg>
+                          )}
+                        </button>
                         <div className="flex-1 min-w-0">
-                          <p className="text-[13px] font-medium text-slate-700 dark:text-slate-200 leading-snug">{activity.action}</p>
-                          <p className="text-[11px] text-slate-500 dark:text-slate-400 flex items-center gap-1 mt-0.5">
-                            <Clock className="h-3 w-3" /> {activity.time}
+                          <p className={`text-[13px] font-medium leading-snug transition-all duration-200 ${
+                            todo.status === 'CHECKED' 
+                              ? 'text-slate-500 dark:text-slate-400 line-through' 
+                              : 'text-slate-700 dark:text-slate-200'
+                          }`}>
+                            {todo.name}
                           </p>
+                          {todo.time && (
+                            <p className="text-[11px] text-slate-500 dark:text-slate-400 flex items-center gap-1 mt-0.5">
+                              <Clock className="h-3 w-3" /> 
+                              {new Date(todo.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                            </p>
+                          )}
                         </div>
                       </div>
                     ))}
                   </div>
                 ) : (
-                  <p className="text-sm text-slate-500 dark:text-slate-400 text-center py-4">No recent activity</p>
+                  <p className="text-sm text-slate-500 dark:text-slate-400 text-center py-4">No todos for today</p>
                 )}
               </CardContent>
             </Card>
