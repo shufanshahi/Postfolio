@@ -26,4 +26,4 @@ RUN ./gradlew build -x test --no-daemon
 EXPOSE 9991
 
 # Run the application
-CMD ["java", "-jar", "build/libs/stripe-0.1.0.jar"]
+CMD ["java", "-jar", "build/libs/stripe-0.0.1-SNAPSHOT.jar"]
