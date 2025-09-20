@@ -32,6 +32,7 @@ public class AIProcessingController {
     private final NewsSummarizationAIService newsSummarizationAIService;
     private final RoadmapGenerationAIService roadmapGenerationAIService;
     private final DocumentSummarizationAIService documentSummarizationAIService;
+    private final GroqAIService groqAIService;
 
     @PostMapping("/process-post")
     public ResponseEntity<PostProcessingResponse> processPost(@RequestBody PostProcessingRequest request) {
@@ -166,6 +167,13 @@ public class AIProcessingController {
             response.put("status", "ERROR");
         }
 
+        return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/groq-query")
+    public ResponseEntity<GroqResponse> processGroqQuery(@RequestBody GroqRequest request) {
+        log.info("Processing Groq query: {}", request.getQuestion());
+        GroqResponse response = groqAIService.processQuery(request);
         return ResponseEntity.ok(response);
     }
 

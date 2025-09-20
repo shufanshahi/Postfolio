@@ -372,7 +372,7 @@ export default function RagTestPage() {
                             </div>
                             
                             {/* Context section for AI responses */}
-                            {message.context && (
+                            {/* {message.context && (
                               <div className="mt-3 p-3 rounded-xl bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-900/20 dark:to-orange-900/20 border border-amber-200 dark:border-amber-800">
                                 <div className="flex items-center gap-2 mb-2">
                                   <Sparkles className="h-4 w-4 text-amber-600 dark:text-amber-400" />
@@ -384,7 +384,7 @@ export default function RagTestPage() {
                                   {message.context}
                                 </div>
                               </div>
-                            )}
+                            )} */}
                           </div>
                         </div>
                       ))}
