@@ -36,6 +36,7 @@ function ProfileManagementPage() {
         positionOrInstitue: '',
         profilePicture: null
     });
+    const [previewImage, setPreviewImage] = useState(null);
 
     useEffect(() => {
         const fetchProfile = async () => {
@@ -65,6 +66,7 @@ function ProfileManagementPage() {
                     positionOrInstitue: data.positionOrInstitue || '',
                     profilePicture: null
                 });
+                setPreviewImage(null); // Clear any preview image
             } catch (err) {
                 setError(err.message);
             } finally {
@@ -83,7 +85,19 @@ function ProfileManagementPage() {
     };
 
     const handleFileChange = (e) => {
-        setFormData(prev => ({ ...prev, profilePicture: e.target.files[0] }));
+        const file = e.target.files[0];
+        setFormData(prev => ({ ...prev, profilePicture: file }));
+        
+        // Create preview
+        if (file) {
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                setPreviewImage(reader.result);
+            };
+            reader.readAsDataURL(file);
+        } else {
+            setPreviewImage(null);
+        }
     };
 
     const handleSubmit = async (e) => {
@@ -110,17 +124,47 @@ function ProfileManagementPage() {
                 body: formDataToSend
             });
 
-            if (!response.ok) throw new Error('Failed to update profile');
+            if (!response.ok) {
+                const errorText = await response.text();
+                throw new Error(`Failed to update profile: ${response.status} ${errorText}`);
+            }
 
-            const updatedProfile = await response.json();
+            // Check if response has content before parsing JSON
+            const contentType = response.headers.get('content-type');
+            let updatedProfile;
+            
+            if (contentType && contentType.includes('application/json')) {
+                const responseText = await response.text();
+                if (responseText) {
+                    updatedProfile = JSON.parse(responseText);
+                } else {
+                    // If response is empty but successful, refetch the profile
+                    const fetchResponse = await fetch('http://localhost:8080/api/profile/me', {
+                        headers: {
+                            'Authorization': `Bearer ${token}`,
+                        },
+                    });
+                    updatedProfile = await fetchResponse.json();
+                }
+            } else {
+                // If response is not JSON, refetch the profile
+                const fetchResponse = await fetch('http://localhost:8080/api/profile/me', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                    },
+                });
+                updatedProfile = await fetchResponse.json();
+            }
+
             setProfile(updatedProfile);
             setSuccess('Profile updated successfully!');
 
-            // Update form data to reflect the saved changes
+            // Update form data to reflect the saved changes and clear preview
             setFormData({
                 ...formData,
                 profilePicture: null // Reset file input
             });
+            setPreviewImage(null); // Clear preview image
 
         } catch (err) {
             setError(err.message);
@@ -229,18 +273,30 @@ function ProfileManagementPage() {
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                             {/* Profile Picture Section */}
                                             <div className="md:col-span-2 flex flex-col items-center space-y-4">
-                                                <Avatar className="w-24 h-24 border-4 border-teal-200 dark:border-teal-600">
-                                                    {profile?.pictureBase64 ? (
-                                                        <AvatarImage
-                                                            src={`data:image/jpeg;base64,${profile.pictureBase64}`}
-                                                            alt="Profile"
-                                                        />
-                                                    ) : (
-                                                        <AvatarFallback className="bg-gradient-to-br from-teal-400 to-indigo-500 text-white text-xl font-semibold">
-                                                            {user?.firstName?.[0]}{user?.lastName?.[0]}
-                                                        </AvatarFallback>
+                                                <div className="relative">
+                                                    <Avatar className="w-24 h-24 border-4 border-teal-200 dark:border-teal-600">
+                                                        {previewImage ? (
+                                                            <AvatarImage
+                                                                src={previewImage}
+                                                                alt="Profile Preview"
+                                                            />
+                                                        ) : profile?.pictureBase64 ? (
+                                                            <AvatarImage
+                                                                src={`data:image/jpeg;base64,${profile.pictureBase64}`}
+                                                                alt="Profile"
+                                                            />
+                                                        ) : (
+                                                            <AvatarFallback className="bg-gradient-to-br from-teal-400 to-indigo-500 text-white text-xl font-semibold">
+                                                                {user?.firstName?.[0]}{user?.lastName?.[0]}
+                                                            </AvatarFallback>
+                                                        )}
+                                                    </Avatar>
+                                                    {previewImage && (
+                                                        <div className="absolute -bottom-2 -right-2 bg-amber-500 text-white text-xs px-2 py-1 rounded-full border-2 border-white dark:border-slate-800">
+                                                            New
+                                                        </div>
                                                     )}
-                                                </Avatar>
+                                                </div>
                                                 <div className="space-y-2">
                                                     <Label htmlFor="profilePicture" className="text-teal-700 dark:text-slate-300 font-medium">
                                                         Profile Picture

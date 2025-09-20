@@ -234,44 +234,44 @@ const SimpleEducationForm = ({ onSuccess, editData = null }) => {
     return (
         <div className="space-y-6">
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                <TabsList className="grid w-full grid-cols-2 mb-6 bg-gray-800 border border-gray-600">
-                    <TabsTrigger value="school" className="data-[state=active]:bg-green-600 data-[state=active]:text-white text-gray-300">
+                <TabsList className="grid w-full grid-cols-2 mb-6 bg-gradient-to-br from-teal-50/70 via-white/50 to-indigo-50/70 dark:from-slate-800/60 dark:via-slate-800/50 dark:to-slate-800/60 backdrop-blur-xl border border-white/40 dark:border-slate-700/50">
+                    <TabsTrigger value="school" className="data-[state=active]:bg-teal-600 data-[state=active]:text-white text-slate-600 dark:text-slate-400">
                         School Education
                     </TabsTrigger>
-                    <TabsTrigger value="university" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white text-gray-300">
+                    <TabsTrigger value="university" className="data-[state=active]:bg-teal-600 data-[state=active]:text-white text-slate-600 dark:text-slate-400">
                         University Education
                     </TabsTrigger>
                 </TabsList>
 
-                <div className="bg-gray-800 border border-gray-600 rounded-lg p-6">
+                <div className="bg-gradient-to-br from-teal-50/65 via-white/55 to-indigo-50/60 dark:from-slate-800/70 dark:via-slate-800/60 dark:to-slate-800/70 backdrop-blur-md border border-teal-900/5 dark:border-slate-700/60 hover:border-teal-500/30 dark:hover:border-teal-400/30 transition-colors rounded-lg p-6">
                     <TabsContent value="school" className="space-y-4">
                         <form onSubmit={handleSchoolSubmit} className="space-y-4">
                             <div className="space-y-2">
-                                <Label htmlFor="schoolName" className="text-gray-300">School Name *</Label>
+                                <Label htmlFor="schoolName" className="text-slate-800 dark:text-slate-100">School Name *</Label>
                                 <Input
                                     id="schoolName"
                                     value={schoolForm.schoolName}
                                     onChange={(e) => setSchoolForm({ ...schoolForm, schoolName: e.target.value })}
                                     placeholder="Enter school name"
                                     required
-                                    className="bg-gray-700 border-gray-600 text-white placeholder:text-gray-400"
+                                    className="bg-white/80 dark:bg-slate-700/80 border-teal-900/10 dark:border-slate-600/60 text-slate-800 dark:text-white placeholder:text-slate-500 dark:placeholder:text-slate-400 focus:border-teal-500/50 dark:focus:border-teal-400/50"
                                 />
                             </div>
 
                             <div className="flex gap-2">
-                                <Button type="submit" disabled={loading} className="flex-1 bg-green-600 hover:bg-green-700">
+                                <Button type="submit" disabled={loading} className="flex-1 bg-teal-600 hover:bg-teal-700 text-white">
                                     {loading ? 'Saving...' : editData ? 'Update School' : 'Add School'}
                                 </Button>
                                 {editData && (
-                                    <Button type="button" variant="outline" onClick={resetSchoolForm} className="border-gray-600 text-gray-300 hover:bg-gray-600 hover:text-white">
+                                    <Button type="button" variant="outline" onClick={resetSchoolForm} className="border-teal-900/20 dark:border-slate-600/60 text-slate-600 dark:text-slate-300 hover:bg-teal-50 dark:hover:bg-slate-600/60 hover:text-slate-800 dark:hover:text-white">
                                         Reset
                                     </Button>
                                 )}
                             </div>
                         </form>
 
-                        <div className="mt-6 pt-6 border-t border-gray-600">
-                            <p className="text-sm text-gray-400 mb-4">
+                        <div className="mt-6 pt-6 border-t border-teal-900/10 dark:border-slate-600/60">
+                            <p className="text-sm text-slate-500 dark:text-slate-400 mb-4">
                                 After adding a school, you can click on specific class levels to add results and academic years for that class.
                             </p>
                         </div>
@@ -281,32 +281,32 @@ const SimpleEducationForm = ({ onSuccess, editData = null }) => {
                         <form onSubmit={handleUniversitySubmit} className="space-y-4">
                             <div className="grid grid-cols-2 gap-4">
                                 <div className="space-y-2">
-                                    <Label htmlFor="universityName" className="text-gray-300">University Name *</Label>
+                                    <Label htmlFor="universityName" className="text-slate-800 dark:text-slate-100">University Name *</Label>
                                     <Input
                                         id="universityName"
                                         value={universityForm.universityName}
                                         onChange={(e) => setUniversityForm({ ...universityForm, universityName: e.target.value })}
                                         placeholder="Enter university name"
                                         required
-                                        className="bg-gray-700 border-gray-600 text-white placeholder:text-gray-400"
+                                        className="bg-white/80 dark:bg-slate-700/80 border-teal-900/10 dark:border-slate-600/60 text-slate-800 dark:text-white placeholder:text-slate-500 dark:placeholder:text-slate-400 focus:border-teal-500/50 dark:focus:border-teal-400/50"
                                     />
                                 </div>
 
                                 <div className="space-y-2">
-                                    <Label htmlFor="degreeName" className="text-gray-300">Degree Name *</Label>
+                                    <Label htmlFor="degreeName" className="text-slate-800 dark:text-slate-100">Degree Name *</Label>
                                     <Input
                                         id="degreeName"
                                         value={universityForm.degreeName}
                                         onChange={(e) => setUniversityForm({ ...universityForm, degreeName: e.target.value })}
                                         placeholder="e.g., Bachelor of Science in Computer Science"
                                         required
-                                        className="bg-gray-700 border-gray-600 text-white placeholder:text-gray-400"
+                                        className="bg-white/80 dark:bg-slate-700/80 border-teal-900/10 dark:border-slate-600/60 text-slate-800 dark:text-white placeholder:text-slate-500 dark:placeholder:text-slate-400 focus:border-teal-500/50 dark:focus:border-teal-400/50"
                                     />
                                 </div>
                             </div>
 
                             <div className="space-y-2">
-                                <Label htmlFor="semesterCount" className="text-gray-300">Total Semesters *</Label>
+                                <Label htmlFor="semesterCount" className="text-slate-800 dark:text-slate-100">Total Semesters *</Label>
                                 <Input
                                     id="semesterCount"
                                     type="number"
@@ -316,18 +316,18 @@ const SimpleEducationForm = ({ onSuccess, editData = null }) => {
                                     onChange={(e) => setUniversityForm({...universityForm, semesterCount: e.target.value})}
                                     placeholder="e.g., 8"
                                     required
-                                    className="bg-gray-700 border-gray-600 text-white placeholder:text-gray-400"
+                                    className="bg-white/80 dark:bg-slate-700/80 border-teal-900/10 dark:border-slate-600/60 text-slate-800 dark:text-white placeholder:text-slate-500 dark:placeholder:text-slate-400 focus:border-teal-500/50 dark:focus:border-teal-400/50"
                                 />
                             </div>
 
                             {/* Semester Results Section */}
                             {universityForm.semesterCount && (
                                 <div className="space-y-4">
-                                    <Label className="text-gray-300">Semester Results (GPA)</Label>
+                                    <Label className="text-slate-800 dark:text-slate-100">Semester Results (GPA)</Label>
                                     <div className="grid grid-cols-2 gap-2">
                                         {Array.from({ length: parseInt(universityForm.semesterCount) || 0 }, (_, i) => (
                                             <div key={i} className="space-y-1">
-                                                <Label className="text-sm text-gray-400">Semester {i + 1}</Label>
+                                                <Label className="text-sm text-slate-600 dark:text-slate-400">Semester {i + 1}</Label>
                                                 <Input
                                                     type="number"
                                                     step="0.01"
@@ -340,7 +340,7 @@ const SimpleEducationForm = ({ onSuccess, editData = null }) => {
                                                         setUniversityForm({...universityForm, semesterResults: newResults});
                                                     }}
                                                     placeholder="0.00"
-                                                    className="bg-gray-700 border-gray-600 text-white placeholder:text-gray-400"
+                                                    className="bg-white/80 dark:bg-slate-700/80 border-teal-900/10 dark:border-slate-600/60 text-slate-800 dark:text-white placeholder:text-slate-500 dark:placeholder:text-slate-400 focus:border-teal-500/50 dark:focus:border-teal-400/50"
                                                 />
                                             </div>
                                         ))}
@@ -349,11 +349,11 @@ const SimpleEducationForm = ({ onSuccess, editData = null }) => {
                             )}
 
                             <div className="flex gap-2">
-                                <Button type="submit" disabled={loading} className="flex-1 bg-blue-600 hover:bg-blue-700">
+                                <Button type="submit" disabled={loading} className="flex-1 bg-teal-600 hover:bg-teal-700 text-white">
                                     {loading ? 'Saving...' : editData ? 'Update University' : 'Add University'}
                                 </Button>
                                 {editData && (
-                                    <Button type="button" variant="outline" onClick={resetUniversityForm} className="border-gray-600 text-gray-300 hover:bg-gray-600 hover:text-white">
+                                    <Button type="button" variant="outline" onClick={resetUniversityForm} className="border-teal-900/20 dark:border-slate-600/60 text-slate-600 dark:text-slate-300 hover:bg-teal-50 dark:hover:bg-slate-600/60 hover:text-slate-800 dark:hover:text-white">
                                         Reset
                                     </Button>
                                 )}
@@ -365,22 +365,22 @@ const SimpleEducationForm = ({ onSuccess, editData = null }) => {
 
             {/* Class Result Modal */}
             <Dialog open={showClassModal} onOpenChange={setShowClassModal}>
-                <DialogContent className="max-w-md bg-gray-800 border-gray-600">
+                <DialogContent className="max-w-md bg-gradient-to-br from-teal-50/65 via-white/55 to-indigo-50/60 dark:from-slate-800/70 dark:via-slate-800/60 dark:to-slate-800/70 backdrop-blur-md border border-teal-900/20 dark:border-slate-600/60">
                     <DialogHeader>
-                        <DialogTitle className="text-white">
+                        <DialogTitle className="text-slate-800 dark:text-white">
                             Add Class Result for {selectedSchool?.schoolName}
                         </DialogTitle>
                     </DialogHeader>
                     <form onSubmit={handleClassResultSubmit} className="space-y-4">
                         <div className="space-y-2">
-                            <Label htmlFor="classLevel" className="text-gray-300">Class Level *</Label>
+                            <Label htmlFor="classLevel" className="text-slate-800 dark:text-slate-100">Class Level *</Label>
                             <Select value={classResultForm.classLevel} onValueChange={(value) => setClassResultForm({ ...classResultForm, classLevel: value })}>
-                                <SelectTrigger className="bg-gray-700 border-gray-600 text-white">
+                                <SelectTrigger className="bg-white/80 dark:bg-slate-700/80 border-teal-900/10 dark:border-slate-600/60 text-slate-800 dark:text-white">
                                     <SelectValue placeholder="Select class" />
                                 </SelectTrigger>
-                                <SelectContent className="bg-gray-700 border-gray-600">
+                                <SelectContent className="bg-white/95 dark:bg-slate-700/95 border-teal-900/20 dark:border-slate-600/60 backdrop-blur-md">
                                     {Array.from({ length: 12 }, (_, i) => (
-                                        <SelectItem key={i + 1} value={(i + 1).toString()} className="text-white hover:bg-gray-600">
+                                        <SelectItem key={i + 1} value={(i + 1).toString()} className="text-slate-800 dark:text-white hover:bg-teal-50 dark:hover:bg-slate-600/60">
                                             {i + 1 === 10 ? 'SSC (Class 10)' : i + 1 === 12 ? 'HSC (Class 12)' : `Class ${i + 1}`}
                                         </SelectItem>
                                     ))}
@@ -389,36 +389,36 @@ const SimpleEducationForm = ({ onSuccess, editData = null }) => {
                         </div>
 
                         <div className="space-y-2">
-                            <Label htmlFor="classAcademicYear" className="text-gray-300">Academic Year *</Label>
+                            <Label htmlFor="classAcademicYear" className="text-slate-800 dark:text-slate-100">Academic Year *</Label>
                             <Select value={classResultForm.academicYear} onValueChange={(value) => setClassResultForm({ ...classResultForm, academicYear: value })}>
-                                <SelectTrigger className="bg-gray-700 border-gray-600 text-white">
+                                <SelectTrigger className="bg-white/80 dark:bg-slate-700/80 border-teal-900/10 dark:border-slate-600/60 text-slate-800 dark:text-white">
                                     <SelectValue placeholder="Select year" />
                                 </SelectTrigger>
-                                <SelectContent className="bg-gray-700 border-gray-600">
+                                <SelectContent className="bg-white/95 dark:bg-slate-700/95 border-teal-900/20 dark:border-slate-600/60 backdrop-blur-md">
                                     {academicYears.map(year => (
-                                        <SelectItem key={year} value={year} className="text-white hover:bg-gray-600">{year}</SelectItem>
+                                        <SelectItem key={year} value={year} className="text-slate-800 dark:text-white hover:bg-teal-50 dark:hover:bg-slate-600/60">{year}</SelectItem>
                                     ))}
                                 </SelectContent>
                             </Select>
                         </div>
 
                         <div className="space-y-2">
-                            <Label htmlFor="classResult" className="text-gray-300">Result *</Label>
+                            <Label htmlFor="classResult" className="text-slate-800 dark:text-slate-100">Result *</Label>
                             <Input
                                 id="classResult"
                                 value={classResultForm.result}
                                 onChange={(e) => setClassResultForm({ ...classResultForm, result: e.target.value })}
                                 placeholder="e.g., 5.00, A+, 95%"
                                 required
-                                className="bg-gray-700 border-gray-600 text-white placeholder:text-gray-400"
+                                className="bg-white/80 dark:bg-slate-700/80 border-teal-900/10 dark:border-slate-600/60 text-slate-800 dark:text-white placeholder:text-slate-500 dark:placeholder:text-slate-400 focus:border-teal-500/50 dark:focus:border-teal-400/50"
                             />
                         </div>
 
                         <div className="flex gap-2">
-                            <Button type="submit" disabled={loading} className="flex-1 bg-green-600 hover:bg-green-700">
+                            <Button type="submit" disabled={loading} className="flex-1 bg-teal-600 hover:bg-teal-700 text-white">
                                 {loading ? 'Adding...' : 'Add Result'}
                             </Button>
-                            <Button type="button" variant="outline" onClick={() => setShowClassModal(false)} className="border-gray-600 text-gray-300 hover:bg-gray-600 hover:text-white">
+                            <Button type="button" variant="outline" onClick={() => setShowClassModal(false)} className="border-teal-900/20 dark:border-slate-600/60 text-slate-600 dark:text-slate-300 hover:bg-teal-50 dark:hover:bg-slate-600/60 hover:text-slate-800 dark:hover:text-white">
                                 Cancel
                             </Button>
                         </div>
