@@ -10,6 +10,19 @@ spring:
         locator:
           enabled: false  # Disable auto-discovery routes to use custom routes
           lower-case-service-id: true
+      routes:
+        - id: postfolio-backend
+          uri: lb://postfolio-backend
+          predicates:
+            - Path=/api/**
+        - id: ai-service
+          uri: lb://ai-service
+          predicates:
+            - Path=/ai/**
+        - id: stripe-service
+          uri: lb://stripe
+          predicates:
+            - Path=/stripe/**
 
 eureka:
   client:

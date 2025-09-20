@@ -170,6 +170,8 @@ services:
         condition: service_started
       ai-service:
         condition: service_started
+      stripe-service:
+        condition: service_started
     # healthcheck:
     #   test: [ "CMD", "curl", "-f", "http://localhost:8080/actuator/health" ]
     #   interval: 30s
@@ -185,6 +187,7 @@ services:
     container_name: postfolio-stripe
     environment:
       SPRING_PROFILES_ACTIVE: docker
+      EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE: http://eureka-server:8761/eureka
       STRIPE_RETURN_URL: ${STRIPE_RETURN_URL:-http://localhost:3000}
       STRIPE_KEY_PUBLIC: ${STRIPE_PUBLIC_KEY}
       STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY}
@@ -192,6 +195,9 @@ services:
       - "9991:9991"
     networks:
       - postfolio-network
+    depends_on:
+      eureka-server:
+        condition: service_started
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://localhost:9991/actuator/health" ]
       interval: 30s

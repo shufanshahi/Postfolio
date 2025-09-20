@@ -35,6 +35,14 @@ public class GatewayConfig {
                                                         .uri("lb://ai-service");
                                 })
 
+                                // Stripe Service routes
+                                .route("stripe-service", r -> {
+                                        System.out.println("Configuring stripe-service route for /stripe/**");
+                                        return r
+                                                        .path("/stripe/**")
+                                                        .uri("lb://stripe");
+                                })
+
                                 // Health check route
                                 .route("health-check", r -> {
                                         System.out.println("Configuring health-check route");
