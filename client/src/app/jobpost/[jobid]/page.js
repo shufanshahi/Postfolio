@@ -251,15 +251,16 @@ function JobDetails() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
+      <div className="min-h-screen relative overflow-hidden flex items-center justify-center">
+        {/* Background gradients matching dashboard */}
+        <div className="pointer-events-none select-none absolute inset-0 -z-10">
+          <div className="absolute -top-24 -left-10 h-[38rem] w-[38rem] bg-gradient-to-br from-teal-200 via-teal-100 to-white dark:from-teal-600/30 dark:via-indigo-600/20 dark:to-transparent blur-3xl opacity-70" />
+          <div className="absolute top-1/3 -right-32 h-[34rem] w-[34rem] bg-gradient-to-tr from-indigo-200 via-white to-amber-100 dark:from-indigo-700/30 dark:via-transparent dark:to-teal-700/20 blur-3xl opacity-60" />
+        </div>
         <Navbar />
-        <div className="container mx-auto px-4 py-8">
-          <div className="flex items-center justify-center min-h-[60vh]">
-            <div className="text-center">
-              <Loader2 className="h-12 w-12 animate-spin text-blue-600 mx-auto mb-4" />
-              <p className="text-gray-600 dark:text-gray-400">Loading job details...</p>
-            </div>
-          </div>
+        <div className="text-center animate-in fade-in zoom-in duration-500">
+          <Loader2 className="h-9 w-9 animate-spin text-teal-600 dark:text-teal-300 mx-auto mb-4" />
+          <p className="text-sm font-medium text-slate-600 dark:text-slate-300 tracking-wide">Loading job details...</p>
         </div>
       </div>
     );
@@ -267,19 +268,24 @@ function JobDetails() {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
+      <div className="min-h-screen relative overflow-hidden">
+        {/* Background gradients matching dashboard */}
+        <div className="pointer-events-none select-none absolute inset-0 -z-10">
+          <div className="absolute -top-24 -left-10 h-[38rem] w-[38rem] bg-gradient-to-br from-teal-200 via-teal-100 to-white dark:from-teal-600/30 dark:via-indigo-600/20 dark:to-transparent blur-3xl opacity-70" />
+          <div className="absolute top-1/3 -right-32 h-[34rem] w-[34rem] bg-gradient-to-tr from-indigo-200 via-white to-amber-100 dark:from-indigo-700/30 dark:via-transparent dark:to-teal-700/20 blur-3xl opacity-60" />
+        </div>
         <Navbar />
-        <div className="container mx-auto px-4 py-8">
+        <div className="max-w-7xl mx-auto px-6 py-10">
           <div className="flex items-center justify-center min-h-[60vh]">
-            <Card className="w-full max-w-md">
+            <Card className={`w-full max-w-md ${subtleCard} shadow-sm`}>
               <CardContent className="pt-6">
                 <div className="text-center">
                   <XCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
-                  <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">
+                  <h3 className="text-lg font-semibold text-slate-800 dark:text-slate-100 mb-2">
                     Error Loading Job
                   </h3>
-                  <p className="text-gray-600 dark:text-gray-400 mb-4">{error}</p>
-                  <Button onClick={handleRetry} variant="outline">
+                  <p className="text-slate-600 dark:text-slate-400 mb-4">{error}</p>
+                  <Button onClick={handleRetry} variant="outline" className="rounded-full border-slate-300/60 bg-white/60 backdrop-blur hover:bg-white shadow-sm">
                     Try Again
                   </Button>
                 </div>
@@ -293,18 +299,23 @@ function JobDetails() {
 
   if (!job) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
+      <div className="min-h-screen relative overflow-hidden">
+        {/* Background gradients matching dashboard */}
+        <div className="pointer-events-none select-none absolute inset-0 -z-10">
+          <div className="absolute -top-24 -left-10 h-[38rem] w-[38rem] bg-gradient-to-br from-teal-200 via-teal-100 to-white dark:from-teal-600/30 dark:via-indigo-600/20 dark:to-transparent blur-3xl opacity-70" />
+          <div className="absolute top-1/3 -right-32 h-[34rem] w-[34rem] bg-gradient-to-tr from-indigo-200 via-white to-amber-100 dark:from-indigo-700/30 dark:via-transparent dark:to-teal-700/20 blur-3xl opacity-60" />
+        </div>
         <Navbar />
-        <div className="container mx-auto px-4 py-8">
+        <div className="max-w-7xl mx-auto px-6 py-10">
           <div className="flex items-center justify-center min-h-[60vh]">
-            <Card className="w-full max-w-md">
+            <Card className={`w-full max-w-md ${subtleCard} shadow-sm`}>
               <CardContent className="pt-6">
                 <div className="text-center">
-                  <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                  <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">
+                  <FileText className="h-12 w-12 text-slate-400 mx-auto mb-4" />
+                  <h3 className="text-lg font-semibold text-slate-800 dark:text-slate-100 mb-2">
                     Job Not Found
                   </h3>
-                  <p className="text-gray-600 dark:text-gray-400">
+                  <p className="text-slate-600 dark:text-slate-400">
                     The job you&apos;re looking for doesn&apos;t exist or has been removed.
                   </p>
                 </div>
@@ -316,16 +327,26 @@ function JobDetails() {
     );
   }
 
+// Design tokens matching dashboard
+const gradientPanel = 'bg-gradient-to-br from-teal-50/70 via-white/50 to-indigo-50/70 dark:from-slate-800/60 dark:via-slate-800/50 dark:to-slate-800/60 backdrop-blur-xl border border-white/40 dark:border-slate-700/50 shadow-sm';
+const subtleCard = 'bg-gradient-to-br from-teal-50/65 via-white/55 to-indigo-50/60 dark:from-slate-800/70 dark:via-slate-800/60 dark:to-slate-800/70 backdrop-blur-md border border-teal-900/5 dark:border-slate-700/60 hover:border-teal-500/30 dark:hover:border-teal-400/30 transition-colors';
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
+    <div className="min-h-screen relative overflow-hidden">
+      {/* Background gradients matching dashboard */}
+      <div className="pointer-events-none select-none absolute inset-0 -z-10">
+        <div className="absolute -top-24 -left-10 h-[38rem] w-[38rem] bg-gradient-to-br from-teal-200 via-teal-100 to-white dark:from-teal-600/30 dark:via-indigo-600/20 dark:to-transparent blur-3xl opacity-70" />
+        <div className="absolute top-1/3 -right-32 h-[34rem] w-[34rem] bg-gradient-to-tr from-indigo-200 via-white to-amber-100 dark:from-indigo-700/30 dark:via-transparent dark:to-teal-700/20 blur-3xl opacity-60" />
+      </div>
+
       <Navbar />
-      <div className="container mx-auto px-4 py-8">
+      <div className="max-w-7xl mx-auto px-6 py-10 relative">
         {/* Header with back button */}
-        <div className="mb-6">
+        <div className="mb-8">
           <Button 
-            variant="ghost" 
+            variant="outline" 
             onClick={() => window.history.back()}
-            className="mb-4 text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100"
+            className="mb-6 rounded-full border-slate-300/60 bg-white/60 backdrop-blur hover:bg-white shadow-sm"
           >
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back to Jobs
@@ -336,34 +357,34 @@ function JobDetails() {
           {/* Main Content */}
           <div className="lg:col-span-2 space-y-6">
             {/* Job Header */}
-            <Card className="shadow-lg border-0 bg-white dark:bg-gray-900">
+            <Card className={`rounded-2xl ${subtleCard} shadow-sm`}>
               <CardHeader className="pb-4">
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
-                    <CardTitle className="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-2">
+                    <CardTitle className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-teal-700 via-indigo-700 to-amber-600 dark:from-teal-200 dark:via-indigo-200 dark:to-amber-200 mb-2">
                       {job.title}
                     </CardTitle>
-                    <CardDescription className="text-xl text-gray-600 dark:text-gray-400 mb-4">
+                    <CardDescription className="text-xl text-slate-600 dark:text-slate-400 mb-4">
                       {job.position}
                     </CardDescription>
                     <div className="flex items-center gap-4 flex-wrap">
                       <Badge 
-                        className={`px-3 py-1 text-sm font-medium ${getStatusColor(job.status)}`}
+                        className={`px-3 py-1 text-sm font-medium rounded-full ${getStatusColor(job.status)}`}
                       >
                         {getStatusIcon(job.status)}
                         <span className="ml-1">{job.status}</span>
                       </Badge>
-                      <div className="flex items-center text-gray-600 dark:text-gray-400">
+                      <div className="flex items-center text-slate-600 dark:text-slate-400">
                         <Calendar className="h-4 w-4 mr-1" />
                         <span className="text-sm">Posted {formatDate(job.datePosted)}</span>
                       </div>
                     </div>
                   </div>
                   <div className="flex gap-2">
-                    <Button variant="outline" size="sm">
+                    <Button variant="outline" size="sm" className="rounded-full border-slate-300/60 bg-white/60 backdrop-blur hover:bg-white shadow-sm">
                       <Share2 className="h-4 w-4" />
                     </Button>
-                    <Button variant="outline" size="sm">
+                    <Button variant="outline" size="sm" className="rounded-full border-slate-300/60 bg-white/60 backdrop-blur hover:bg-white shadow-sm">
                       <BookmarkPlus className="h-4 w-4" />
                     </Button>
                   </div>
@@ -372,66 +393,66 @@ function JobDetails() {
             </Card>
 
             {/* Job Details */}
-            <Card className="shadow-lg border-0 bg-white dark:bg-gray-900">
+            <Card className={`rounded-2xl ${subtleCard} shadow-sm`}>
               <CardHeader>
-                <CardTitle className="flex items-center text-gray-900 dark:text-gray-100">
-                  <FileText className="h-5 w-5 mr-2" />
+                <CardTitle className="flex items-center text-slate-800 dark:text-slate-100">
+                  <FileText className="h-5 w-5 mr-2 text-teal-600 dark:text-teal-400" />
                   Job Description
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-gray-700 dark:text-gray-300 leading-relaxed whitespace-pre-wrap">
+                <p className="text-slate-700 dark:text-slate-300 leading-relaxed whitespace-pre-wrap">
                   {job.description}
                 </p>
               </CardContent>
             </Card>
 
             {/* Requirements */}
-            <Card className="shadow-lg border-0 bg-white dark:bg-gray-900">
+            <Card className={`rounded-2xl ${subtleCard} shadow-sm`}>
               <CardHeader>
-                <CardTitle className="flex items-center text-gray-900 dark:text-gray-100">
-                  <CheckCircle className="h-5 w-5 mr-2" />
+                <CardTitle className="flex items-center text-slate-800 dark:text-slate-100">
+                  <CheckCircle className="h-5 w-5 mr-2 text-teal-600 dark:text-teal-400" />
                   Requirements
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-6">
                 {job.requiredSkills && (
                   <div>
-                    <h4 className="font-semibold text-gray-900 dark:text-gray-100 mb-2 flex items-center">
-                      <Award className="h-4 w-4 mr-2" />
+                    <h4 className="font-semibold text-slate-800 dark:text-slate-100 mb-2 flex items-center">
+                      <Award className="h-4 w-4 mr-2 text-teal-600 dark:text-teal-400" />
                       Required Skills
                     </h4>
-                    <p className="text-gray-700 dark:text-gray-300">{job.requiredSkills}</p>
+                    <p className="text-slate-700 dark:text-slate-300">{job.requiredSkills}</p>
                   </div>
                 )}
                 
                 {job.requiredExperience && (
                   <div>
-                    <h4 className="font-semibold text-gray-900 dark:text-gray-100 mb-2 flex items-center">
-                      <Briefcase className="h-4 w-4 mr-2" />
+                    <h4 className="font-semibold text-slate-800 dark:text-slate-100 mb-2 flex items-center">
+                      <Briefcase className="h-4 w-4 mr-2 text-teal-600 dark:text-teal-400" />
                       Required Experience
                     </h4>
-                    <p className="text-gray-700 dark:text-gray-300">{job.requiredExperience}</p>
+                    <p className="text-slate-700 dark:text-slate-300">{job.requiredExperience}</p>
                   </div>
                 )}
                 
                 {job.requiredEducation && (
                   <div>
-                    <h4 className="font-semibold text-gray-900 dark:text-gray-100 mb-2 flex items-center">
-                      <GraduationCap className="h-4 w-4 mr-2" />
+                    <h4 className="font-semibold text-slate-800 dark:text-slate-100 mb-2 flex items-center">
+                      <GraduationCap className="h-4 w-4 mr-2 text-teal-600 dark:text-teal-400" />
                       Required Education
                     </h4>
-                    <p className="text-gray-700 dark:text-gray-300">{job.requiredEducation}</p>
+                    <p className="text-slate-700 dark:text-slate-300">{job.requiredEducation}</p>
                   </div>
                 )}
                 
                 {job.requiredProject && (
                   <div>
-                    <h4 className="font-semibold text-gray-900 dark:text-gray-100 mb-2 flex items-center">
-                      <FileText className="h-4 w-4 mr-2" />
+                    <h4 className="font-semibold text-slate-800 dark:text-slate-100 mb-2 flex items-center">
+                      <FileText className="h-4 w-4 mr-2 text-teal-600 dark:text-teal-400" />
                       Required Projects
                     </h4>
-                    <p className="text-gray-700 dark:text-gray-300">{job.requiredProject}</p>
+                    <p className="text-slate-700 dark:text-slate-300">{job.requiredProject}</p>
                   </div>
                 )}
               </CardContent>
@@ -441,14 +462,14 @@ function JobDetails() {
           {/* Sidebar */}
           <div className="space-y-6">
             {/* Apply Button */}
-            <Card className="shadow-lg border-0 bg-white dark:bg-gray-900">
+            <Card className={`rounded-2xl ${subtleCard} shadow-sm`}>
               <CardContent className="pt-6">
                 {job.status === 'OPEN' ? (
                   <>
                     {isApplied ? (
                       <Button 
                         onClick={handleWithdraw}
-                        className="w-full mb-4 bg-red-600 hover:bg-red-700 text-white"
+                        className="w-full mb-4 bg-red-600 hover:bg-red-700 text-white rounded-xl shadow-sm"
                         size="lg"
                         disabled={applying}
                       >
@@ -467,7 +488,7 @@ function JobDetails() {
                     ) : (
                       <Button 
                         onClick={handleApply}
-                        className="w-full mb-4 bg-blue-600 hover:bg-blue-700 text-white"
+                        className="w-full mb-4 bg-teal-600 hover:bg-teal-700 text-white rounded-xl shadow-sm"
                         size="lg"
                         disabled={applying}
                       >
@@ -487,7 +508,7 @@ function JobDetails() {
                   </>
                 ) : (
                   <Button 
-                    className="w-full mb-4 bg-gray-500 text-white cursor-not-allowed"
+                    className="w-full mb-4 bg-slate-500 text-white cursor-not-allowed rounded-xl"
                     size="lg"
                     disabled={true}
                   >
@@ -496,13 +517,13 @@ function JobDetails() {
                   </Button>
                 )}
                 {job.endDate && (
-                  <p className="text-sm text-gray-600 dark:text-gray-400 text-center">
+                  <p className="text-sm text-slate-600 dark:text-slate-400 text-center">
                     Application deadline: {formatDate(job.endDate)}
                   </p>
                 )}
                 {isApplied && job.status === 'OPEN' && (
-                  <div className="mt-3 p-2 bg-green-100 dark:bg-green-900 rounded-lg">
-                    <p className="text-sm text-green-700 dark:text-green-300 text-center flex items-center justify-center">
+                  <div className="mt-3 p-3 bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-emerald-900/20 dark:to-teal-900/20 border border-emerald-200 dark:border-emerald-800 rounded-xl">
+                    <p className="text-sm text-emerald-700 dark:text-emerald-300 text-center flex items-center justify-center">
                       <CheckCircle className="h-4 w-4 mr-1" />
                       You have applied for this job
                     </p>
@@ -512,42 +533,42 @@ function JobDetails() {
             </Card>
 
             {/* Job Summary */}
-            <Card className="shadow-lg border-0 bg-white dark:bg-gray-900">
+            <Card className={`rounded-2xl ${subtleCard} shadow-sm`}>
               <CardHeader>
-                <CardTitle className="text-gray-900 dark:text-gray-100">Job Summary</CardTitle>
+                <CardTitle className="text-slate-800 dark:text-slate-100">Job Summary</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center text-gray-600 dark:text-gray-400">
-                    <DollarSign className="h-4 w-4 mr-2" />
+                  <div className="flex items-center text-slate-600 dark:text-slate-400">
+                    <DollarSign className="h-4 w-4 mr-2 text-teal-600 dark:text-teal-400" />
                     <span className="text-sm">Salary</span>
                   </div>
-                  <span className="font-semibold text-gray-900 dark:text-gray-100">
+                  <span className="font-semibold text-slate-800 dark:text-slate-100">
                     {formatSalary(job.minSalary, job.maxSalary)}
                   </span>
                 </div>
                 
-                <Separator />
+                <Separator className="bg-gradient-to-r from-transparent via-slate-200/80 to-transparent dark:via-slate-700/60" />
                 
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center text-gray-600 dark:text-gray-400">
-                    <Clock className="h-4 w-4 mr-2" />
+                  <div className="flex items-center text-slate-600 dark:text-slate-400">
+                    <Clock className="h-4 w-4 mr-2 text-teal-600 dark:text-teal-400" />
                     <span className="text-sm">Posted</span>
                   </div>
-                  <span className="font-semibold text-gray-900 dark:text-gray-100">
+                  <span className="font-semibold text-slate-800 dark:text-slate-100">
                     {formatDate(job.datePosted)}
                   </span>
                 </div>
                 
                 {job.endDate && (
                   <>
-                    <Separator />
+                    <Separator className="bg-gradient-to-r from-transparent via-slate-200/80 to-transparent dark:via-slate-700/60" />
                     <div className="flex items-center justify-between">
-                      <div className="flex items-center text-gray-600 dark:text-gray-400">
-                        <Calendar className="h-4 w-4 mr-2" />
+                      <div className="flex items-center text-slate-600 dark:text-slate-400">
+                        <Calendar className="h-4 w-4 mr-2 text-teal-600 dark:text-teal-400" />
                         <span className="text-sm">Deadline</span>
                       </div>
-                      <span className="font-semibold text-gray-900 dark:text-gray-100">
+                      <span className="font-semibold text-slate-800 dark:text-slate-100">
                         {formatDate(job.endDate)}
                       </span>
                     </div>
@@ -558,10 +579,10 @@ function JobDetails() {
 
             {/* Location Map */}
             {coordinates && (
-              <Card className="shadow-lg border-0 bg-white dark:bg-gray-900">
+              <Card className={`rounded-2xl ${subtleCard} shadow-sm`}>
                 <CardHeader>
-                  <CardTitle className="flex items-center text-gray-900 dark:text-gray-100">
-                    <MapPin className="h-5 w-5 mr-2" />
+                  <CardTitle className="flex items-center text-slate-800 dark:text-slate-100">
+                    <MapPin className="h-5 w-5 mr-2 text-teal-600 dark:text-teal-400" />
                     Job Location
                   </CardTitle>
                 </CardHeader>
@@ -569,7 +590,7 @@ function JobDetails() {
                   <div className="mb-4">
                     <JobLocationMap coordinates={coordinates} />
                   </div>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                  <p className="text-sm text-slate-600 dark:text-slate-400">
                     {job.location}
                   </p>
                 </CardContent>
