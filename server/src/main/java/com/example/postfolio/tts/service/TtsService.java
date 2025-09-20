@@ -28,7 +28,7 @@ public class TtsService {
         // Get the Python script from resources
         ClassPathResource scriptResource = new ClassPathResource("tts_script.py");
         Path tempScriptPath = Paths.get(TEMP_DIR, "tts_script_" + UUID.randomUUID().toString() + ".py");
-        
+
         try (InputStream inputStream = scriptResource.getInputStream()) {
             String scriptContent = StreamUtils.copyToString(inputStream, Charset.defaultCharset());
             Files.write(tempScriptPath, scriptContent.getBytes());
@@ -37,15 +37,14 @@ public class TtsService {
         try {
             // Execute Python script with arguments
             ProcessBuilder pb = new ProcessBuilder(
-                "python", 
-                tempScriptPath.toString(),
-                "--text", text,
-                "--output", audioPath.toString()
-            );
-            
+                    "python3",
+                    tempScriptPath.toString(),
+                    "--text", text,
+                    "--output", audioPath.toString());
+
             pb.redirectErrorStream(true);
             Process process = pb.start();
-            
+
             // Read output for debugging
             StringBuilder output = new StringBuilder();
             try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
@@ -54,16 +53,16 @@ public class TtsService {
                     output.append(line).append("\n");
                 }
             }
-            
+
             boolean finished = process.waitFor(TIMEOUT_SECONDS, TimeUnit.SECONDS);
-            
+
             if (!finished) {
                 process.destroyForcibly();
                 throw new RuntimeException("TTS process timed out after " + TIMEOUT_SECONDS + " seconds");
             }
-            
+
             int exitCode = process.exitValue();
-            
+
             if (exitCode != 0) {
                 System.err.println("Python script output: " + output.toString());
                 throw new RuntimeException("Python script execution failed with exit code: " + exitCode);
@@ -76,7 +75,7 @@ public class TtsService {
             } else {
                 throw new RuntimeException("Audio file was not created or is empty. Output: " + output.toString());
             }
-            
+
         } finally {
             // Clean up the temporary Python script
             try {

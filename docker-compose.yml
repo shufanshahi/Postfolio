@@ -7,7 +7,7 @@ services:
     container_name: postfolio-postgres
     environment:
       POSTGRES_DB: ${POSTGRES_DB:-postfolio}
-      POSTGRES_USER: ${POSTGRES_USER403 :-postgres}
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-admin}
     ports:
       - "5433:5432"
