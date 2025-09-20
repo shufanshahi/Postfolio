@@ -1,0 +1,48 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: api-gateway
+  cloud:
+    gateway:
+      discovery:
+        locator:
+          enabled: true
+          lower-case-service-id: true
+      routes:
+        - id: postfolio-backend
+          uri: lb://postfolio-backend
+          predicates:
+            - Path=/api/**
+        - id: ai-service
+          uri: lb://ai-service
+          predicates:
+            - Path=/ai/**
+        - id: stripe-service
+          uri: lb://stripe
+          predicates:
+            - Path=/stripe/**
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://eureka-server:8761/eureka
+  instance:
+    prefer-ip-address: true
+    lease-renewal-interval-in-seconds: 10
+    hostname: api-gateway
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,gateway
+  endpoint:
+    health:
+      show-details: always
+
+logging:
+  level:
+    org.springframework.cloud.gateway: INFO
+    com.example.postfolio.gateway: INFO
