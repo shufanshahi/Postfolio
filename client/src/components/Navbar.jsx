@@ -117,7 +117,8 @@ export default function Navbar() {
               {!isEmployer && <NavItem icon="📝" label="My CV" path="/mycv" />}
               {!isEmployer && <NavItem icon="🎯" label="Prep" path="/myprep" />}
               {!isEmployer && <NavItem icon="🤝" label="Mentorship" path="/mentorship" />}
-              {!isEmployer && <NavItem icon="🤖" label="My Interviews" path="/mockInterview" />}
+              {!isEmployer && <NavItem icon="🤖" label="Mock Interviews" path="/mockInterview" />}
+              {!isEmployer && <NavItem icon="💳" label="Credit" path="/addcradit" />}
               
               {/* More dropdown */}
               <DropdownMenu>

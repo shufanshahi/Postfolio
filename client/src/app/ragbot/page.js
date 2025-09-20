@@ -8,6 +8,7 @@ import { Textarea } from "../../components/ui/textarea";
 import { Badge } from "../../components/ui/badge";
 import { Separator } from "../../components/ui/separator";
 import { Upload, MessageCircle, FileText, Send, Loader2, Bot, User, AlertCircle, CheckCircle, Sparkles, BrainCircuit } from "lucide-react";
+import Navbar from "@/components/Navbar";
 
 export default function RagTestPage() {
   const [file, setFile] = useState(null);
@@ -175,6 +176,8 @@ export default function RagTestPage() {
         <div className="absolute -top-24 -left-10 h-[38rem] w-[38rem] bg-gradient-to-br from-teal-200 via-teal-100 to-white dark:from-teal-600/30 dark:via-indigo-600/20 dark:to-transparent blur-3xl opacity-70" />
         <div className="absolute top-1/3 -right-32 h-[34rem] w-[34rem] bg-gradient-to-tr from-indigo-200 via-white to-amber-100 dark:from-indigo-700/30 dark:via-transparent dark:to-teal-700/20 blur-3xl opacity-60" />
       </div>
+
+      <Navbar />
 
       <div className="container mx-auto p-6 max-w-6xl relative">
         {/* Header Section */}

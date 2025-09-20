@@ -389,6 +389,14 @@ const PreparationPage = () => {
                     )}
                     {summaryLoading ? 'Generating Summary...' : 'Generate Summary PDF'}
                   </button>
+
+                  <button
+                    onClick={() => window.location.href = '/ragbot'}
+                    className="w-full h-11 rounded-full bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium shadow-sm flex items-center justify-center gap-2 transition-colors"
+                  >
+                    <Brain className="h-4 w-4" />
+                    AI Q&A Assistant
+                  </button>
                 </div>
               </div>
             </div>
