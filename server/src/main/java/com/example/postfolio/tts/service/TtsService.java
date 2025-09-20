@@ -37,7 +37,7 @@ public class TtsService {
         try {
             // Execute Python script with arguments
             ProcessBuilder pb = new ProcessBuilder(
-                    "python3",
+                    "python",
                     tempScriptPath.toString(),
                     "--text", text,
                     "--output", audioPath.toString());

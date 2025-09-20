@@ -39,6 +39,11 @@ const PreparationPage = () => {
       setError('Please select a text file (.txt) or PDF file (.pdf)');
       setSelectedFile(null);
     }
+    
+    // Reset the input value to allow selecting the same file again
+    if (event.target) {
+      event.target.value = '';
+    }
   };
 
   const handleDragOver = (event) => {
@@ -51,7 +56,16 @@ const PreparationPage = () => {
     event.stopPropagation();
     const file = event.dataTransfer.files[0];
     if (file) {
-      handleFileSelect({ target: { files: [file] } });
+      const isTextFile = file.type === 'text/plain' || file.name.endsWith('.txt');
+      const isPdfFile = file.type === 'application/pdf' || file.name.endsWith('.pdf');
+
+      if (isTextFile || isPdfFile) {
+        setSelectedFile(file);
+        setError('');
+      } else {
+        setError('Please select a text file (.txt) or PDF file (.pdf)');
+        setSelectedFile(null);
+      }
     }
   };
 
@@ -120,7 +134,6 @@ const PreparationPage = () => {
       // Reset form
       if (activeTab === 'upload') {
         setSelectedFile(null);
-        if (fileInputRef.current) fileInputRef.current.value = '';
       } else {
         setTextContent('');
         setDocumentName('');
@@ -185,7 +198,6 @@ const PreparationPage = () => {
       // Reset form
       if (activeTab === 'upload') {
         setSelectedFile(null);
-        if (fileInputRef.current) fileInputRef.current.value = '';
       } else {
         setTextContent('');
         setDocumentName('');
@@ -291,29 +303,58 @@ const PreparationPage = () => {
               <div className="p-8 space-y-8">
                 {activeTab === 'upload' ? (
                   <div className="space-y-6">
-                    <div
-                      className="border-2 border-dashed border-teal-900/15 dark:border-slate-700/60 hover:border-indigo-500/40 rounded-2xl p-10 text-center transition-colors cursor-pointer bg-white/50 dark:bg-slate-900/30 backdrop-blur-sm"
-                      onDragOver={handleDragOver}
-                      onDrop={handleDrop}
-                      onClick={() => fileInputRef.current?.click()}
-                    >
-                      <Upload className="h-12 w-12 text-slate-400 mx-auto mb-4" />
-                      <p className="text-slate-600 dark:text-slate-400 mb-4 text-sm">Drag & drop your text or PDF file here, or click to browse</p>
-                      <input ref={fileInputRef} type="file" accept=".txt,.pdf,text/plain,application/pdf" onChange={handleFileSelect} className="hidden" id="fileInput" />
-                      <label htmlFor="fileInput" className="inline-flex items-center h-10 px-6 rounded-full bg-teal-600 hover:bg-teal-700 text-white text-sm font-medium shadow-sm cursor-pointer transition-colors">Choose File</label>
-                    </div>
-                    {selectedFile && (
-                      <div className="p-4 rounded-xl bg-white/60 dark:bg-slate-900/40 border border-teal-900/10 dark:border-slate-700/60 flex items-center justify-between">
-                        <div className="flex items-center min-w-0 gap-2">
-                          <FileText className="h-4 w-4 text-indigo-500 flex-shrink-0" />
-                          <span className="text-sm text-slate-700 dark:text-slate-200 truncate">{selectedFile.name}</span>
-                        </div>
-                        <button
-                          onClick={(e) => { e.stopPropagation(); setSelectedFile(null); if (fileInputRef.current) fileInputRef.current.value = ''; }}
-                          className="p-1.5 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-600 dark:text-rose-400 transition-colors"
+                    {/* Single file input element for the entire upload tab */}
+                    <input ref={fileInputRef} type="file" accept=".txt,.pdf,text/plain,application/pdf" onChange={handleFileSelect} className="hidden" id="fileInput" />
+                    
+                    {!selectedFile ? (
+                      <div
+                        className="border-2 border-dashed border-teal-900/15 dark:border-slate-700/60 hover:border-indigo-500/40 rounded-2xl p-10 text-center transition-colors bg-white/50 dark:bg-slate-900/30 backdrop-blur-sm"
+                        onDragOver={handleDragOver}
+                        onDrop={handleDrop}
+                      >
+                        <Upload className="h-12 w-12 text-slate-400 mx-auto mb-4" />
+                        <p className="text-slate-600 dark:text-slate-400 mb-4 text-sm">Drag & drop your text or PDF file here, or click to browse</p>
+                        <button 
+                          onClick={() => fileInputRef.current?.click()}
+                          className="inline-flex items-center h-10 px-6 rounded-full bg-teal-600 hover:bg-teal-700 text-white text-sm font-medium shadow-sm cursor-pointer transition-colors"
                         >
-                          <X className="h-4 w-4" />
+                          Choose File
                         </button>
+                      </div>
+                    ) : (
+                      <div className="space-y-4">
+                        <div className="p-6 rounded-xl bg-white/60 dark:bg-slate-900/40 border border-teal-900/10 dark:border-slate-700/60">
+                          <div className="flex items-center justify-between mb-4">
+                            <div className="flex items-center min-w-0 gap-3">
+                              <div className="h-10 w-10 rounded-lg bg-teal-600/10 dark:bg-teal-400/10 flex items-center justify-center">
+                                <FileText className="h-5 w-5 text-teal-600 dark:text-teal-400" />
+                              </div>
+                              <div className="min-w-0">
+                                <h4 className="text-sm font-medium text-slate-700 dark:text-slate-200 truncate">{selectedFile.name}</h4>
+                                <p className="text-xs text-slate-500 dark:text-slate-400">
+                                  {(selectedFile.size / 1024).toFixed(1)} KB • {selectedFile.type || 'Unknown type'}
+                                </p>
+                              </div>
+                            </div>
+                            <button
+                              onClick={() => {
+                                setSelectedFile(null);
+                                setError('');
+                              }}
+                              className="p-2 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-600 dark:text-rose-400 transition-colors"
+                            >
+                              <X className="h-4 w-4" />
+                            </button>
+                          </div>
+                          <div className="flex gap-2">
+                            <button
+                              onClick={() => fileInputRef.current?.click()}
+                              className="flex-1 h-9 px-4 rounded-lg bg-teal-50 dark:bg-teal-900/20 text-teal-700 dark:text-teal-300 text-sm font-medium hover:bg-teal-100 dark:hover:bg-teal-900/30 transition-colors"
+                            >
+                              Change File
+                            </button>
+                          </div>
+                        </div>
                       </div>
                     )}
                   </div>

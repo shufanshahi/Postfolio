@@ -1281,7 +1281,7 @@ export default function MockInterviewPage() {
                             router.push(`/prev-mock-interview/${mock.id}`);
                           }}
                         >
-                          View Details
+                          Give Interview
                         </Button>
                         <Button
                           className="flex-1 bg-blue-600 hover:bg-blue-700 text-white rounded-lg shadow-sm"

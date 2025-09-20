@@ -1,42 +1,12 @@
 "use client";
 import { useEffect, useState } from "react";
-import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
-import "leaflet/dist/leaflet.css";
-import L from "leaflet";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { MapPin, Briefcase, DollarSign, Calendar, Users, Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import Navbar from '@/components/Navbar';
-
-// Fix for default markers in React Leaflet
-delete L.Icon.Default.prototype._getIconUrl;
-L.Icon.Default.mergeOptions({
-  iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
-  iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
-  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
-});
-
-// Custom job marker icon
-const jobMarkerIcon = new L.Icon({
-  iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png',
-  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
-  iconSize: [25, 41],
-  iconAnchor: [12, 41],
-  popupAnchor: [1, -34],
-  shadowSize: [41, 41]
-});
-
-// Current location marker icon
-const currentLocationIcon = new L.Icon({
-  iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png',
-  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
-  iconSize: [25, 41],
-  iconAnchor: [12, 41],
-  popupAnchor: [1, -34],
-  shadowSize: [41, 41]
-});
+import LeafletMap from '@/components/LeafletMap';
 
 // Design tokens matching dashboard theme
 const gradientPanel = 'bg-gradient-to-br from-teal-50/70 via-white/50 to-indigo-50/70 dark:from-slate-800/60 dark:via-slate-800/50 dark:to-slate-800/60 backdrop-blur-xl border border-white/40 dark:border-slate-700/50 shadow-sm';
@@ -355,72 +325,16 @@ export default function NearbyJobs() {
             <Card className={`${subtleCard} h-full`}>
               <CardContent className="p-0 h-full">
                 <div className="h-full rounded-2xl overflow-hidden">
-                  <MapContainer
+                  <LeafletMap
                     center={userLocation ? [userLocation.lat, userLocation.lng] : mapCenter}
                     zoom={userLocation ? 15 : 12}
-                    style={{ height: '100%', width: '100%' }}
-                    key={userLocation ? `${userLocation.lat}-${userLocation.lng}` : 'default'}
-                  >
-                    <TileLayer
-                      attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-                      url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                    />
-                    
-                    {/* User's current location */}
-                    {userLocation && (
-                      <Marker 
-                        position={[userLocation.lat, userLocation.lng]}
-                        icon={currentLocationIcon}
-                      >
-                        <Popup>
-                          <div className="text-center p-2">
-                            <strong className="text-blue-600">Your Location</strong>
-                            <p className="text-sm text-slate-600 mt-1">You are here</p>
-                          </div>
-                        </Popup>
-                      </Marker>
-                    )}
-
-                    {/* Job markers */}
-                    {jobs.map((job) => {
-                      const coords = parseLocation(job.location);
-                      if (!coords) return null;
-
-                      return (
-                        <Marker
-                          key={job.jobId}
-                          position={[coords.lat, coords.lng]}
-                          icon={jobMarkerIcon}
-                          eventHandlers={{
-                            click: () => setSelectedJob(job)
-                          }}
-                        >
-                          <Popup>
-                            <div className="max-w-xs p-2">
-                              <h3 className="font-bold text-lg mb-2 text-slate-800">{job.title}</h3>
-                              <div className="space-y-2">
-                                <div className="flex items-center gap-2">
-                                  <Briefcase className="h-4 w-4 text-teal-600" />
-                                  <span className="text-sm text-slate-600">{job.position}</span>
-                                </div>
-                                <div className="flex items-center gap-2">
-                                  <DollarSign className="h-4 w-4 text-emerald-600" />
-                                  <span className="text-sm text-slate-600">
-                                    {job.minSalary && job.maxSalary 
-                                      ? `${job.minSalary} - ${job.maxSalary}` 
-                                      : 'Salary not specified'}
-                                  </span>
-                                </div>
-                                <Badge className="bg-emerald-100 text-emerald-700 text-xs">
-                                  {job.status}
-                                </Badge>
-                              </div>
-                            </div>
-                          </Popup>
-                        </Marker>
-                      );
-                    })}
-                  </MapContainer>
+                    userLocation={userLocation}
+                    jobs={jobs}
+                    onJobClick={setSelectedJob}
+                    parseLocation={parseLocation}
+                    height="100%"
+                    width="100%"
+                  />
                 </div>
               </CardContent>
             </Card>

@@ -498,7 +498,7 @@ function FunctionalDashboard() {
 
 
             {/* Weekly Summary */}
-            <Card className={`rounded-2xl relative overflow-hidden ${gradientPanel}`}>
+            {/* <Card className={`rounded-2xl relative overflow-hidden ${gradientPanel}`}>
               <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,theme(colors.teal.200)/40,transparent_60%)] dark:bg-[radial-gradient(circle_at_20%_20%,oklch(0.3_0.05_210)/40,transparent_60%)]" />
               <CardHeader className="relative">
                 <CardTitle className="text-slate-800 dark:text-slate-100 text-base font-semibold">This Week</CardTitle>
@@ -527,7 +527,7 @@ function FunctionalDashboard() {
                   </Badge>
                 </div>
               </CardContent>
-            </Card>
+            </Card> */}
           </div>
         </div>
       </div>
